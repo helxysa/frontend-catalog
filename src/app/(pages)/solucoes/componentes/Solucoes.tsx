@@ -1,14 +1,15 @@
 'use client'
 
-interface DemandaFormData {
-  proprietario_id: number;
+interface SolucaoFormData {
   nome: string;
+  demanda_id: number;
   sigla: string;
   descricao: string;
-  demandante: string;
-  fator_gerador: string;
-  alinhamento_id: number;
-  prioridade_id: number;
+  versao: string;
+  tipo_id: number;
+  linguagem_id: number;
+  desenvolvedor_id: number;
+  categoria_id: number;
   responsavel_id: number;
   status_id: number;
   data_status: string;
@@ -16,35 +17,38 @@ interface DemandaFormData {
 
 import { useEffect, useState } from 'react';
 import { 
-  getDemandas, 
-  getProprietarios, 
-  getAlinhamentos, 
-  getPrioridades, 
+  getSolucoes, 
+  getTipos, 
+  getLinguagens, 
+  getDesenvolvedores, 
+  getCategorias, 
   getResponsaveis, 
   getStatus,
-  deleteDemanda,
-  createDemanda,
-  updateDemanda
+  deleteSolucao,
+  createSolucao,
+  updateSolucao,
+  getDemandas
 } from "../actions/actions";
 import { Plus, Edit2, Trash2, X, Info, ChevronRight } from 'lucide-react';
-import { DemandaType } from '../types/types';
+import { SolucaoType } from '../types/types';
 import DeleteConfirmationModal from './ModalConfirmacao/DeleteConfirmationModal';
 
 
-export default function Demanda() {
-  const [demandas, setDemandas] = useState([]);
+export default function Solucao() {
+  const [solucoes, setSolucoes] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedDemandDetails, setSelectedDemandDetails] = useState<DemandaType | null>(null);
-  const [formData, setFormData] = useState<DemandaFormData>({} as DemandaFormData);
-  const [proprietarios, setProprietarios] = useState([]);
-  const [alinhamentos, setAlinhamentos] = useState([]);
-  const [prioridades, setPrioridades] = useState([]);
+  const [selectedDemandDetails, setSelectedDemandDetails] = useState<SolucaoType | null>(null);
+  const [formData, setFormData] = useState<SolucaoFormData>({} as SolucaoFormData);
+  const [tipos, setTipos] = useState([]);
+  const [linguagens, setLinguagens] = useState([]);
+  const [desenvolvedores, setDesenvolvedores] = useState([]);
+  const [categorias, setCategorias] = useState([]);
   const [responsaveis, setResponsaveis] = useState([]);
   const [statusList, setStatusList] = useState([]);
   const [isEditing, setIsEditing] = useState<string | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [itemToDeleteId, setItemToDeleteId] = useState<string | null>(null);
-
+  const [demanda, setDemanda] = useState([]);
 
   const determinarCorTexto = (corHex: string) => {
    
@@ -61,21 +65,26 @@ export default function Demanda() {
     return luminancia > 0.5 ? 'text-gray-800' : 'text-white';
   };
 
+
   useEffect(() => {
     Promise.all([
-      getDemandas(),
-      getProprietarios(),
-      getAlinhamentos(),
-      getPrioridades(),
+      getSolucoes(),
+      getTipos(),
+      getLinguagens(),
+      getDesenvolvedores(),
+      getCategorias(),
       getResponsaveis(),
       getStatus(),
-    ]).then(([demandasData, proprietariosData, alinhamentosData, prioridadesData, responsaveisData, statusData]) => {
-      setDemandas(demandasData);
-      setProprietarios(proprietariosData);
-      setAlinhamentos(alinhamentosData);
-      setPrioridades(prioridadesData);
+      getDemandas(),
+    ]).then(([solucoesData, tiposData, linguagensData, desenvolvedoresData, categoriasData, responsaveisData, statusData, demandasData]) => {
+      setSolucoes(solucoesData);
+      setTipos(tiposData);
+      setLinguagens(linguagensData);
+      setDesenvolvedores(desenvolvedoresData);
+      setCategorias(categoriasData);
       setResponsaveis(responsaveisData);
       setStatusList(statusData);
+      setDemanda(demandasData);
     });
   }, []);
 
@@ -84,32 +93,33 @@ export default function Demanda() {
     
     try {
       const formDataToSubmit = {
-        proprietario_id: Number(formData.proprietario_id),
+        demanda_id: Number(formData.demanda_id),
         nome: formData.nome,
         sigla: formData.sigla,
         descricao: formData.descricao,
-        demandante: formData.demandante,
-        fator_gerador: formData.fator_gerador,
-        alinhamento_id: Number(formData.alinhamento_id),
-        prioridade_id: Number(formData.prioridade_id),
+        versao: formData.versao,
+        tipo_id: Number(formData.tipo_id),
+        linguagem_id: Number(formData.linguagem_id),
+        desenvolvedor_id: Number(formData.desenvolvedor_id),
+        categoria_id: Number(formData.categoria_id),
         responsavel_id: Number(formData.responsavel_id),
         status_id: Number(formData.status_id),
         data_status: formData.data_status
       };
 
       if (isEditing) {
-        await updateDemanda(isEditing, formDataToSubmit);
+        await updateSolucao(isEditing, formDataToSubmit);
       } else {
-        await createDemanda(formDataToSubmit);
+        await createSolucao(formDataToSubmit);
       }
       
-      const updatedDemandas = await getDemandas();
-      setDemandas(updatedDemandas);
+      const updatedSolucoes = await getSolucoes();
+      setSolucoes(updatedSolucoes);
       setIsModalOpen(false);
-      setFormData({} as DemandaFormData);
+      setFormData({} as SolucaoFormData);
       setIsEditing(null);
     } catch (error) {
-      console.error('Error saving demanda:', error);
+      console.error('Error saving solucao:', error);
     }
   };
 
@@ -136,11 +146,11 @@ export default function Demanda() {
   const confirmDelete = async () => {
     if (itemToDeleteId) {
       try {
-        await deleteDemanda(itemToDeleteId);
-        const updatedDemandas = await getDemandas();
-        setDemandas(updatedDemandas);
+        await deleteSolucao(itemToDeleteId);
+        const updatedSolucoes = await getSolucoes();
+        setSolucoes(updatedSolucoes);
       } catch (error) {
-        console.error('Error deleting demanda:', error);
+        console.error('Error deleting solucao:', error);
       }
       setIsDeleteModalOpen(false);
     }
@@ -150,7 +160,7 @@ export default function Demanda() {
     <div className="min-h-screen">
       <div className="p-6">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-gray-800">Demandas</h1>
+          <h1 className="text-3xl font-bold text-gray-800">Soluções</h1>
           <div className="flex gap-2">
             <button 
               onClick={() => setIsModalOpen(true)}
@@ -167,82 +177,87 @@ export default function Demanda() {
             <thead className="bg-gray-200">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sigla</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nome</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fator Gerador</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Demandante</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Alinhamento</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Prioridade</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Responsável</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sigla</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">VERSÃO</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">TIPO</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">LINGUAGEM</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">DESENVOLVEDOR</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">DEMANDA</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">CATEGORIA</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">RESPONSAVEL</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">STATUS</th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">AÇÕES</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {Array.isArray(demandas) && demandas.map((demanda: DemandaType, index: number) => (
-                <tr key={demanda.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+              {Array.isArray(solucoes) && solucoes.map((solucao: SolucaoType, index: number) => (
+                <tr key={solucao.id} className="hover:bg-gray-50 transition-colors">
+                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                     {index + 1}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                    {demanda.sigla || '-'}
-                  </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-800">
-                    {demanda.nome || '-'}
+                    {solucao.nome || '-'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                    {demanda.fatorGerador || '-'}
+                    {solucao.sigla || '-'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                    {demanda.demandante || '-'}
+                    {solucao.versao || '-'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                    {demanda.alinhamento?.nome || '-'}
+                    {solucao.tipo?.nome || '-'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                    {demanda.prioridade?.nome || '-'}
+                    {solucao.linguagem?.nome || '-'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                    {demanda.responsavel?.nome || '-'}
+                    {solucao.desenvolvedor?.nome || '-'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                    {formatDate(demanda.dataStatus)}
+                    {solucao.demanda?.nome || '-'}
                   </td>
-                  <td className="px-6 py-4 rounded-md px-2 whitespace-nowrap text-sm text-gray-600">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                    {solucao.categoria?.nome || '-'}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                    {solucao.responsavel?.nome || '-'}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                     <span 
-                      className={`rounded-md px-2 py-1 ${determinarCorTexto(demanda.status.propriedade)}`} 
-                      style={{ backgroundColor: demanda.status.propriedade }}
+                      className={`rounded-md px-2 py-1 ${determinarCorTexto(solucao.status?.propriedade)}`} 
+                      style={{ backgroundColor: solucao.status?.propriedade }}
                     >
-                      {demanda.status?.nome || '-'}
+                      {solucao.status?.nome || '-'}
                     </span>
                   </td>
 
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
                     <div className="flex justify-end space-x-2">
                       <button 
-                        onClick={() => setSelectedDemandDetails(demanda)}
+                        onClick={() => setSelectedDemandDetails(solucao)}
                         className="text-blue-500 hover:text-blue-700 p-1 rounded-full hover:bg-blue-50 transition-colors"
                       >
                         <Info className="w-5 h-5" />
                       </button>
                       <button 
                         onClick={() => {
-                          const formattedData: DemandaFormData = {
-                            proprietario_id: Number(demanda.proprietario?.id) || 0,
-                            nome: demanda.nome || '',
-                            sigla: demanda.sigla || '',
-                            descricao: demanda.propriedade || '',
-                            demandante: demanda.demandante || '',
-                            fator_gerador: demanda.fatorGerador || '',
-                            alinhamento_id: Number(demanda.alinhamento?.id) || 0,
-                            prioridade_id: Number(demanda.prioridade?.id) || 0,
-                            responsavel_id: Number(demanda.responsavel?.id) || 0,
-                            status_id: Number(demanda.status?.id) || 0,
-                            data_status: demanda.dataStatus || ''
+                          const formattedData: SolucaoFormData = {
+                            demanda_id: Number(solucao.demanda?.id) || 0,
+                            nome: solucao.nome || '',
+                            sigla: solucao.sigla || '',
+                            descricao: solucao.descricao || '',
+                            versao: solucao.versao || '',
+                            tipo_id: Number(solucao.tipo?.id) || 0,
+                            linguagem_id: Number(solucao.linguagem?.id) || 0,
+                            desenvolvedor_id: Number(solucao.desenvolvedor?.id) || 0,
+                            categoria_id: Number(solucao.categoria?.id) || 0,
+                            responsavel_id: Number(solucao.responsavel?.id) || 0,
+                            status_id: Number(solucao.status?.id) || 0,
+                            data_status: solucao.dataStatus || ''
                           };
                           setFormData(formattedData);
-                          setIsEditing(demanda.id);
+                          setIsEditing(solucao.id);
                           setIsModalOpen(true);
                         }}
                         className="text-green-500 hover:text-green-700 p-1 rounded-full hover:bg-green-50 transition-colors"
@@ -250,7 +265,7 @@ export default function Demanda() {
                         <Edit2 className="w-5 h-5" />
                       </button>
                       <button 
-                        onClick={() => handleDeleteClick(demanda.id)}
+                        onClick={() => handleDeleteClick(solucao.id)}
                         className="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50 transition-colors"
                       >
                        
@@ -260,7 +275,7 @@ export default function Demanda() {
                             isOpen={isDeleteModalOpen}
                             onClose={() => setIsDeleteModalOpen(false)}
                             onConfirm={confirmDelete}
-                            itemName="esta demanda"
+                            itemName="esta solução"
                         />
                     </div>
                   </td>
@@ -275,36 +290,24 @@ export default function Demanda() {
             <div className="relative bg-white rounded-lg shadow-2xl p-8 w-full max-w-2xl m-4">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-2xl font-bold text-gray-800">
-                  {isEditing ? 'Editar Demanda' : 'Nova Demanda'}
+                  {isEditing ? 'Editar Solução' : 'Nova Solução'}
                 </h2>
                 <button 
                   onClick={() => {
                     setIsModalOpen(false);
                     setIsEditing(null);
-                    setFormData({} as DemandaFormData);
+                    setFormData({} as SolucaoFormData);
                   }}
                   className="text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full p-2"
                 >
                   <X className="w-6 h-6" />
                 </button>
               </div>
+
+
               
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Proprietário</label>
-                    <select 
-                      name="proprietario_id" 
-                      value={formData.proprietario_id || ''}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-md text-gray-500"
-                    >
-                      <option value="">Selecione um proprietário</option>
-                      {proprietarios.map((prop: any) => (
-                        <option key={prop.id} value={prop.id}>{prop.nome}</option>
-                      ))}
-                    </select>
-                  </div>
                   
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Nome</label>
@@ -328,17 +331,6 @@ export default function Demanda() {
                     />
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Demandante</label>
-                    <input 
-                      type="text" 
-                      name="demandante" 
-                      value={formData.demandante || ''} 
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-md text-gray-500" 
-                    />
-                  </div>
-
                   <div className="col-span-2">
                     <label className="block text-sm font-medium text-gray-700 mb-2">Descrição</label>
                     <textarea 
@@ -350,42 +342,88 @@ export default function Demanda() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Fator Gerador</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Versão</label>
                     <input 
                       type="text" 
-                      name="fator_gerador" 
-                      value={formData.fator_gerador || ''} 
+                      name="versao" 
+                      value={formData.versao || ''} 
                       onChange={handleInputChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-md text-gray-500" 
+                      className="w-full px-4 py-3 border border-gray-300 rounded-md text-gray-500"
                     />
                   </div>
 
+
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Alinhamento</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Tipo</label>
                     <select 
-                      name="alinhamento_id" 
-                      value={formData.alinhamento_id || ''}
+                      name="tipo_id" 
+                      value={formData.tipo_id || ''}
                       onChange={handleInputChange}
                       className="w-full px-4 py-3 border border-gray-300 rounded-md text-gray-500"
                     >
-                      <option value="">Selecione um alinhamento</option>
-                      {alinhamentos.map((align: any) => (
-                        <option key={align.id} value={align.id}>{align.nome}</option>
+                      <option value="">Selecione um tipo</option>
+                      {tipos.map((tipo: any) => (
+                        <option key={tipo.id} value={tipo.id}>{tipo.nome}</option>
                       ))}
                     </select>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Prioridade</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Linguagem</label>
                     <select 
-                      name="prioridade_id" 
-                      value={formData.prioridade_id || ''}
+                      name="linguagem_id" 
+                      value={formData.linguagem_id || ''}
                       onChange={handleInputChange}
                       className="w-full px-4 py-3 border border-gray-300 rounded-md text-gray-500"
                     >
-                      <option value="">Selecione uma prioridade</option>
-                      {prioridades.map((prior: any) => (
-                        <option key={prior.id} value={prior.id}>{prior.nome}</option>
+                      <option value="">Selecione uma linguagem</option>
+                      {linguagens.map((linguagem: any) => (
+                        <option key={linguagem.id} value={linguagem.id}>{linguagem.nome}</option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Desenvolvedor</label>
+                    <select 
+                      name="desenvolvedor_id" 
+                      value={formData.desenvolvedor_id || ''}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-md text-gray-500"
+                    >
+                      <option value="">Selecione um desenvolvedor</option>
+                      {desenvolvedores.map((desenvolvedor: any) => (
+                        <option key={desenvolvedor.id} value={desenvolvedor.id}>{desenvolvedor.nome}</option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Categoria</label>
+                    <select 
+                      name="categoria_id" 
+                      value={formData.categoria_id || ''}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-md text-gray-500"
+                    >
+                      <option value="">Selecione uma categoria</option>
+                      {categorias.map((categoria: any) => (
+                        <option key={categoria.id} value={categoria.id}>{categoria.nome}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Demanda</label>
+                    <select 
+                      name="demanda_id" 
+                      value={formData.demanda_id || ''}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-md text-gray-500"
+                    >
+                      <option value="">Selecione uma demanda</option>
+                      {demanda.map((demanda: any) => (
+                        <option key={demanda.id} value={demanda.id}>{demanda.sigla}</option>
                       ))}
                     </select>
                   </div>

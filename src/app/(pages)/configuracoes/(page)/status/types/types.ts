@@ -1,7 +1,7 @@
 export interface Status {
     id: string;
     nome: string;
-    descricao: string;
+    propriedade: string;
     status: string;
   }
   

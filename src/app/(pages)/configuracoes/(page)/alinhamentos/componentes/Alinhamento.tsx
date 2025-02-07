@@ -99,16 +99,16 @@ export default function Alinhamento() {
           <table className="min-w-full">
             <thead className="bg-gray-200">
               <tr>
-                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">#</th>
+                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
                 <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nome</th>
                 <th className="px-4 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {Array.isArray(alinhamentos) && alinhamentos.map((alinhamento) => (
+              {Array.isArray(alinhamentos) && alinhamentos.map((alinhamento, index) => (
                 <tr key={alinhamento.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-600 hidden sm:table-cell">
-                    {alinhamento.id}
+                    {index + 1}
                   </td>
                   <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-800">
                     {alinhamento.nome}

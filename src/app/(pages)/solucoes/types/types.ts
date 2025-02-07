@@ -1,7 +1,13 @@
-export interface DemandaType {
+export interface SolucaoType {
     id: string;
     sigla: string;
     nome: string;
+    descricao: string;
+    versao: string;
+    tipo: {
+      id: number;
+      nome: string;
+    };
     status: {
       id: number;
       nome: string;
@@ -11,20 +17,27 @@ export interface DemandaType {
       id: number;
       nome: string;
     };
+    desenvolvedor: {
+      id: number;
+      nome: string;
+    };
+    categoria: {
+      id: number;
+      nome: string;
+    };
+    demanda: {
+      id: number;
+      nome: string;
+    };
     propriedade: string;
     demandante: string;
-    fatorGerador: string;
-    alinhamento: {
-      id: number;
-      nome: string;
-    };
-    prioridade: {
-      id: number;
-      nome: string;
-    };
     responsavel: {
       id: number;
       nome: string;
     };
     dataStatus: string;
+    linguagem?: {
+      id: number;
+      nome: string;
+    };
   }

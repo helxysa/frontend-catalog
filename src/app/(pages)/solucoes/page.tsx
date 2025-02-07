@@ -1,7 +1,7 @@
-export default function Solucoes() {
+import Solucoes from "./componentes/Solucoes";
+
+export default function SolucoesPage() {
   return (
-    <div>
-      <h1>Soluções</h1>
-    </div>
+    <Solucoes />
   );
 }
