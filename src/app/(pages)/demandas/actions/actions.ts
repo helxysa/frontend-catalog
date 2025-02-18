@@ -31,6 +31,9 @@ export async function deleteDemanda(id: string) {
   return response.data;
 }
 
+
+
+
 //select aqui
 const urlSelect = `${baseUrl}`;
 
@@ -58,4 +61,10 @@ export async function getStatus() {
     const response = await axios.get(`${urlSelect}/status`);
     return response.data;
 }
+
+export async function getHistoricoDemandas() {
+    const response = await axios.get(`${urlSelect}/historico_demandas`);
+    return response.data;
+}
+
 

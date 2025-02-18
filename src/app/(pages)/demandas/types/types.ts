@@ -11,6 +11,7 @@ export interface DemandaType {
       id: number;
       nome: string;
     };
+    descricao: string;
     propriedade: string;
     demandante: string;
     fatorGerador: string;

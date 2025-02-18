@@ -70,3 +70,7 @@ export async function getResponsaveis() {
     return response.data;
 }   
 
+export async function getHistoricoSolucoes() {
+    const response = await axios.get(`${urlSelect}/historico_solucoes`);
+    return response.data;
+}

@@ -163,6 +163,15 @@ export function Sidebar() {
             </div>
           </Link>
         </div>
+        <div 
+          className={`${isConfigMenuOpen ? 'block' : 'hidden'} ${isMobile ? 'ml-2 mt-1 space-y-2' : 'ml-4 mt-1 space-y-1'} py-1`}
+        >
+          <Link href="/configuracoes/tipos" className="block">
+            <div className={`flex items-center ${isMobile ? 'px-3 py-3' : 'px-4 py-2'} text-gray-500 hover:bg-gray-50 hover:text-gray-700 rounded-lg transition-colors group`}>
+              <span className="ml-3 text-sm">Tipos</span>
+            </div>
+          </Link>
+        </div>
       </div>
     </div>
   );
