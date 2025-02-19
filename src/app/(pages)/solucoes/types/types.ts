@@ -41,3 +41,4 @@ export interface SolucaoType {
       nome: string;
     };
   }
+
