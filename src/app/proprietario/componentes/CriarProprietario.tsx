@@ -17,28 +17,33 @@ export default function CriarProprietario({ onClose, onSuccess }: CriarProprieta
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setError(null);
+    setLoading(true);
 
     try {
+      // Validate required fields
+      if (!formData.nome.trim() || !formData.sigla.trim()) {
+        throw new Error('Nome e sigla são campos obrigatórios');
+      }
+
       await createProprietario(formData);
       onSuccess();
-      onClose();
     } catch (err) {
-      setError("Erro ao criar escritório");
-      console.error(err);
+      setError(err instanceof Error ? err.message : 'Erro ao criar proprietário');
+      console.error('Error:', err);
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setFormData(prev => ({
-      ...prev,
-      [e.target.name]: e.target.value
-    }));
   };
 
   return (
@@ -56,6 +61,12 @@ export default function CriarProprietario({ onClose, onSuccess }: CriarProprieta
             </svg>
           </button>
         </div>
+
+        {error && (
+          <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+            {error}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
@@ -123,15 +134,6 @@ export default function CriarProprietario({ onClose, onSuccess }: CriarProprieta
               />
             </div>
           </div>
-
-          {error && (
-            <div className="p-3 rounded-lg bg-red-50 border border-red-200">
-              <p className="text-red-600 text-sm flex items-center">
-                <span className="mr-2">⚠️</span>
-                {error}
-              </p>
-            </div>
-          )}
 
           <div className="flex justify-end space-x-3 pt-4">
             <button

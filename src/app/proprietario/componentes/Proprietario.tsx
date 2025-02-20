@@ -2,6 +2,8 @@
 import { useState, useEffect } from "react";
 import { getProprietario } from "../actions/actions";
 import CriarProprietario from "./CriarProprietario";
+import { useRouter } from 'next/navigation';
+import { Building2 } from 'lucide-react';
 
 interface Proprietario {
   id: number;
@@ -18,13 +20,15 @@ export default function Proprietario() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
+  const router = useRouter();
 
   const fetchEscritorios = async () => {
     try {
       const data = await getProprietario();
-      setEscritorios(data);
-    } catch (err) {
-      setError("Erro ao carregar os escritórios");
+      setEscritorios(data || []);
+      setError(null);
+    } catch (err: any) {
+      setError(err.message || "Erro ao carregar os escritórios");
       console.error(err);
     } finally {
       setLoading(false);
@@ -35,18 +39,31 @@ export default function Proprietario() {
     fetchEscritorios();
   }, []);
 
+  const handleProprietarioClick = (id: number) => {
+    localStorage.setItem('selectedProprietarioId', id.toString());
+    router.push(`/proprietario/${id}/dashboard`);
+  };
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-blue-700">Carregando...</div>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-red-600">{error}</div>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <p className="text-red-500 mb-4">{error}</p>
+          <button
+            onClick={fetchEscritorios}
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            Tentar novamente
+          </button>
+        </div>
       </div>
     );
   }
@@ -64,39 +81,52 @@ export default function Proprietario() {
           </button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {escritorios.map((escritorio) => (
-            <div 
-              key={escritorio.id}
-              className="bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow cursor-pointer"
-            >
-              <div className="flex items-start justify-between">
-                <h2 className="text-lg font-semibold text-gray-900 mb-3">{escritorio.nome}</h2>
-                {escritorio.logo && (
-                  <img 
-                    src={escritorio.logo} 
-                    alt={`Logo ${escritorio.nome}`} 
-                    className="w-10 h-10 object-contain"
-                  />
+        {escritorios.length === 0 ? (
+          <div className="text-center py-12">
+            <Building2 className="mx-auto h-12 w-12 text-gray-400" />
+            <h3 className="mt-2 text-sm font-semibold text-gray-900">Nenhum escritório encontrado</h3>
+            <p className="mt-1 text-sm text-gray-500">Comece criando seu primeiro escritório.</p>
+            <div className="mt-6">
+              <button
+                onClick={() => setShowModal(true)}
+                className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+              >
+                + Criar Primeiro Escritório
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {escritorios.map((escritorio) => (
+              <div
+                key={escritorio.id}
+                onClick={() => handleProprietarioClick(escritorio.id)}
+                className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow cursor-pointer"
+              >
+                <div className="flex items-center space-x-4">
+                  {escritorio.logo ? (
+                    <img
+                      src={escritorio.logo}
+                      alt={`Logo ${escritorio.nome}`}
+                      className="h-12 w-12 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="h-12 w-12 rounded-full bg-gray-200 flex items-center justify-center">
+                      <Building2 className="h-6 w-6 text-gray-400" />
+                    </div>
+                  )}
+                  <div>
+                    <h2 className="text-lg font-semibold text-gray-900">{escritorio.nome}</h2>
+                    <p className="text-sm text-gray-500">{escritorio.sigla}</p>
+                  </div>
+                </div>
+                {escritorio.descricao && (
+                  <p className="mt-4 text-sm text-gray-600">{escritorio.descricao}</p>
                 )}
               </div>
-              <div className="space-y-2 text-sm text-gray-600">
-                <p>Sigla: {escritorio.sigla}</p>
-                {escritorio.descricao && <p>{escritorio.descricao}</p>}
-                <p className="text-xs text-gray-400">
-                  Criado em: {new Date(escritorio.createdAt).toLocaleDateString()}
-                </p>
-              </div>
-              <div className="mt-4 flex justify-end">
-                <button className="text-blue-700 hover:text-blue-800">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16m-7 6h7" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
 
         {showModal && (
           <CriarProprietario

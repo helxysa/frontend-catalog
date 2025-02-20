@@ -70,7 +70,7 @@ import {
   getProprietarios, 
   getAlinhamentos, 
   getPrioridades, 
-  getResponsaveis, 
+  getResponsaveis,
   getStatus,
   deleteDemanda,
   createDemanda,
@@ -86,7 +86,23 @@ export default function Demanda() {
   const [demandas, setDemandas] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedDemandDetails, setSelectedDemandDetails] = useState<DemandaType | null>(null);
-  const [formData, setFormData] = useState<DemandaFormData>({} as DemandaFormData);
+  const [formData, setFormData] = useState<DemandaFormData>(() => {
+    // Inicializa o formData com o proprietario_id do localStorage
+    const storedId = localStorage.getItem('selectedProprietarioId');
+    return {
+      proprietario_id: storedId ? Number(storedId) : 0,
+      nome: '',
+      sigla: '',
+      descricao: '',
+      demandante: '',
+      fator_gerador: '',
+      alinhamento_id: 0,
+      prioridade_id: 0,
+      responsavel_id: 0,
+      status_id: 0,
+      data_status: ''
+    };
+  });
   const [proprietarios, setProprietarios] = useState<ProprietarioType[]>([]);
   const [alinhamentos, setAlinhamentos] = useState<AlinhamentoType[]>([]);
   const [prioridades, setPrioridades] = useState<PrioridadeType[]>([]);
@@ -109,19 +125,22 @@ export default function Demanda() {
   const [filteredDemandas, setFilteredDemandas] = useState<DemandaType[]>([]);
 
 
-  const determinarCorTexto = (corHex: string) => {
+  const determinarCorTexto = (corHex: string | undefined) => {
+    if (!corHex) return 'text-gray-800'; // cor padrão se não houver cor hex
    
-    corHex = corHex.replace('#', '');
+    const hexSemHash = corHex.replace('#', '');
     
-
-    const r = parseInt(corHex.substr(0, 2), 16);
-    const g = parseInt(corHex.substr(2, 2), 16);
-    const b = parseInt(corHex.substr(4, 2), 16);
+    try {
+      const r = parseInt(hexSemHash.substr(0, 2), 16);
+      const g = parseInt(hexSemHash.substr(2, 2), 16);
+      const b = parseInt(hexSemHash.substr(4, 2), 16);
+      
+      const luminancia = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
     
-
-    const luminancia = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-  
-    return luminancia > 0.5 ? 'text-gray-800' : 'text-white';
+      return luminancia > 0.5 ? 'text-gray-800' : 'text-white';
+    } catch (error) {
+      return 'text-gray-800'; // cor padrão em caso de erro
+    }
   };
 
   useEffect(() => {
@@ -133,8 +152,14 @@ export default function Demanda() {
       getResponsaveis(),
       getStatus(),
     ]).then(([demandasData, proprietariosData, alinhamentosData, prioridadesData, responsaveisData, statusData]) => {
-      setDemandas(demandasData);
-      setFilteredDemandas(demandasData);
+      // Filtra as demandas pelo proprietario_id do localStorage
+      const storedId = localStorage.getItem('selectedProprietarioId');
+      const demandasFiltradas = demandasData.filter(
+        (demanda: DemandaType) => demanda.proprietario?.id === Number(storedId)
+      );
+      
+      setDemandas(demandasFiltradas);
+      setFilteredDemandas(demandasFiltradas);
       setProprietarios(proprietariosData);
       setAlinhamentos(alinhamentosData);
       setPrioridades(prioridadesData);
@@ -142,6 +167,19 @@ export default function Demanda() {
       setStatusList(statusData);
     });
   }, []);
+
+  // Quando o modal for aberto, atualiza o proprietario_id
+  useEffect(() => {
+    if (isModalOpen) {
+      const storedId = localStorage.getItem('selectedProprietarioId');
+      if (storedId) {
+        setFormData(prev => ({
+          ...prev,
+          proprietario_id: Number(storedId)
+        }));
+      }
+    }
+  }, [isModalOpen]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -168,7 +206,11 @@ export default function Demanda() {
       }
       
       const updatedDemandas = await getDemandas();
-      setDemandas(updatedDemandas);
+      const storedId = localStorage.getItem('selectedProprietarioId');
+      const demandasFiltradas = updatedDemandas.filter(
+        (demanda: DemandaType) => demanda.proprietario?.id === Number(storedId)
+      );
+      setDemandas(demandasFiltradas);
       setIsModalOpen(false);
       setFormData({} as DemandaFormData);
       setIsEditing(null);
@@ -506,12 +548,16 @@ export default function Demanda() {
                     {formatDate(demanda.dataStatus)}
                   </td>
                   <td className="px-6 py-4 rounded-md px-2 whitespace-nowrap text-sm text-gray-600">
-                    <span 
-                      className={`rounded-md px-2 py-1 ${determinarCorTexto(demanda.status.propriedade)}`} 
-                      style={{ backgroundColor: demanda.status.propriedade }}
-                    >
-                      {demanda.status?.nome || '-'}
-                    </span>
+                    {demanda.status?.propriedade ? (
+                      <span 
+                        className={`rounded-md px-2 py-1 ${determinarCorTexto(demanda.status.propriedade)}`} 
+                        style={{ backgroundColor: demanda.status.propriedade }}
+                      >
+                        {demanda.status.nome || '-'}
+                      </span>
+                    ) : (
+                      <span className="text-gray-500">-</span>
+                    )}
                   </td>
 
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">

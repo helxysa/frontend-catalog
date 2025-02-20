@@ -672,7 +672,7 @@ export default function Solucao() {
                       className="w-full px-4 py-3 border border-gray-300 rounded-md text-gray-500"
                     >
                       <option value="">Selecione um tipo</option>
-                      {tipos.map((tipo: any) => (
+                      {tipos.map((tipo) => (
                         <option key={tipo.id} value={tipo.id}>{tipo.nome}</option>
                       ))}
                     </select>
@@ -687,7 +687,7 @@ export default function Solucao() {
                       className="w-full px-4 py-3 border border-gray-300 rounded-md text-gray-500"
                     >
                       <option value="">Selecione uma linguagem</option>
-                      {linguagens.map((linguagem: any) => (
+                      {linguagens.map((linguagem) => (
                         <option key={linguagem.id} value={linguagem.id}>{linguagem.nome}</option>
                       ))}
                     </select>
@@ -702,7 +702,7 @@ export default function Solucao() {
                       className="w-full px-4 py-3 border border-gray-300 rounded-md text-gray-500"
                     >
                       <option value="">Selecione um desenvolvedor</option>
-                      {desenvolvedores.map((desenvolvedor: any) => (
+                      {desenvolvedores.map((desenvolvedor) => (
                         <option key={desenvolvedor.id} value={desenvolvedor.id}>{desenvolvedor.nome}</option>
                       ))}
                     </select>
@@ -717,7 +717,7 @@ export default function Solucao() {
                       className="w-full px-4 py-3 border border-gray-300 rounded-md text-gray-500"
                     >
                       <option value="">Selecione uma categoria</option>
-                      {categorias.map((categoria: any) => (
+                      {categorias.map((categoria) => (
                         <option key={categoria.id} value={categoria.id}>{categoria.nome}</option>
                       ))}
                     </select>
@@ -732,7 +732,7 @@ export default function Solucao() {
                       className="w-full px-4 py-3 border border-gray-300 rounded-md text-gray-500"
                     >
                       <option value="">Selecione uma demanda</option>
-                      {demanda.map((demanda: any) => (
+                      {demanda.map((demanda) => (
                         <option key={demanda.id} value={demanda.id}>{demanda.sigla}</option>
                       ))}
                     </select>
@@ -747,7 +747,7 @@ export default function Solucao() {
                       className="w-full px-4 py-3 border border-gray-300 rounded-md text-gray-500"
                     >
                       <option value="">Selecione um responsável</option>
-                      {responsaveis.map((resp: any) => (
+                      {responsaveis.map((resp) => (
                         <option key={resp.id} value={resp.id}>{resp.nome}</option>
                       ))}
                     </select>
@@ -762,7 +762,7 @@ export default function Solucao() {
                       className="w-full px-4 py-3 border border-gray-300 rounded-md text-gray-500"
                     >
                       <option value="">Selecione um status</option>
-                      {statusList.map((status: any) => (
+                      {statusList.map((status) => (
                         <option key={status.id} value={status.id}>{status.nome}</option>
                       ))}
                     </select>

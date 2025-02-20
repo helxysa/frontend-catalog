@@ -6,7 +6,11 @@ if (!baseUrl) {
 }
 const url = `${baseUrl}/categorias`;
 
-export async function getCategorias() {
+export async function getCategorias(proprietarioId?: string) {
+  if (proprietarioId) {
+    const response = await axios.get(`${baseUrl}/proprietarios/${proprietarioId}/categorias`);
+    return response.data;
+  }
   const response = await axios.get(url);
   return response.data;
 }
@@ -17,12 +21,21 @@ export async function getCategoriasById(id: string) {
 }
 
 export async function createCategoria(categoria: any) {
-  const response = await axios.post(`${url}`, categoria);
+  const payload = {
+    nome: categoria.nome,
+    descricao: categoria.descricao,
+    proprietario_id: Number(categoria.proprietario_id)
+  };
+  
+  const response = await axios.post(url, payload);
   return response.data;
 }
 
 export async function updateCategoria(id: string, categoria: any) {
-  const response = await axios.put(`${url}/${id}`, categoria);
+  const response = await axios.put(`${url}/${id}`, {
+    ...categoria,
+    proprietario_id: categoria.proprietario_id
+  });
   return response.data;
 }
 

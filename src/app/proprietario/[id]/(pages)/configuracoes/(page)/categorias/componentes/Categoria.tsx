@@ -19,17 +19,39 @@ import {
 } from 'lucide-react';
 import type { Categoria } from '../types/types';
 
-export default function Categoria() {
+interface Proprietario {
+  id: number;
+  nome: string;
+}
+
+export default function Categoria({ proprietarioId }: { proprietarioId?: string }) {
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentCategoria, setCurrentCategoria] = useState<Partial<Categoria>>({});
   const [isEditMode, setIsEditMode] = useState(false);
   const [selectedCategoriaDetails, setSelectedCategoriaDetails] = useState<Categoria | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [proprietarios, setProprietarios] = useState<Proprietario[]>([]);
 
   useEffect(() => {
-    getCategorias().then(setCategorias);
-  }, []);
+    // Modify getCategorias to filter by proprietarioId if provided
+    const loadCategorias = async () => {
+      const data = await getCategorias(proprietarioId);
+      setCategorias(data);
+    };
+    
+    loadCategorias();
+    
+    // Only load proprietários if we're in the main categories view
+    if (!proprietarioId) {
+      const loadProprietarios = async () => {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/proprietarios`);
+        const data = await response.json();
+        setProprietarios(data);
+      };
+      loadProprietarios();
+    }
+  }, [proprietarioId]);
 
   const openModal = (categoria?: Categoria) => {
     if (categoria) {
@@ -43,16 +65,23 @@ export default function Categoria() {
   };
 
   const handleCreate = async () => {
-    if (currentCategoria.nome && currentCategoria.descricao) {
+    if (currentCategoria.nome && currentCategoria.descricao && currentCategoria.proprietario_id) {
       const categoriaToSave = {
         nome: currentCategoria.nome,
-        descricao: currentCategoria.descricao
+        descricao: currentCategoria.descricao,
+        proprietario_id: Number(currentCategoria.proprietario_id)
       };
 
-      const created = await createCategoria(categoriaToSave);
-      setCategorias([...categorias, created]);
-      setIsModalOpen(false);
-      setCurrentCategoria({});
+      try {
+        console.log('Dados sendo enviados:', categoriaToSave); // Debug
+        const created = await createCategoria(categoriaToSave);
+        setCategorias([...categorias, created]);
+        setIsModalOpen(false);
+        setCurrentCategoria({});
+      } catch (error) {
+        console.error('Erro ao criar categoria:', error);
+        console.error('Dados do erro:', error.response?.data); // Debug
+      }
     }
   };
 
@@ -80,11 +109,13 @@ export default function Categoria() {
   };
 
   return (
-    <div className="min-h-screen ">
+    <div className="min-h-screen">
       <div className="p-4 sm:p-6">
         {/* Header */}
         <div className="flex justify-between items-center mb-6 mt-[70px] lg:mt-0">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">Categorias</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">
+            {proprietarioId ? 'Categorias do Escritório' : 'Categorias'}
+          </h1>
           <div className="flex gap-2">
             <button 
               onClick={() => openModal()}
@@ -162,6 +193,24 @@ export default function Categoria() {
                 </button>
               </div>
               <div className="space-y-4 sm:space-y-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Proprietário</label>
+                  <select
+                    value={currentCategoria.proprietario_id || ''}
+                    onChange={(e) => setCurrentCategoria({ 
+                      ...currentCategoria, 
+                      proprietario_id: e.target.value 
+                    })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  >
+                    <option value="">Selecione um proprietário</option>
+                    {proprietarios.map((prop: Proprietario) => (
+                      <option key={prop.id} value={prop.id}>
+                        {prop.nome}
+                      </option>
+                    ))}
+                  </select>
+                </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Nome</label>
                   <input 

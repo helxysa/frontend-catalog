@@ -1,10 +1,12 @@
+
 import type { Metadata } from "next";
 import { Montserrat } from "next/font/google";
 import "./globals.css";
+import { AppWrapper } from './components/AppWrapper'
+
 const montserrat = Montserrat({
   subsets: ["latin"],
 });
-
 
 export const metadata: Metadata = {
   title: "Catalog do Ministerio",
@@ -13,16 +15,28 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+}: {
+  children: React.ReactNode
+}) {
   return (
-    <html lang="en">
-      <body
-          className={`${montserrat.className} antialiased`}
-      >
-        {children}
+    <html lang="pt-BR">
+      <body className={montserrat.className}>
+        <AppWrapper>
+          {children}
+        </AppWrapper>
       </body>
     </html>
-  );
+  )
+}
+
+export function ProprietarioLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {children}
+    </div>
+  )
 }

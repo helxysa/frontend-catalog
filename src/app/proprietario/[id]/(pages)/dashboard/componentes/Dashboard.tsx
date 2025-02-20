@@ -179,14 +179,14 @@ export default function Dashboard() {
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
         <div className="bg-white p-6 rounded-lg shadow-lg">
-          <h3 className="text-gray-800 font-semibold mb-4">Alinhamento</h3>
+          <h3 className="text-gray-800 font-semibold mb-4">Alinhamentos</h3>
           <div className="h-[300px] flex items-center justify-center">
             <Doughnut data={processAlinhamentoData()} options={chartOptions} />
           </div>
         </div>
 
         <div className="bg-white p-6 rounded-lg shadow-lg">
-          <h3 className="text-gray-800 font-semibold mb-4">Solução</h3>
+          <h3 className="text-gray-800 font-semibold mb-4">Tipos de Soluções</h3>
           <div className="h-[300px] flex items-center justify-center">
             <Doughnut data={processSolucaoData()} options={chartOptions} />
           </div>
@@ -199,7 +199,7 @@ export default function Dashboard() {
           </div>
         </div>
         <div className="bg-white p-6 rounded-lg shadow-lg">
-        <h3 className="text-gray-800 font-semibold mb-4">Categoria</h3>
+        <h3 className="text-gray-800 font-semibold mb-4">Categorias</h3>
         <div className="h-[300px]">
           <Bar 
             data={processCategoriaData()} 
