@@ -123,15 +123,12 @@ export default function Solucao() {
       getStatus(),
       getDemandas(),
     ]).then(([solucoesData, tiposData, linguagensData, desenvolvedoresData, categoriasData, responsaveisData, statusData, demandasData]) => {
-      // Filtra as demandas pelo proprietario_id do localStorage
       const storedId = localStorage.getItem('selectedProprietarioId');
       
-      // Filtra primeiro as demandas pelo proprietário
       const demandasFiltradas = demandasData.filter(
         (demanda: any) => demanda.proprietario?.id === Number(storedId)
       );
 
-      // Depois filtra as soluções que pertencem às demandas filtradas
       const solucoesFiltradas = solucoesData.filter((solucao: SolucaoType) =>
         demandasFiltradas.some((demanda: any) => demanda.id === solucao.demanda?.id)
       );
@@ -144,7 +141,6 @@ export default function Solucao() {
       setCategorias(categoriasData);
       setResponsaveis(responsaveisData);
       setStatusList(statusData);
-      // Atualiza o estado de demandas apenas com as demandas filtradas
       setDemanda(demandasFiltradas);
     });
   }, []);
