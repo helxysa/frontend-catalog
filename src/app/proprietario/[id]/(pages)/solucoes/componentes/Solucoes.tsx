@@ -44,6 +44,7 @@ interface HistoricoType {
 interface BaseType {
   id: number;
   nome: string;
+  sigla?: string;
 }
 
 import { useEffect, useState } from 'react';
@@ -122,15 +123,29 @@ export default function Solucao() {
       getStatus(),
       getDemandas(),
     ]).then(([solucoesData, tiposData, linguagensData, desenvolvedoresData, categoriasData, responsaveisData, statusData, demandasData]) => {
-      setSolucoes(solucoesData);
-      setFilteredSolucoes(solucoesData);
+      // Filtra as demandas pelo proprietario_id do localStorage
+      const storedId = localStorage.getItem('selectedProprietarioId');
+      
+      // Filtra primeiro as demandas pelo proprietário
+      const demandasFiltradas = demandasData.filter(
+        (demanda: any) => demanda.proprietario?.id === Number(storedId)
+      );
+
+      // Depois filtra as soluções que pertencem às demandas filtradas
+      const solucoesFiltradas = solucoesData.filter((solucao: SolucaoType) =>
+        demandasFiltradas.some((demanda: any) => demanda.id === solucao.demanda?.id)
+      );
+      
+      setSolucoes(solucoesFiltradas);
+      setFilteredSolucoes(solucoesFiltradas);
       setTipos(tiposData);
       setLinguagens(linguagensData);
       setDesenvolvedores(desenvolvedoresData);
       setCategorias(categoriasData);
       setResponsaveis(responsaveisData);
       setStatusList(statusData);
-      setDemanda(demandasData);
+      // Atualiza o estado de demandas apenas com as demandas filtradas
+      setDemanda(demandasFiltradas);
     });
   }, []);
 
@@ -395,7 +410,7 @@ export default function Solucao() {
             >
               <option value="">Demanda</option>
               {demanda.map((d) => (
-                <option key={d.id} value={d.id}>{d.nome}</option>
+                <option key={d.id} value={d.id}>{d.sigla || d.nome}</option>
               ))}
             </select>
 
@@ -733,7 +748,7 @@ export default function Solucao() {
                     >
                       <option value="">Selecione uma demanda</option>
                       {demanda.map((demanda) => (
-                        <option key={demanda.id} value={demanda.id}>{demanda.sigla}</option>
+                        <option key={demanda.id} value={demanda.id}>{demanda.sigla || demanda.nome}</option>
                       ))}
                     </select>
                   </div>

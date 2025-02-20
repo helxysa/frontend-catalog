@@ -185,24 +185,32 @@ export default function Demanda() {
     e.preventDefault();
     
     try {
+      // Format the date to ISO string if it exists
+      const formattedDate = formData.data_status ? new Date(formData.data_status).toISOString() : null;
+
       const formDataToSubmit = {
-        proprietario_id: Number(formData.proprietario_id),
-        nome: formData.nome,
-        sigla: formData.sigla,
-        descricao: formData.descricao,
-        demandante: formData.demandante,
-        fator_gerador: formData.fator_gerador,
-        alinhamento_id: Number(formData.alinhamento_id),
-        prioridade_id: Number(formData.prioridade_id),
-        responsavel_id: Number(formData.responsavel_id),
-        status_id: Number(formData.status_id),
-        data_status: formData.data_status
+        proprietario_id: Number(formData.proprietario_id) || null,
+        nome: formData.nome || null,
+        sigla: formData.sigla || null,
+        descricao: formData.descricao || null,
+        demandante: formData.demandante || null,
+        fator_gerador: formData.fator_gerador || null,
+        alinhamento_id: Number(formData.alinhamento_id) || null,
+        prioridade_id: Number(formData.prioridade_id) || null,
+        responsavel_id: Number(formData.responsavel_id) || null,
+        status_id: Number(formData.status_id) || null,
+        data_status: formattedDate
       };
 
+      // Remove any null values from the object
+      const cleanedFormData = Object.fromEntries(
+        Object.entries(formDataToSubmit).filter(([_, value]) => value !== null)
+      );
+
       if (isEditing) {
-        await updateDemanda(isEditing, formDataToSubmit);
+        await updateDemanda(isEditing, cleanedFormData);
       } else {
-        await createDemanda(formDataToSubmit);
+        await createDemanda(cleanedFormData);
       }
       
       const updatedDemandas = await getDemandas();
@@ -211,11 +219,14 @@ export default function Demanda() {
         (demanda: DemandaType) => demanda.proprietario?.id === Number(storedId)
       );
       setDemandas(demandasFiltradas);
+      setFilteredDemandas(demandasFiltradas);  // Update filtered demands as well
       setIsModalOpen(false);
       setFormData({} as DemandaFormData);
       setIsEditing(null);
     } catch (error) {
       console.error('Error saving demanda:', error);
+      // Optionally add user feedback here
+      alert('Erro ao salvar demanda. Por favor, verifique os dados e tente novamente.');
     }
   };
 
