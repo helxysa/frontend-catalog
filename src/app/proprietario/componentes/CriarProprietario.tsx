@@ -50,7 +50,7 @@ export default function CriarProprietario({ onClose, onSuccess }: CriarProprieta
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fadeIn">
       <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-xl transform transition-all animate-slideIn">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">Criar Novo Escritório</h2>
+          <h2 className="text-2xl font-bold text-gray-900">Criar Nova Unidade</h2>
           <button
             onClick={onClose}
             className="p-2 rounded-full hover:bg-gray-100 transition-colors"
@@ -70,7 +70,7 @@ export default function CriarProprietario({ onClose, onSuccess }: CriarProprieta
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Nome do Escritório</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Nome da Unidade</label>
             <div className="relative">
               <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5m4 0v-2a1 1 0 011-1h2a1 1 0 011 1v2m-5 0h5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -81,7 +81,7 @@ export default function CriarProprietario({ onClose, onSuccess }: CriarProprieta
                 value={formData.nome}
                 onChange={handleChange}
                 required
-                placeholder="Digite o nome do escritório"
+                placeholder="Digite o nome da unidade"
                 className="pl-10 pr-3 py-2 block w-full rounded-lg border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
               />
             </div>
@@ -112,7 +112,7 @@ export default function CriarProprietario({ onClose, onSuccess }: CriarProprieta
               name="descricao"
               value={formData.descricao}
               onChange={handleChange}
-              placeholder="Descreva o escritório..."
+              placeholder="Descreva a unidade..."
               rows={3}
               className="block w-full rounded-lg border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all resize-none"
             />
@@ -157,7 +157,7 @@ export default function CriarProprietario({ onClose, onSuccess }: CriarProprieta
                   Criando...
                 </span>
               ) : (
-                "Criar Escritório"
+                "Criar Unidade"
               )}
             </button>
           </div>

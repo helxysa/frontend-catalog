@@ -28,7 +28,6 @@ export default function Alinhamento({ proprietarioId }: { proprietarioId?: strin
   const [alinhamentos, setAlinhamentos] = useState<Alinhamento[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentAlinhamento, setCurrentAlinhamento] = useState<Partial<Alinhamento>>(() => ({
-    // Initialize with proprietarioId from props or localStorage
     proprietario_id: proprietarioId ? proprietarioId : 
                     localStorage.getItem('selectedProprietarioId') || ''
   }));
@@ -39,7 +38,7 @@ export default function Alinhamento({ proprietarioId }: { proprietarioId?: strin
 
   useEffect(() => {
     const loadAlinhamentos = async () => {
-      setAlinhamentos([]); // Clear existing alinhamentos
+      setAlinhamentos([]); 
       
       const storedId = proprietarioId || localStorage.getItem('selectedProprietarioId');
       if (storedId) {
@@ -48,7 +47,6 @@ export default function Alinhamento({ proprietarioId }: { proprietarioId?: strin
           const data = await getAlinhamentos(storedId);
           console.log('Received data:', data);
           
-          // Use data directly since getCategorias already filters by proprietario_id
           setAlinhamentos(data);
         } catch (error) {
           console.error('Error loading alinhamentos:', error);

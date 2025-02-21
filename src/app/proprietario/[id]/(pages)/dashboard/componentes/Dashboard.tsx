@@ -65,21 +65,20 @@ export default function Dashboard() {
     fetchData();
   }, []);
 
+
+
+
+
+
   // Processamento dos dados reais
   const processAlinhamentoData = () => {
     const counts: { [key: string]: number } = {};
 
     dashboardData.demandas.forEach(demanda => {
-      console.log('Processando demanda:', {
-        demandaId: demanda.id,
-        alinhamentoCompleto: demanda.alinhamento
-      });
-
-      const alinhamentoNome = demanda.alinhamento?.nome || 'Não alinhada';
+      const alinhamentoNome = demanda.alinhamento?.nome || 'Erro ao buscar alinhamento';
       counts[alinhamentoNome] = (counts[alinhamentoNome] || 0) + 1;
     });
 
-    console.log('Contagem final de alinhamentos:', counts);
     return {
       labels: Object.keys(counts),
       datasets: [{
@@ -90,6 +89,10 @@ export default function Dashboard() {
     };
   };
 
+
+
+
+
   const processSolucaoData = () => {
     const counts: { [key: string]: number } = {};
     dashboardData.solucoes.forEach(solucao => {
@@ -97,6 +100,7 @@ export default function Dashboard() {
       counts[tipoNome] = (counts[tipoNome] || 0) + 1;
     });
 
+    
     return {
       labels: Object.keys(counts),
       datasets: [{
@@ -106,6 +110,13 @@ export default function Dashboard() {
       }],
     };
   };
+
+
+
+
+
+
+
 
   const processStatusData = () => {
     const counts: { [key: string]: number } = {};
@@ -176,12 +187,21 @@ export default function Dashboard() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-        <div className="bg-white p-6 rounded-lg shadow-lg">
+        {/* <div className="bg-white p-6 rounded-lg shadow-lg">
           <h3 className="text-gray-800 font-semibold mb-4">Alinhamentos</h3>
           <div className="h-[300px] flex items-center justify-center">
             <Doughnut data={processAlinhamentoData()} options={chartOptions} />
           </div>
+        </div> */}
+
+      <div className="bg-white p-6 rounded-lg shadow-lg">
+          <h3 className="text-gray-800 font-semibold mb-4">Alinhamento</h3>
+          <div className="h-[300px] flex items-center justify-center">
+            <Pie data={processAlinhamentoData()} options={chartOptions} />
+          </div>
         </div>
+
+
 
         <div className="bg-white p-6 rounded-lg shadow-lg">
           <h3 className="text-gray-800 font-semibold mb-4">Tipos de Soluções</h3>
