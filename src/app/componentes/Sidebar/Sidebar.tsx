@@ -124,7 +124,7 @@ export function Sidebar() {
         <div 
           className={`${isConfigMenuOpen ? 'block' : 'hidden'} ${isMobile ? 'ml-2 mt-1 space-y-2' : 'ml-4 mt-1 space-y-1'} py-1`}
         >
-          <Link href="/configuracoes/categorias" className="block">
+          <Link href={`/proprietario/${proprietarioId}/configuracoes/categorias`} className="block">
             <div className={`flex items-center ${isMobile ? 'px-3 py-3' : 'px-4 py-2'} text-gray-500 hover:bg-gray-50 hover:text-gray-700 rounded-lg transition-colors group`}>
               <span className="ml-3 text-sm">Categorias</span>
             </div>
@@ -134,7 +134,7 @@ export function Sidebar() {
         <div 
           className={`${isConfigMenuOpen ? 'block' : 'hidden'} ${isMobile ? 'ml-2 mt-1 space-y-2' : 'ml-4 mt-1 space-y-1'} py-1`}
         >
-          <Link href="/configuracoes/alinhamentos" className="block">
+          <Link href={`/proprietario/${proprietarioId}/configuracoes/alinhamentos`} className="block">
             <div className={`flex items-center ${isMobile ? 'px-3 py-3' : 'px-4 py-2'} text-gray-500 hover:bg-gray-50 hover:text-gray-700 rounded-lg transition-colors group`}>
               <span className="ml-3 text-sm">Alinhamentos</span>
             </div>
@@ -143,7 +143,7 @@ export function Sidebar() {
         <div 
           className={`${isConfigMenuOpen ? 'block' : 'hidden'} ${isMobile ? 'ml-2 mt-1 space-y-2' : 'ml-4 mt-1 space-y-1'} py-1`}
         >
-          <Link href="/configuracoes/desenvolvedores" className="block">
+          <Link href={`/proprietario/${proprietarioId}/configuracoes/desenvolvedores`} className="block">
             <div className={`flex items-center ${isMobile ? 'px-3 py-3' : 'px-4 py-2'} text-gray-500 hover:bg-gray-50 hover:text-gray-700 rounded-lg transition-colors group`}>
               <span className="ml-3 text-sm">Desenvolvedores</span>
             </div>
@@ -153,7 +153,7 @@ export function Sidebar() {
         <div 
           className={`${isConfigMenuOpen ? 'block' : 'hidden'} ${isMobile ? 'ml-2 mt-1 space-y-2' : 'ml-4 mt-1 space-y-1'} py-1`}
         >
-          <Link href="/configuracoes/linguagem" className="block">
+          <Link href={`/proprietario/${proprietarioId}/configuracoes/linguagem`} className="block">
             <div className={`flex items-center ${isMobile ? 'px-3 py-3' : 'px-4 py-2'} text-gray-500 hover:bg-gray-50 hover:text-gray-700 rounded-lg transition-colors group`}>
               <span className="ml-3 text-sm">Linguagem</span>
             </div>
@@ -162,7 +162,7 @@ export function Sidebar() {
         <div 
           className={`${isConfigMenuOpen ? 'block' : 'hidden'} ${isMobile ? 'ml-2 mt-1 space-y-2' : 'ml-4 mt-1 space-y-1'} py-1`}
         >
-          <Link href="/configuracoes/prioridades" className="block">
+          <Link href={`/proprietario/${proprietarioId}/configuracoes/prioridades`} className="block">
             <div className={`flex items-center ${isMobile ? 'px-3 py-3' : 'px-4 py-2'} text-gray-500 hover:bg-gray-50 hover:text-gray-700 rounded-lg transition-colors group`}>
               <span className="ml-3 text-sm">Prioridades</span>
             </div>
@@ -171,7 +171,7 @@ export function Sidebar() {
         <div 
           className={`${isConfigMenuOpen ? 'block' : 'hidden'} ${isMobile ? 'ml-2 mt-1 space-y-2' : 'ml-4 mt-1 space-y-1'} py-1`}
         >
-          <Link href="/configuracoes/responsaveis" className="block">
+          <Link href={`/proprietario/${proprietarioId}/configuracoes/responsaveis`} className="block">
             <div className={`flex items-center ${isMobile ? 'px-3 py-3' : 'px-4 py-2'} text-gray-500 hover:bg-gray-50 hover:text-gray-700 rounded-lg transition-colors group`}>
               <span className="ml-3 text-sm">Responsaveis</span>
             </div>
@@ -180,7 +180,7 @@ export function Sidebar() {
         <div 
           className={`${isConfigMenuOpen ? 'block' : 'hidden'} ${isMobile ? 'ml-2 mt-1 space-y-2' : 'ml-4 mt-1 space-y-1'} py-1`}
         >
-          <Link href="/configuracoes/status" className="block">
+          <Link href={`/proprietario/${proprietarioId}/configuracoes/status`} className="block">
             <div className={`flex items-center ${isMobile ? 'px-3 py-3' : 'px-4 py-2'} text-gray-500 hover:bg-gray-50 hover:text-gray-700 rounded-lg transition-colors group`}>
               <span className="ml-3 text-sm">Status</span>
             </div>
@@ -189,7 +189,7 @@ export function Sidebar() {
         <div 
           className={`${isConfigMenuOpen ? 'block' : 'hidden'} ${isMobile ? 'ml-2 mt-1 space-y-2' : 'ml-4 mt-1 space-y-1'} py-1`}
         >
-          <Link href="/configuracoes/tipos" className="block">
+          <Link href={`/proprietario/${proprietarioId}/configuracoes/tipos`} className="block">
             <div className={`flex items-center ${isMobile ? 'px-3 py-3' : 'px-4 py-2'} text-gray-500 hover:bg-gray-50 hover:text-gray-700 rounded-lg transition-colors group`}>
               <span className="ml-3 text-sm">Tipos</span>
             </div>
@@ -201,9 +201,9 @@ export function Sidebar() {
 
   return (
     <>
-      {/* Header Mobile */}
+     
       <div className="md:hidden fixed top-0 left-0 right-0 bg-white shadow-md z-50 flex items-center justify-between p-4">
-        <Link href="/dashboard" className="text-xl font-bold text-gray-800">
+        <Link href={`/proprietario/${proprietarioId}/dashboard`} className="text-xl font-bold text-gray-800">
           Catalog do Ministerio
         </Link>
         <button 
@@ -218,10 +218,10 @@ export function Sidebar() {
         </button>
       </div>
 
-      {/* Desktop Sidebar */}
+      
       <aside className="hidden md:flex flex-col w-64 h-screen bg-white shadow-md border-r border-gray-100 fixed left-0">
         <div className="px-4 py-6 border-b border-gray-100">
-          <Link href="/dashboard" className="text-2xl font-bold text-gray-800 hover:text-gray-900 transition-colors">
+            <Link href={`/proprietario/${proprietarioId}/dashboard`} className="text-2xl font-bold text-gray-800 hover:text-gray-900 transition-colors">
             Catalog do Ministerio
           </Link>
         </div>
@@ -231,7 +231,7 @@ export function Sidebar() {
         </nav>
       </aside>
 
-      {/* Mobile Menu Overlay */}
+      
       {isMobileMenuOpen && (
         <div 
           className="fixed inset-0 bg-black/50 z-40 md:hidden"
@@ -240,7 +240,6 @@ export function Sidebar() {
         />
       )}
 
-      {/* Mobile Menu Content */}
       <div 
         className={`
           fixed top-0 pt-16 left-0 right-0 bottom-0 bg-white z-40 
@@ -256,9 +255,9 @@ export function Sidebar() {
         </div>
       </div>
 
-      {/* Main Content Padding */}
+      
       <div className="md:pl-64">
-        {/* Seu conteúdo principal vai aqui */}
+        
       </div>
     </>
   );

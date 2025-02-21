@@ -3,6 +3,7 @@ export interface SolucaoType {
     sigla: string;
     nome: string;
     descricao: string;
+    proprietario_id: number;
     versao: string;
     tipo: {
       id: number;

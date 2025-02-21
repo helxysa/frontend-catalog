@@ -19,17 +19,69 @@ import {
 } from 'lucide-react';
 import type { Prioridade } from '../types/types';
 
-export default function Prioridade() {
+interface Proprietario {
+  id: number;
+  nome: string;
+}
+
+export default function Prioridade({ proprietarioId }: { proprietarioId?: string }) {
   const [prioridades, setPrioridades] = useState<Prioridade[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [currentPrioridade, setCurrentPrioridade] = useState<Partial<Prioridade>>({});
+  const [currentPrioridade, setCurrentPrioridade] = useState<Partial<Prioridade>>(() => ({
+    // Initialize with proprietarioId from props or localStorage
+    proprietario_id: proprietarioId ? proprietarioId : 
+                    localStorage.getItem('selectedProprietarioId') || ''
+  }));
   const [isEditMode, setIsEditMode] = useState(false);
   const [selectedPrioridadeDetails, setSelectedPrioridadeDetails] = useState<Prioridade | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [proprietarios, setProprietarios] = useState<Proprietario[]>([]);
 
   useEffect(() => {
-    getPrioridades().then(setPrioridades);
-  }, []);
+    const loadPrioridades = async () => {
+      setPrioridades([]); // Clear existing prioridades
+      
+      const storedId = proprietarioId || localStorage.getItem('selectedProprietarioId');
+      if (storedId) {
+        try {
+          console.log('Fetching prioridades for proprietarioId:', storedId);
+          const data = await getPrioridades(storedId);
+          console.log('Received data:', data);
+          
+          // Use data directly since getCategorias already filters by proprietario_id
+          setPrioridades(data);
+        } catch (error) {
+          console.error('Error loading prioridades:', error);
+          setPrioridades([]);
+        }
+      }
+    };
+    
+    loadPrioridades();
+    
+    // Only load proprietários if we're in the main categories view
+    if (!proprietarioId) {
+      const loadProprietarios = async () => {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/proprietarios`);
+        const data = await response.json();
+        setProprietarios(data);
+      };
+      loadProprietarios();
+    }
+  }, [proprietarioId]);
+
+  // When modal is opened, ensure proprietarioId is set
+  useEffect(() => {
+    if (isModalOpen) {
+      const storedId = proprietarioId || localStorage.getItem('selectedProprietarioId') || undefined;
+      if (storedId) {
+        setCurrentPrioridade(prev => ({
+          ...prev,
+          proprietario_id: storedId
+        }));
+      }
+    }
+  }, [isModalOpen, proprietarioId]);
 
   const openModal = (prioridade?: Prioridade) => {
     if (prioridade) {
@@ -43,16 +95,23 @@ export default function Prioridade() {
   };
 
   const handleCreate = async () => {
-    if (currentPrioridade.nome && currentPrioridade.descricao) {
+    if (currentPrioridade.nome && currentPrioridade.descricao && currentPrioridade.proprietario_id) {
       const prioridadeToSave = {
         nome: currentPrioridade.nome,
-        descricao: currentPrioridade.descricao
+        descricao: currentPrioridade.descricao,
+        proprietario_id: Number(currentPrioridade.proprietario_id)
       };
 
-      const created = await createPrioridade(prioridadeToSave);
-      setPrioridades([...prioridades, created]);
-      setIsModalOpen(false);
-      setCurrentPrioridade({});
+      try {
+        console.log('Dados sendo enviados:', prioridadeToSave); // Debug
+        const created = await createPrioridade(prioridadeToSave);
+        setPrioridades([...prioridades, created]);
+        setIsModalOpen(false);
+        setCurrentPrioridade({});
+      } catch (error: any) {
+        console.error('Erro ao criar prioridade:', error);
+        console.error('Dados do erro:', error.response?.data);
+      }
     }
   };
 
@@ -80,11 +139,13 @@ export default function Prioridade() {
   };
 
   return (
-    <div className="min-h-screen ">
+    <div className="min-h-screen">
       <div className="p-4 sm:p-6">
         {/* Header */}
         <div className="flex justify-between items-center mb-6 mt-[70px] lg:mt-0">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">Prioridades</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">
+            {proprietarioId ? 'Prioridades do Escritório' : 'Prioridades'}
+          </h1>
           <div className="flex gap-2">
             <button 
               onClick={() => openModal()}
@@ -107,7 +168,7 @@ export default function Prioridade() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-                {Array.isArray(prioridades) && prioridades.map((prioridade, index) => (
+              {Array.isArray(prioridades) && prioridades.map((prioridade, index) => (
                 <tr key={prioridade.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-600 hidden sm:table-cell">
                     {index + 1}
@@ -162,6 +223,18 @@ export default function Prioridade() {
                 </button>
               </div>
               <div className="space-y-4 sm:space-y-6">
+                <div className="text-gray-700">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Proprietário</label>
+                  <select
+                    value={currentPrioridade.proprietario_id || ''}
+                    disabled={true}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
+                  >
+                    <option value={currentPrioridade.proprietario_id}>
+                      {proprietarios.find(p => p.id === Number(currentPrioridade.proprietario_id))?.nome || 'Carregando...'}
+                    </option>
+                  </select>
+                </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Nome</label>
                   <input 

@@ -6,8 +6,8 @@ if (!baseUrl) {
 }
 const url = `${baseUrl}/linguagens`;
 
-export async function getLinguagens() {
-  const response = await axios.get(url);
+export async function getLinguagens(proprietarioId: string) {
+  const response = await axios.get(`${baseUrl}/proprietarios/${proprietarioId}/linguagens`);
   return response.data;
 }
 

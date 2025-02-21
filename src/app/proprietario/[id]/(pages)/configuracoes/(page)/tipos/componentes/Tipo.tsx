@@ -19,17 +19,68 @@ import {
 } from 'lucide-react';
 import type { Tipo } from '../types/types';
 
-export default function Tipo() {
+interface Proprietario {
+  id: number;
+  nome: string;
+}
+
+export default function Tipo({ proprietarioId }: { proprietarioId?: string }) {
   const [tipos, setTipos] = useState<Tipo[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [currentTipo, setCurrentTipo] = useState<Partial<Tipo>>({});
+  const [currentTipo, setCurrentTipo] = useState<Partial<Tipo>>(() => ({
+    proprietario_id: proprietarioId ? proprietarioId : 
+                    localStorage.getItem('selectedProprietarioId') || ''
+  }));
   const [isEditMode, setIsEditMode] = useState(false);
   const [selectedTipoDetails, setSelectedTipoDetails] = useState<Tipo | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [proprietarios, setProprietarios] = useState<Proprietario[]>([]);
 
   useEffect(() => {
-    getTipos().then(setTipos);
-  }, []);
+    const loadTipos = async () => {
+      setTipos([]); // Clear existing tipos
+      
+      const storedId = proprietarioId || localStorage.getItem('selectedProprietarioId');
+      if (storedId) {
+        try {
+          console.log('Fetching tipos for proprietarioId:', storedId);
+            const data = await getTipos(storedId);
+          console.log('Received data:', data);
+          
+          // Use data directly since getCategorias already filters by proprietario_id
+          setTipos(data);
+        } catch (error) {
+          console.error('Error loading tipos:', error);
+          setTipos([]);
+        }
+      }
+    };
+    
+    loadTipos();
+    
+    // Only load proprietários if we're in the main tipos view
+    if (!proprietarioId) {
+      const loadProprietarios = async () => {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/proprietarios`);
+        const data = await response.json();
+        setProprietarios(data);
+      };
+      loadProprietarios();
+    }
+  }, [proprietarioId]);
+
+  // When modal is opened, ensure proprietarioId is set
+  useEffect(() => {
+    if (isModalOpen) {
+      const storedId = proprietarioId || localStorage.getItem('selectedProprietarioId') || undefined;
+      if (storedId) {
+          setCurrentTipo(prev => ({
+          ...prev,
+          proprietario_id: storedId
+        }));
+      }
+    }
+  }, [isModalOpen, proprietarioId]);
 
   const openModal = (tipo?: Tipo) => {
     if (tipo) {
@@ -43,16 +94,23 @@ export default function Tipo() {
   };
 
   const handleCreate = async () => {
-    if (currentTipo.nome && currentTipo.descricao) {
+      if (currentTipo.nome && currentTipo.descricao && currentTipo.proprietario_id) {
       const tipoToSave = {
         nome: currentTipo.nome,
-        descricao: currentTipo.descricao
+        descricao: currentTipo.descricao,
+        proprietario_id: Number(currentTipo.proprietario_id)
       };
 
-      const created = await createTipo(tipoToSave);
-      setTipos([...tipos, created]);
-      setIsModalOpen(false);
-      setCurrentTipo({});
+      try {
+        console.log('Dados sendo enviados:', tipoToSave); // Debug
+        const created = await createTipo(tipoToSave);
+        setTipos([...tipos, created]);
+        setIsModalOpen(false);
+        setCurrentTipo({});
+      } catch (error: any) {
+        console.error('Erro ao criar categoria:', error);
+        console.error('Dados do erro:', error.response?.data);
+      }
     }
   };
 
@@ -64,7 +122,7 @@ export default function Tipo() {
       };
 
       const updated = await updateTipo(currentTipo.id, tipoToUpdate);
-      setTipos(tipos.map(r => (r.id === currentTipo.id ? updated : r)));
+      setTipos(tipos.map(t => (t.id === currentTipo.id ? updated : t)));
       setIsModalOpen(false);
       setCurrentTipo({});
     }
@@ -72,7 +130,7 @@ export default function Tipo() {
 
   const handleDelete = async (id: string) => {
     await deleteTipo(id);
-    setTipos(tipos.filter(r => r.id !== id));
+    setTipos(tipos.filter(t => t.id !== id));
   };
 
   const showTipoDetails = (tipo: Tipo) => {
@@ -80,11 +138,12 @@ export default function Tipo() {
   };
 
   return (
-    <div className="min-h-screen ">
+    <div className="min-h-screen">
       <div className="p-4 sm:p-6">
-        {/* Header */}
         <div className="flex justify-between items-center mb-6 mt-[70px] lg:mt-0">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">Tipos</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">
+            {proprietarioId ? 'Tipos do Escritório' : 'Tipos'}
+          </h1>
           <div className="flex gap-2">
             <button 
               onClick={() => openModal()}
@@ -103,21 +162,17 @@ export default function Tipo() {
               <tr>
                 <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
                 <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nome</th>
-                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
                 <th className="px-4 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {Array.isArray(tipos) && tipos.map((tipo, index) => (
-                    <tr key={tipo.id} className="hover:bg-gray-50 transition-colors">
+                <tr key={tipo.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-600 hidden sm:table-cell">
                     {index + 1}
                   </td>
                   <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-800">
                     {tipo.nome}
-                  </td>
-                  <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-800">
-                    {tipo.descricao}
                   </td>
                   <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
                     <div className="flex justify-end space-x-2">
@@ -166,11 +221,23 @@ export default function Tipo() {
                 </button>
               </div>
               <div className="space-y-4 sm:space-y-6">
+                <div className="text-gray-700">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Proprietário</label>
+                  <select
+                    value={currentTipo.proprietario_id || ''}
+                    disabled={true}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
+                  >
+                    <option value={currentTipo.proprietario_id}>
+                      {proprietarios.find(p => p.id === Number(currentTipo.proprietario_id))?.nome || 'Carregando...'}
+                    </option>
+                  </select>
+                </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Nome</label>
                   <input 
                     type="text" 
-                    placeholder="Digite o nome do responsável" 
+                    placeholder="Digite o nome do tipo" 
                     value={currentTipo.nome || ''} 
                     onChange={(e) => setCurrentTipo({ ...currentTipo, nome: e.target.value })}
                     className="w-full px-3 py-2 sm:px-4 sm:py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800 placeholder-gray-500 text-sm sm:text-base"
@@ -178,12 +245,12 @@ export default function Tipo() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Descrição</label>
-                  <input 
-                    type="text" 
-                    placeholder="Digite a descrição" 
+                  <textarea 
+                    placeholder="Descreva os detalhes do tipo" 
                     value={currentTipo.descricao || ''} 
                     onChange={(e) => setCurrentTipo({ ...currentTipo, descricao: e.target.value })}
                     className="w-full px-3 py-2 sm:px-4 sm:py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800 placeholder-gray-500 text-sm sm:text-base"
+                    rows={4}
                   />
                 </div>
                 <div className="flex justify-end space-x-4">
@@ -210,7 +277,7 @@ export default function Tipo() {
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
             <div className="bg-white rounded-lg shadow-2xl p-6 w-full max-w-xl">
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl sm:text-2xl font-bold text-gray-800">Detalhes do Desenvolvedor</h2>
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-800">Detalhes do Alinhamento</h2>
                 <button 
                   onClick={() => setSelectedTipoDetails(null)}
                   className="text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full p-2"
@@ -230,11 +297,10 @@ export default function Tipo() {
                       <p className="text-xs sm:text-sm text-gray-600 font-medium">ID</p>
                       <p className="text-gray-800 font-bold text-sm sm:text-base">{selectedTipoDetails.id}</p>
                     </div>
-                    
                   </div>
                 </div>
                 <div>
-                  <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-2">Email</h3>
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-2">Descrição</h3>
                   <p className="text-gray-700 bg-gray-50 p-4 rounded-md text-sm sm:text-base">
                     {selectedTipoDetails.descricao}
                   </p>

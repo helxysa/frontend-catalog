@@ -3,5 +3,6 @@ export interface Linguagem {
     nome: string;
     descricao: string;
     status: string;
+    proprietario_id: string;
   }
   

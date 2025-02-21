@@ -19,18 +19,69 @@ import {
 } from 'lucide-react';
 import type { Desenvolvedor } from '../types/types';
 
-export default function Desenvolvedor() {
+interface Proprietario {
+  id: number;
+  nome: string;
+}
+
+export default function Desenvolvedor({ proprietarioId }: { proprietarioId?: string }) {
   const [desenvolvedores, setDesenvolvedores] = useState<Desenvolvedor[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [currentDesenvolvedor, setCurrentDesenvolvedor] = useState<Partial<Desenvolvedor>>({});
+  const [currentDesenvolvedor, setCurrentDesenvolvedor] = useState<Partial<Desenvolvedor>>(() => ({
+    // Initialize with proprietarioId from props or localStorage
+    proprietario_id: proprietarioId ? proprietarioId : 
+                    localStorage.getItem('selectedProprietarioId') || ''
+  }));
   const [isEditMode, setIsEditMode] = useState(false);
   const [selectedDesenvolvedorDetails, setSelectedDesenvolvedorDetails] = useState<Desenvolvedor | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [emailError, setEmailError] = useState<string>('');
+  const [proprietarios, setProprietarios] = useState<Proprietario[]>([]);
 
   useEffect(() => {
-    getDesenvolvedores().then(setDesenvolvedores);
-  }, []);
+    const loadDesenvolvedores = async () => {
+      setDesenvolvedores([]); // Clear existing desenvolvedores
+      
+      const storedId = proprietarioId || localStorage.getItem('selectedProprietarioId');
+      if (storedId) {
+        try {
+          console.log('Fetching desenvolvedores for proprietarioId:', storedId);
+          const data = await getDesenvolvedores(storedId);
+          console.log('Received data:', data);
+          
+          // Use data directly since getCategorias already filters by proprietario_id
+          setDesenvolvedores(data);
+        } catch (error) {
+          console.error('Error loading desenvolvedores:', error);
+          setDesenvolvedores([]);
+        }
+      }
+    };
+    
+    loadDesenvolvedores();
+    
+    // Only load proprietários if we're in the main categories view
+    if (!proprietarioId) {
+      const loadProprietarios = async () => {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/proprietarios`);
+        const data = await response.json();
+        setProprietarios(data);
+      };
+      loadProprietarios();
+    }
+  }, [proprietarioId]);
+
+  // When modal is opened, ensure proprietarioId is set
+  useEffect(() => {
+    if (isModalOpen) {
+      const storedId = proprietarioId || localStorage.getItem('selectedProprietarioId') || undefined;
+      if (storedId) {
+        setCurrentDesenvolvedor(prev => ({
+          ...prev,
+          proprietario_id: storedId
+        }));
+      }
+    }
+  }, [isModalOpen, proprietarioId]);
 
   const openModal = (desenvolvedor?: Desenvolvedor) => {
     if (desenvolvedor) {
@@ -43,55 +94,44 @@ export default function Desenvolvedor() {
     setIsModalOpen(true);
   };
 
-  const validateEmail = (email: string) => {
-    // Regex that allows standard emails and institutional domains
-    const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-    return emailRegex.test(email);
-  };
-
   const handleCreate = async () => {
-    if (currentDesenvolvedor.nome && currentDesenvolvedor.email) {
-      if (!validateEmail(currentDesenvolvedor.email)) {
-        setEmailError('Por favor, insira um email válido');
-        return;
-      }
-      
+    if (currentDesenvolvedor.nome && currentDesenvolvedor.email && currentDesenvolvedor.proprietario_id) {
       const desenvolvedorToSave = {
         nome: currentDesenvolvedor.nome,
-        email: currentDesenvolvedor.email
+        email: currentDesenvolvedor.email,
+        proprietario_id: Number(currentDesenvolvedor.proprietario_id)
       };
 
-      const created = await createDesenvolvedor(desenvolvedorToSave);
-      setDesenvolvedores([...desenvolvedores, created]);
-      setIsModalOpen(false);
-      setCurrentDesenvolvedor({});
-      setEmailError('');
+      try {
+        console.log('Dados sendo enviados:', desenvolvedorToSave); // Debug
+        const created = await createDesenvolvedor(desenvolvedorToSave);
+        setDesenvolvedores([...desenvolvedores, created]);
+        setIsModalOpen(false);
+        setCurrentDesenvolvedor({});
+      } catch (error: any) {
+        console.error('Erro ao criar desenvolvedor:', error);
+        console.error('Dados do erro:', error.response?.data);
+      }
     }
   };
 
   const handleUpdate = async () => {
     if (currentDesenvolvedor.id && currentDesenvolvedor.nome && currentDesenvolvedor.email) {
-      if (!validateEmail(currentDesenvolvedor.email)) {
-        setEmailError('Por favor, insira um email válido');
-        return;
-      }
-
       const desenvolvedorToUpdate = {
         nome: currentDesenvolvedor.nome,
         email: currentDesenvolvedor.email
       };
 
       const updated = await updateDesenvolvedor(currentDesenvolvedor.id, desenvolvedorToUpdate);
-      setDesenvolvedores(desenvolvedores.map(r => (r.id === currentDesenvolvedor.id ? updated : r)));
+      setDesenvolvedores(desenvolvedores.map(d => (d.id === currentDesenvolvedor.id ? updated : d)));
       setIsModalOpen(false);
       setCurrentDesenvolvedor({});
-      setEmailError('');
     }
   };
 
   const handleDelete = async (id: string) => {
     await deleteDesenvolvedor(id);
-    setDesenvolvedores(desenvolvedores.filter(r => r.id !== id));
+    setDesenvolvedores(desenvolvedores.filter(d => d.id !== id));
   };
 
   const showDesenvolvedorDetails = (desenvolvedor: Desenvolvedor) => {
@@ -99,11 +139,13 @@ export default function Desenvolvedor() {
   };
 
   return (
-    <div className="min-h-screen ">
+    <div className="min-h-screen">
       <div className="p-4 sm:p-6">
         {/* Header */}
         <div className="flex justify-between items-center mb-6 mt-[70px] lg:mt-0">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">Desenvolvedores</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">
+            {proprietarioId ? 'Desenvolvedores do Escritório' : 'Desenvolvedores'}
+          </h1>
           <div className="flex gap-2">
             <button 
               onClick={() => openModal()}
@@ -122,21 +164,17 @@ export default function Desenvolvedor() {
               <tr>
                 <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
                 <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nome</th>
-                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
                 <th className="px-4 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {Array.isArray(desenvolvedores) && desenvolvedores.map((desenvolvedor, index) => (
-                  <tr key={desenvolvedor.id} className="hover:bg-gray-50 transition-colors">
+                <tr key={desenvolvedor.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-600 hidden sm:table-cell">
                     {index + 1}
                   </td>
                   <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-800">
                     {desenvolvedor.nome}
-                  </td>
-                  <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-800">
-                    {desenvolvedor.email}
                   </td>
                   <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
                     <div className="flex justify-end space-x-2">
@@ -185,11 +223,23 @@ export default function Desenvolvedor() {
                 </button>
               </div>
               <div className="space-y-4 sm:space-y-6">
+                <div className="text-gray-700">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Proprietário</label>
+                  <select
+                    value={currentDesenvolvedor.proprietario_id || ''}
+                    disabled={true}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
+                  >
+                    <option value={currentDesenvolvedor.proprietario_id}>
+                      {proprietarios.find(p => p.id === Number(currentDesenvolvedor.proprietario_id))?.nome || 'Carregando...'}
+                    </option>
+                  </select>
+                </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Nome</label>
                   <input 
                     type="text" 
-                    placeholder="Digite o nome do responsável" 
+                    placeholder="Digite o nome do desenvolvedor" 
                     value={currentDesenvolvedor.nome || ''} 
                     onChange={(e) => setCurrentDesenvolvedor({ ...currentDesenvolvedor, nome: e.target.value })}
                     className="w-full px-3 py-2 sm:px-4 sm:py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800 placeholder-gray-500 text-sm sm:text-base"
@@ -198,18 +248,12 @@ export default function Desenvolvedor() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
                   <input 
-                    type="email" 
+                    type="email"
                     placeholder="Digite o email do desenvolvedor" 
                     value={currentDesenvolvedor.email || ''} 
-                    onChange={(e) => {
-                      setCurrentDesenvolvedor({ ...currentDesenvolvedor, email: e.target.value });
-                      setEmailError('');
-                    }}
-                    className={`w-full px-3 py-2 sm:px-4 sm:py-3 border ${emailError ? 'border-red-500' : 'border-gray-300'} rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800 placeholder-gray-500 text-sm sm:text-base`}
+                    onChange={(e) => setCurrentDesenvolvedor({ ...currentDesenvolvedor, email: e.target.value })}
+                    className="w-full px-3 py-2 sm:px-4 sm:py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800 placeholder-gray-500 text-sm sm:text-base"
                   />
-                  {emailError && (
-                    <p className="mt-1 text-sm text-red-600">{emailError}</p>
-                  )}
                 </div>
                 <div className="flex justify-end space-x-4">
                   <button 
@@ -235,7 +279,7 @@ export default function Desenvolvedor() {
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
             <div className="bg-white rounded-lg shadow-2xl p-6 w-full max-w-xl">
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl sm:text-2xl font-bold text-gray-800">Detalhes do Desenvolvedor</h2>
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-800">Detalhes do Alinhamento</h2>
                 <button 
                   onClick={() => setSelectedDesenvolvedorDetails(null)}
                   className="text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full p-2"
@@ -255,7 +299,6 @@ export default function Desenvolvedor() {
                       <p className="text-xs sm:text-sm text-gray-600 font-medium">ID</p>
                       <p className="text-gray-800 font-bold text-sm sm:text-base">{selectedDesenvolvedorDetails.id}</p>
                     </div>
-                    
                   </div>
                 </div>
                 <div>

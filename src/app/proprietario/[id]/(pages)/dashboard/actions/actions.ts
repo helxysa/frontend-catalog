@@ -7,32 +7,82 @@ if (!baseUrl) {
 const url = `${baseUrl}`;
 
 export async function getTipos() {
-  const response = await axios.get(`${url}/tipos`);
+  const storedId = localStorage.getItem('selectedProprietarioId');
+  if (!storedId) {
+      throw new Error("ProprietarioId not found in localStorage");
+  }
+  const response = await axios.get(`${url}/proprietarios/${storedId}/tipos`);
   return response.data;
 }
 
 export async function getDemandas() {
-  const response = await axios.get(`${url}/demandas`);
+  const storedId = localStorage.getItem('selectedProprietarioId');
+  if (!storedId) {
+      throw new Error("ProprietarioId not found in localStorage");
+  }
+  // Modificando a URL para garantir que o alinhamento seja carregado com todos os campos
+  const response = await axios.get(`${url}/proprietarios/${storedId}/demandas?preload[0]=alinhamento`);
+  console.log('Dados brutos das demandas:', response.data);
   return response.data;
 }
 
 export async function getSolucoes() {
-  const response = await axios.get(`${url}/solucoes`);
-  return response.data;
+  const storedId = localStorage.getItem('selectedProprietarioId');
+  if (!storedId) {
+      throw new Error("ProprietarioId not found in localStorage");
+  }
+
+  try {
+    // Primeiro, busca todas as demandas do proprietário
+    const demandasResponse = await axios.get(`${url}/proprietarios/${storedId}/demandas`);
+    const demandas = demandasResponse.data;
+    
+    // Depois, busca todas as soluções
+    const solucoesResponse = await axios.get(`${url}/solucoes`);
+    const solucoes = solucoesResponse.data;
+    
+    // Adiciona logs para debug
+    console.log('Demandas:', demandas);
+    console.log('Soluções:', solucoes);
+    
+    // Filtra as soluções, garantindo que os IDs sejam comparados como números
+    const solucoesFiltradas = solucoes.filter((solucao: any) => {
+      const solucaoDemandaId = Number(solucao.demanda?.id || solucao.demanda_id);
+      return demandas.some((demanda: any) => Number(demanda.id) === solucaoDemandaId);
+    });
+
+    console.log('Soluções Filtradas:', solucoesFiltradas);
+    return solucoesFiltradas;
+  } catch (error) {
+    console.error('Erro ao buscar soluções:', error);
+    throw error;
+  }
 }
 
 export async function getAlinhamentos() {
-  const response = await axios.get(`${url}/alinhamentos`);
+  const storedId = localStorage.getItem('selectedProprietarioId');
+  if (!storedId) {
+      throw new Error("ProprietarioId not found in localStorage");
+  }
+  const response = await axios.get(`${url}/proprietarios/${storedId}/alinhamentos`);
   return response.data;
 }
 
 export async function getStatus() {
-  const response = await axios.get(`${url}/status`);
+  const storedId = localStorage.getItem('selectedProprietarioId');
+  if (!storedId) {
+      throw new Error("ProprietarioId not found in localStorage");
+  }
+  const response = await axios.get(`${url}/proprietarios/${storedId}/status`);
   return response.data;
 }
 
 export async function getCategorias() {
-  const response = await axios.get(`${url}/categorias`);
+  const storedId = localStorage.getItem('selectedProprietarioId');
+  if (!storedId) {
+      throw new Error("ProprietarioId not found in localStorage");
+  }
+  const response = await axios.get(`${url}/proprietarios/${storedId}/categorias`);
   return response.data;
 }
 

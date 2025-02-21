@@ -6,10 +6,11 @@ if (!baseUrl) {
 }
 const url = `${baseUrl}/tipos`;
 
-export async function getTipos() {
-  const response = await axios.get(url);
+export async function getTipos(proprietarioId: string) {
+  const response = await axios.get(`${baseUrl}/proprietarios/${proprietarioId}/tipos`);
   return response.data;
 }
+
 
 export async function getTiposById(id: string) {
   const response = await axios.get(`${url}/${id}`);

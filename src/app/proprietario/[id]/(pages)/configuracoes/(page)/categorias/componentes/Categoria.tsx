@@ -27,17 +27,33 @@ interface Proprietario {
 export default function Categoria({ proprietarioId }: { proprietarioId?: string }) {
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [currentCategoria, setCurrentCategoria] = useState<Partial<Categoria>>({});
+  const [currentCategoria, setCurrentCategoria] = useState<Partial<Categoria>>(() => ({
+    proprietario_id: proprietarioId ? proprietarioId : 
+                    localStorage.getItem('selectedProprietarioId') || ''
+  }));
   const [isEditMode, setIsEditMode] = useState(false);
   const [selectedCategoriaDetails, setSelectedCategoriaDetails] = useState<Categoria | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [proprietarios, setProprietarios] = useState<Proprietario[]>([]);
 
   useEffect(() => {
-    // Modify getCategorias to filter by proprietarioId if provided
     const loadCategorias = async () => {
-      const data = await getCategorias(proprietarioId);
-      setCategorias(data);
+      setCategorias([]); // Clear existing categories
+      
+      const storedId = proprietarioId || localStorage.getItem('selectedProprietarioId');
+      if (storedId) {
+        try {
+          console.log('Fetching categories for proprietarioId:', storedId);
+          const data = await getCategorias(storedId);
+          console.log('Received data:', data);
+          
+          // Use data directly since getCategorias already filters by proprietario_id
+          setCategorias(data);
+        } catch (error) {
+          console.error('Error loading categorias:', error);
+          setCategorias([]);
+        }
+      }
     };
     
     loadCategorias();
@@ -52,6 +68,19 @@ export default function Categoria({ proprietarioId }: { proprietarioId?: string 
       loadProprietarios();
     }
   }, [proprietarioId]);
+
+  // When modal is opened, ensure proprietarioId is set
+  useEffect(() => {
+    if (isModalOpen) {
+      const storedId = proprietarioId || localStorage.getItem('selectedProprietarioId') || undefined;
+      if (storedId) {
+        setCurrentCategoria(prev => ({
+          ...prev,
+          proprietario_id: storedId
+        }));
+      }
+    }
+  }, [isModalOpen, proprietarioId]);
 
   const openModal = (categoria?: Categoria) => {
     if (categoria) {
@@ -78,9 +107,9 @@ export default function Categoria({ proprietarioId }: { proprietarioId?: string 
         setCategorias([...categorias, created]);
         setIsModalOpen(false);
         setCurrentCategoria({});
-      } catch (error) {
+      } catch (error: any) {
         console.error('Erro ao criar categoria:', error);
-        console.error('Dados do erro:', error.response?.data); // Debug
+        console.error('Dados do erro:', error.response?.data);
       }
     }
   };
@@ -111,7 +140,6 @@ export default function Categoria({ proprietarioId }: { proprietarioId?: string 
   return (
     <div className="min-h-screen">
       <div className="p-4 sm:p-6">
-        {/* Header */}
         <div className="flex justify-between items-center mb-6 mt-[70px] lg:mt-0">
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">
             {proprietarioId ? 'Categorias do Escritório' : 'Categorias'}
@@ -193,22 +221,16 @@ export default function Categoria({ proprietarioId }: { proprietarioId?: string 
                 </button>
               </div>
               <div className="space-y-4 sm:space-y-6">
-                <div>
+                <div className="text-gray-700">
                   <label className="block text-sm font-medium text-gray-700 mb-2">Proprietário</label>
                   <select
                     value={currentCategoria.proprietario_id || ''}
-                    onChange={(e) => setCurrentCategoria({ 
-                      ...currentCategoria, 
-                      proprietario_id: e.target.value 
-                    })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    disabled={true}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
                   >
-                    <option value="">Selecione um proprietário</option>
-                    {proprietarios.map((prop: Proprietario) => (
-                      <option key={prop.id} value={prop.id}>
-                        {prop.nome}
-                      </option>
-                    ))}
+                    <option value={currentCategoria.proprietario_id}>
+                      {proprietarios.find(p => p.id === Number(currentCategoria.proprietario_id))?.nome || 'Carregando...'}
+                    </option>
                   </select>
                 </div>
                 <div>

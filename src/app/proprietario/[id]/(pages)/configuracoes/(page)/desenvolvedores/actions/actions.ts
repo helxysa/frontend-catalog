@@ -6,8 +6,9 @@ if (!baseUrl) {
 }
 const url = `${baseUrl}/desenvolvedores`;
 
-export async function getDesenvolvedores() {
-  const response = await axios.get(url);
+
+export async function getDesenvolvedores(proprietarioId: string) {
+  const response = await axios.get(`${baseUrl}/proprietarios/${proprietarioId}/desenvolvedores`);
   return response.data;
 }
 

@@ -6,8 +6,8 @@ if (!baseUrl) {
 }
 const url = `${baseUrl}/status`;
 
-export async function getStatus() {
-  const response = await axios.get(url);
+export async function getStatus(proprietarioId: string) {
+  const response = await axios.get(`${baseUrl}/proprietarios/${proprietarioId}/status`);
   return response.data;
 }
 

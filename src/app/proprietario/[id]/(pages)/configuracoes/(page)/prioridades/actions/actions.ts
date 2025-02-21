@@ -6,8 +6,8 @@ if (!baseUrl) {
 }
 const url = `${baseUrl}/prioridades`;
 
-export async function getPrioridades() {
-  const response = await axios.get(url);
+export async function getPrioridades(proprietarioId: string) {
+  const response = await axios.get(`${baseUrl}/proprietarios/${proprietarioId}/prioridades`);
   return response.data;
 }
 

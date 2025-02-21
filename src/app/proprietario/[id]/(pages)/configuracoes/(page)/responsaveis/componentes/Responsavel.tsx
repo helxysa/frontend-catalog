@@ -19,18 +19,69 @@ import {
 } from 'lucide-react';
 import type { Responsavel } from '../types/types';
 
-export default function Responsavel() {
+interface Proprietario {
+  id: number;
+  nome: string;
+}
+
+export default function Responsavel({ proprietarioId }: { proprietarioId?: string }) {
   const [responsaveis, setResponsaveis] = useState<Responsavel[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [currentResponsavel, setCurrentResponsavel] = useState<Partial<Responsavel>>({});
+  const [currentResponsavel, setCurrentResponsavel] = useState<Partial<Responsavel>>(() => ({
+    // Initialize with proprietarioId from props or localStorage
+    proprietario_id: proprietarioId ? proprietarioId : 
+                    localStorage.getItem('selectedProprietarioId') || ''
+  }));
   const [isEditMode, setIsEditMode] = useState(false);
   const [selectedResponsavelDetails, setSelectedResponsavelDetails] = useState<Responsavel | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [emailError, setEmailError] = useState<string>('');
+  const [proprietarios, setProprietarios] = useState<Proprietario[]>([]);
 
   useEffect(() => {
-    getResponsaveis().then(setResponsaveis);
-  }, []);
+    const loadResponsaveis = async () => {
+      setResponsaveis([]); // Clear existing responsaveis
+      
+      const storedId = proprietarioId || localStorage.getItem('selectedProprietarioId');
+      if (storedId) {
+        try {
+          console.log('Fetching responsaveis for proprietarioId:', storedId);
+          const data = await getResponsaveis(storedId);
+          console.log('Received data:', data);
+          
+          // Use data directly since getCategorias already filters by proprietario_id
+          setResponsaveis(data);
+        } catch (error) {
+          console.error('Error loading responsaveis:', error);
+          setResponsaveis([]);
+        }
+      }
+    };
+    
+    loadResponsaveis();
+    
+    // Only load proprietários if we're in the main categories view
+    if (!proprietarioId) {
+      const loadProprietarios = async () => {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/proprietarios`);
+        const data = await response.json();
+        setProprietarios(data);
+      };
+      loadProprietarios();
+    }
+  }, [proprietarioId]);
+
+  // When modal is opened, ensure proprietarioId is set
+  useEffect(() => {
+    if (isModalOpen) {
+      const storedId = proprietarioId || localStorage.getItem('selectedProprietarioId') || undefined;
+      if (storedId) {
+        setCurrentResponsavel(prev => ({
+          ...prev,
+          proprietario_id: storedId
+        }));
+      }
+    }
+  }, [isModalOpen, proprietarioId]);
 
   const openModal = (responsavel?: Responsavel) => {
     if (responsavel) {
@@ -43,40 +94,30 @@ export default function Responsavel() {
     setIsModalOpen(true);
   };
 
-  const validateEmail = (email: string) => {
-    // Regex that allows standard emails and institutional domains
-    const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-    return emailRegex.test(email);
-  };
-
   const handleCreate = async () => {
-    if (currentResponsavel.nome && currentResponsavel.email) {
-      if (!validateEmail(currentResponsavel.email)) {
-        setEmailError('Por favor, insira um email válido');
-        return;
-      }
-      
+    if (currentResponsavel.nome && currentResponsavel.email && currentResponsavel.proprietario_id) {
       const responsavelToSave = {
         nome: currentResponsavel.nome,
-        email: currentResponsavel.email
+        email: currentResponsavel.email,
+        proprietario_id: Number(currentResponsavel.proprietario_id)
       };
 
-      const created = await createResponsavel(responsavelToSave);
-      setResponsaveis([...responsaveis, created]);
-      setIsModalOpen(false);
-      setCurrentResponsavel({});
-      setEmailError('');
+      try {
+        console.log('Dados sendo enviados:', responsavelToSave); // Debug
+        const created = await createResponsavel(responsavelToSave);
+        setResponsaveis([...responsaveis, created]);
+        setIsModalOpen(false);
+        setCurrentResponsavel({});
+      } catch (error: any) {
+        console.error('Erro ao criar responsavel:', error);
+        console.error('Dados do erro:', error.response?.data);
+      }
     }
   };
 
   const handleUpdate = async () => {
     if (currentResponsavel.id && currentResponsavel.nome && currentResponsavel.email) {
-      if (!validateEmail(currentResponsavel.email)) {
-        setEmailError('Por favor, insira um email válido');
-        return;
-      }
-
-      const responsavelToUpdate = {
+        const responsavelToUpdate = {
         nome: currentResponsavel.nome,
         email: currentResponsavel.email
       };
@@ -85,7 +126,6 @@ export default function Responsavel() {
       setResponsaveis(responsaveis.map(r => (r.id === currentResponsavel.id ? updated : r)));
       setIsModalOpen(false);
       setCurrentResponsavel({});
-      setEmailError('');
     }
   };
 
@@ -99,11 +139,13 @@ export default function Responsavel() {
   };
 
   return (
-    <div className="min-h-screen ">
+    <div className="min-h-screen">
       <div className="p-4 sm:p-6">
         {/* Header */}
         <div className="flex justify-between items-center mb-6 mt-[70px] lg:mt-0">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">Responsáveis</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">
+            {proprietarioId ? 'Responsáveis do Escritório' : 'Responsáveis'}
+          </h1>
           <div className="flex gap-2">
             <button 
               onClick={() => openModal()}
@@ -122,7 +164,6 @@ export default function Responsavel() {
               <tr>
                 <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
                 <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nome</th>
-                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
                 <th className="px-4 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
               </tr>
             </thead>
@@ -134,9 +175,6 @@ export default function Responsavel() {
                   </td>
                   <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-800">
                     {responsavel.nome}
-                  </td>
-                  <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-800">
-                    {responsavel.email}
                   </td>
                   <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
                     <div className="flex justify-end space-x-2">
@@ -185,6 +223,18 @@ export default function Responsavel() {
                 </button>
               </div>
               <div className="space-y-4 sm:space-y-6">
+                <div className="text-gray-700">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Proprietário</label>
+                  <select
+                    value={currentResponsavel.proprietario_id || ''}
+                    disabled={true}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
+                  >
+                    <option value={currentResponsavel.proprietario_id}>
+                      {proprietarios.find(p => p.id === Number(currentResponsavel.proprietario_id))?.nome || 'Carregando...'}
+                    </option>
+                  </select>
+                </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Nome</label>
                   <input 
@@ -198,18 +248,12 @@ export default function Responsavel() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
                   <input 
-                    type="email" 
+                    type="email"
                     placeholder="Digite o email do responsável" 
                     value={currentResponsavel.email || ''} 
-                    onChange={(e) => {
-                      setCurrentResponsavel({ ...currentResponsavel, email: e.target.value });
-                      setEmailError('');
-                    }}
-                    className={`w-full px-3 py-2 sm:px-4 sm:py-3 border ${emailError ? 'border-red-500' : 'border-gray-300'} rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800 placeholder-gray-500 text-sm sm:text-base`}
+                    onChange={(e) => setCurrentResponsavel({ ...currentResponsavel, email: e.target.value })}
+                    className="w-full px-3 py-2 sm:px-4 sm:py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800 placeholder-gray-500 text-sm sm:text-base"
                   />
-                  {emailError && (
-                    <p className="mt-1 text-sm text-red-600">{emailError}</p>
-                  )}
                 </div>
                 <div className="flex justify-end space-x-4">
                   <button 
@@ -235,7 +279,7 @@ export default function Responsavel() {
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
             <div className="bg-white rounded-lg shadow-2xl p-6 w-full max-w-xl">
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl sm:text-2xl font-bold text-gray-800">Detalhes do Responsável</h2>
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-800">Detalhes do Alinhamento</h2>
                 <button 
                   onClick={() => setSelectedResponsavelDetails(null)}
                   className="text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full p-2"
@@ -255,7 +299,6 @@ export default function Responsavel() {
                       <p className="text-xs sm:text-sm text-gray-600 font-medium">ID</p>
                       <p className="text-gray-800 font-bold text-sm sm:text-base">{selectedResponsavelDetails.id}</p>
                     </div>
-                    
                   </div>
                 </div>
                 <div>

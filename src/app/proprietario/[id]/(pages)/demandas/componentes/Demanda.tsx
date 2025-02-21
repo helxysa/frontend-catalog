@@ -123,6 +123,7 @@ export default function Demanda() {
     status_id: ''
   });
   const [filteredDemandas, setFilteredDemandas] = useState<DemandaType[]>([]);
+  const [shouldRefresh, setShouldRefresh] = useState(0);
 
 
   const determinarCorTexto = (corHex: string | undefined) => {
@@ -152,7 +153,6 @@ export default function Demanda() {
       getResponsaveis(),
       getStatus(),
     ]).then(([demandasData, proprietariosData, alinhamentosData, prioridadesData, responsaveisData, statusData]) => {
-      // Filtra as demandas pelo proprietario_id do localStorage
       const storedId = localStorage.getItem('selectedProprietarioId');
       const demandasFiltradas = demandasData.filter(
         (demanda: DemandaType) => demanda.proprietario?.id === Number(storedId)
@@ -166,7 +166,7 @@ export default function Demanda() {
       setResponsaveis(responsaveisData);
       setStatusList(statusData);
     });
-  }, []);
+  }, [shouldRefresh]);
 
   // Quando o modal for aberto, atualiza o proprietario_id
   useEffect(() => {
@@ -213,13 +213,7 @@ export default function Demanda() {
         await createDemanda(cleanedFormData);
       }
       
-      const updatedDemandas = await getDemandas();
-      const storedId = localStorage.getItem('selectedProprietarioId');
-      const demandasFiltradas = updatedDemandas.filter(
-        (demanda: DemandaType) => demanda.proprietario?.id === Number(storedId)
-      );
-      setDemandas(demandasFiltradas);
-      setFilteredDemandas(demandasFiltradas);  // Update filtered demands as well
+      setShouldRefresh(prev => prev + 1);
       setIsModalOpen(false);
       setFormData({} as DemandaFormData);
       setIsEditing(null);
@@ -254,8 +248,7 @@ export default function Demanda() {
     if (itemToDeleteId) {
       try {
         await deleteDemanda(itemToDeleteId);
-        const updatedDemandas = await getDemandas();
-        setDemandas(updatedDemandas);
+        setShouldRefresh(prev => prev + 1);
       } catch (error) {
         console.error('Error deleting demanda:', error);
       }

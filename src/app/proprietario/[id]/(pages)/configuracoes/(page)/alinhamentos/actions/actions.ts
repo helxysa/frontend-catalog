@@ -6,8 +6,8 @@ if (!baseUrl) {
 }
 const url = `${baseUrl}/alinhamentos`;
 
-export async function getAlinhamentos() {
-  const response = await axios.get(url);
+export async function getAlinhamentos(proprietarioId: string) {
+  const response = await axios.get(`${baseUrl}/proprietarios/${proprietarioId}/alinhamentos`);
   return response.data;
 }
 
@@ -16,8 +16,18 @@ export async function getAlinhamentosById(id: string) {
   return response.data;
 }
 
-export async function createAlinhamento(alinhamento: any) {
-  const response = await axios.post(`${url}`, alinhamento);
+interface AlinhamentoCreate {
+  nome: string;
+  descricao: string;
+  proprietario_id: number;
+}
+
+export async function createAlinhamento(alinhamento: AlinhamentoCreate) {
+  const response = await axios.post(`${url}`, {
+    nome: alinhamento.nome,
+    descricao: alinhamento.descricao,
+    proprietario_id: alinhamento.proprietario_id
+  });
   return response.data;
 }
 

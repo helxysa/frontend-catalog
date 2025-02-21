@@ -11,7 +11,7 @@ import {
   Tooltip,
   Legend 
 } from 'chart.js';
-import { Doughnut, Bar } from 'react-chartjs-2';
+import { Doughnut, Bar, Pie } from 'react-chartjs-2';
 import { getDemandas, getSolucoes, getAlinhamentos, getStatus, getCategorias } from "../actions/actions";
 import type { DemandaType } from '../../demandas/types/types';
 import type { SolucaoType } from '../../solucoes/types/types';
@@ -67,20 +67,24 @@ export default function Dashboard() {
 
   // Processamento dos dados reais
   const processAlinhamentoData = () => {
-    const counts: { [key: string]: number } = {
-      
-    };
+    const counts: { [key: string]: number } = {};
 
     dashboardData.demandas.forEach(demanda => {
+      console.log('Processando demanda:', {
+        demandaId: demanda.id,
+        alinhamentoCompleto: demanda.alinhamento
+      });
+
       const alinhamentoNome = demanda.alinhamento?.nome || 'Não alinhada';
       counts[alinhamentoNome] = (counts[alinhamentoNome] || 0) + 1;
     });
 
+    console.log('Contagem final de alinhamentos:', counts);
     return {
       labels: Object.keys(counts),
       datasets: [{
         data: Object.values(counts),
-        backgroundColor: ['#4285F4', '#34A853', '#FBBC05', '#EA4335', ],
+        backgroundColor: ['#4285F4', '#34A853', '#FBBC05', '#EA4335'],
         borderWidth: 1,
       }],
     };
@@ -110,17 +114,11 @@ export default function Dashboard() {
       counts[statusNome] = (counts[statusNome] || 0) + 1;
     });
 
-    const labels = Object.keys(counts);
-    const colors = labels.map(statusName => {
-      const status = dashboardData.status.find(s => s.nome === statusName);
-      return status?.propriedade || '#999999'; 
-    });
-
     return {
-      labels,
+      labels: Object.keys(counts),
       datasets: [{
         data: Object.values(counts),
-        backgroundColor: colors,
+        backgroundColor: ['#4285F4', '#34A853', '#FBBC05', '#EA4335', '#673AB7', '#FF4081'],
         borderWidth: 1,
       }],
     };
@@ -188,18 +186,18 @@ export default function Dashboard() {
         <div className="bg-white p-6 rounded-lg shadow-lg">
           <h3 className="text-gray-800 font-semibold mb-4">Tipos de Soluções</h3>
           <div className="h-[300px] flex items-center justify-center">
-            <Doughnut data={processSolucaoData()} options={chartOptions} />
+            <Pie data={processSolucaoData()} options={chartOptions} />
           </div>
         </div>
 
         <div className="bg-white p-6 rounded-lg shadow-lg">
-          <h3 className="text-gray-800 font-semibold mb-4">Status</h3>
+          <h3 className="text-gray-800 font-semibold mb-4">Status das Soluções</h3>
           <div className="h-[300px] flex items-center justify-center">
             <Doughnut data={processStatusData()} options={chartOptions} />
           </div>
         </div>
         <div className="bg-white p-6 rounded-lg shadow-lg">
-        <h3 className="text-gray-800 font-semibold mb-4">Categorias</h3>
+        <h3 className="text-gray-800 font-semibold mb-4">Categorias das Soluções</h3>
         <div className="h-[300px]">
           <Bar 
             data={processCategoriaData()} 

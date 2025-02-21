@@ -3,5 +3,6 @@ export interface Status {
     nome: string;
     propriedade: string;
     status: string;
+    proprietario_id: string;
   }
   

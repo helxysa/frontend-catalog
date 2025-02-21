@@ -43,24 +43,44 @@ export async function getProprietarios() {
 }
 
 export async function getAlinhamentos() {
-    const response = await axios.get(`${urlSelect}/alinhamentos`);
-    return response.data;
+  const storedId = localStorage.getItem('selectedProprietarioId');
+  if (!storedId) {
+      throw new Error("ProprietarioId not found in localStorage");
+  }
+  const response = await axios.get(`${urlSelect}/proprietarios/${storedId}/alinhamentos`);
+  return response.data;
 }
+
 
 export async function getPrioridades() {
-    const response = await axios.get(`${urlSelect}/prioridades`);
-    return response.data;
+  const storedId = localStorage.getItem('selectedProprietarioId');
+  if (!storedId) {
+      throw new Error("ProprietarioId not found in localStorage");
+  }
+  const response = await axios.get(`${urlSelect}/proprietarios/${storedId}/prioridades`);
+  return response.data;
 }
+
 
 export async function getResponsaveis() {
-    const response = await axios.get(`${urlSelect}/responsaveis`);
-    return response.data;
+  const storedId = localStorage.getItem('selectedProprietarioId');
+  if (!storedId) {
+      throw new Error("ProprietarioId not found in localStorage");
+  }
+  const response = await axios.get(`${urlSelect}/proprietarios/${storedId}/responsaveis`);
+  return response.data;
 }
 
+
 export async function getStatus() {
-    const response = await axios.get(`${urlSelect}/status`);
-    return response.data;
+  const storedId = localStorage.getItem('selectedProprietarioId');
+  if (!storedId) {
+      throw new Error("ProprietarioId not found in localStorage");
+  }
+  const response = await axios.get(`${urlSelect}/proprietarios/${storedId}/status`);
+  return response.data;
 }
+
 
 export async function getHistoricoDemandas() {
     const response = await axios.get(`${urlSelect}/historico_demandas`);

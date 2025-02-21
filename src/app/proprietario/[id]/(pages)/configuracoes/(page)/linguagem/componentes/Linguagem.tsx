@@ -19,17 +19,69 @@ import {
 } from 'lucide-react';
 import type { Linguagem } from '../types/types';
 
-export default function Linguagem() {
+interface Proprietario {
+  id: number;
+  nome: string;
+}
+
+export default function Linguagem({ proprietarioId }: { proprietarioId?: string }) {
   const [linguagens, setLinguagens] = useState<Linguagem[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [currentLinguagem, setCurrentLinguagem] = useState<Partial<Linguagem>>({});
+  const [currentLinguagem, setCurrentLinguagem] = useState<Partial<Linguagem>>(() => ({
+    // Initialize with proprietarioId from props or localStorage
+    proprietario_id: proprietarioId ? proprietarioId : 
+                    localStorage.getItem('selectedProprietarioId') || ''
+  }));
   const [isEditMode, setIsEditMode] = useState(false);
   const [selectedLinguagemDetails, setSelectedLinguagemDetails] = useState<Linguagem | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [proprietarios, setProprietarios] = useState<Proprietario[]>([]);
 
   useEffect(() => {
-    getLinguagens().then(setLinguagens);
-  }, []);
+    const loadLinguagens = async () => {
+      setLinguagens([]); // Clear existing linguagens
+      
+      const storedId = proprietarioId || localStorage.getItem('selectedProprietarioId');
+      if (storedId) {
+        try {
+          console.log('Fetching linguagens for proprietarioId:', storedId);
+          const data = await getLinguagens(storedId);
+          console.log('Received data:', data);
+          
+          // Use data directly since getCategorias already filters by proprietario_id
+          setLinguagens(data);
+        } catch (error) {
+          console.error('Error loading linguagens:', error);
+          setLinguagens([]);
+        }
+      }
+    };
+    
+    loadLinguagens();
+    
+    // Only load proprietários if we're in the main categories view
+    if (!proprietarioId) {
+      const loadProprietarios = async () => {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/proprietarios`);
+        const data = await response.json();
+        setProprietarios(data);
+      };
+      loadProprietarios();
+    }
+  }, [proprietarioId]);
+
+  // When modal is opened, ensure proprietarioId is set
+  useEffect(() => {
+    if (isModalOpen) {
+      const storedId = proprietarioId || localStorage.getItem('selectedProprietarioId') || undefined;
+      if (storedId) {
+        setCurrentLinguagem(prev => ({
+          ...prev,
+          proprietario_id: storedId
+        }));
+      }
+    }
+  }, [isModalOpen, proprietarioId]);
 
   const openModal = (linguagem?: Linguagem) => {
     if (linguagem) {
@@ -43,16 +95,23 @@ export default function Linguagem() {
   };
 
   const handleCreate = async () => {
-    if (currentLinguagem.nome && currentLinguagem.descricao) {
+    if (currentLinguagem.nome && currentLinguagem.descricao && currentLinguagem.proprietario_id) {
       const linguagemToSave = {
         nome: currentLinguagem.nome,
-        descricao: currentLinguagem.descricao
+        descricao: currentLinguagem.descricao,
+        proprietario_id: Number(currentLinguagem.proprietario_id)
       };
 
-      const created = await createLinguagem(linguagemToSave);
-      setLinguagens([...linguagens, created]);
-      setIsModalOpen(false);
-      setCurrentLinguagem({});
+      try {
+        console.log('Dados sendo enviados:', linguagemToSave); // Debug
+        const created = await createLinguagem(linguagemToSave);
+        setLinguagens([...linguagens, created]);
+        setIsModalOpen(false);
+        setCurrentLinguagem({});
+      } catch (error: any) {
+        console.error('Erro ao criar linguagem:', error);
+        console.error('Dados do erro:', error.response?.data);
+      }
     }
   };
 
@@ -64,7 +123,7 @@ export default function Linguagem() {
       };
 
       const updated = await updateLinguagem(currentLinguagem.id, linguagemToUpdate);
-      setLinguagens(linguagens.map(c => (c.id === currentLinguagem.id ? updated : c)));
+      setLinguagens(linguagens.map(l => (l.id === currentLinguagem.id ? updated : l)));
       setIsModalOpen(false);
       setCurrentLinguagem({});
     }
@@ -72,7 +131,7 @@ export default function Linguagem() {
 
   const handleDelete = async (id: string) => {
     await deleteLinguagem(id);
-    setLinguagens(linguagens.filter(c => c.id !== id));
+    setLinguagens(linguagens.filter(l => l.id !== id));
   };
 
   const showLinguagemDetails = (linguagem: Linguagem) => {
@@ -80,11 +139,13 @@ export default function Linguagem() {
   };
 
   return (
-    <div className="min-h-screen ">
+    <div className="min-h-screen">
       <div className="p-4 sm:p-6">
         {/* Header */}
         <div className="flex justify-between items-center mb-6 mt-[70px] lg:mt-0">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">Linguagens</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">
+            {proprietarioId ? 'Linguagens do Escritório' : 'Linguagens'}
+          </h1>
           <div className="flex gap-2">
             <button 
               onClick={() => openModal()}
@@ -101,16 +162,16 @@ export default function Linguagem() {
           <table className="min-w-full">
             <thead className="bg-gray-200">
               <tr>
-                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">#</th>
+                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
                 <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nome</th>
                 <th className="px-4 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {Array.isArray(linguagens) && linguagens.map((linguagem) => (
-                <tr key={linguagem.id} className="hover:bg-gray-50 transition-colors">
+              {Array.isArray(linguagens) && linguagens.map((linguagem, index) => (
+                    <tr key={linguagem.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-600 hidden sm:table-cell">
-                    {linguagem.id}
+                    {index + 1}
                   </td>
                   <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-800">
                     {linguagem.nome}
@@ -162,6 +223,18 @@ export default function Linguagem() {
                 </button>
               </div>
               <div className="space-y-4 sm:space-y-6">
+                <div className="text-gray-700">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Proprietário</label>
+                  <select
+                    value={currentLinguagem.proprietario_id || ''}
+                    disabled={true}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
+                  >
+                    <option value={currentLinguagem.proprietario_id}>
+                      {proprietarios.find(p => p.id === Number(currentLinguagem.proprietario_id))?.nome || 'Carregando...'}
+                    </option>
+                  </select>
+                </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Nome</label>
                   <input 
@@ -202,7 +275,7 @@ export default function Linguagem() {
         )}
 
         {/* Details Modal - Responsive */}
-          {selectedLinguagemDetails && (
+        {selectedLinguagemDetails && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
             <div className="bg-white rounded-lg shadow-2xl p-6 w-full max-w-xl">
               <div className="flex justify-between items-center mb-6">

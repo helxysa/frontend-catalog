@@ -18,35 +18,77 @@ import {
 import type { Status } from '../types/types';
 import { ChromePicker } from 'react-color';
 
-// Função para determinar a cor do texto baseado na luminância
+
+interface Proprietario {
+  id: number;
+  nome: string;
+}
+
 const determinarCorTexto = (corHex: string) => {
-  // Remove o '#' se estiver presente
   corHex = corHex.replace('#', '');
-  
-  // Converte a cor hexadecimal para RGB
   const r = parseInt(corHex.substr(0, 2), 16);
   const g = parseInt(corHex.substr(2, 2), 16);
   const b = parseInt(corHex.substr(4, 2), 16);
-  
-  // Calcula a luminosidade usando a fórmula de luminância
   const luminancia = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-  
-  // Retorna text-white para cores escuras (quentes), text-gray-800 para cores claras (frias)
   return luminancia > 0.5 ? 'text-gray-800' : 'text-white';
 };
 
-export default function Status() {
+export default function Status({ proprietarioId }: { proprietarioId?: string }) {
   const [status, setStatus] = useState<Status[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [currentStatus, setCurrentStatus] = useState<Partial<Status>>({});
   const [isEditMode, setIsEditMode] = useState(false);
   const [selectedStatusDetails, setSelectedStatusDetails] = useState<Status | null>(null);
   const [color, setColor] = useState<string>('#ffffff');
+  const [currentStatus, setCurrentStatus] = useState<Partial<Status>>(() => ({
+    proprietario_id: proprietarioId ? proprietarioId : 
+                    localStorage.getItem('selectedProprietarioId') || ''
+  }));
   const [showColorPicker, setShowColorPicker] = useState(false);
+  const [proprietarios, setProprietarios] = useState<Proprietario[]>([]);
 
   useEffect(() => {
-    getStatus().then(setStatus);
-  }, []);
+    const loadStatus = async () => {
+      setStatus([]); 
+      
+      const storedId = proprietarioId || localStorage.getItem('selectedProprietarioId');
+      if (storedId) {
+        try {
+          console.log('Fetching categories for proprietarioId:', storedId);
+          const data = await getStatus(storedId);
+          console.log('Received data:', data);
+          
+          setStatus(data);
+        } catch (error) {
+          console.error('Error loading status:', error);
+          setStatus([]);
+        }
+      }
+    };
+    
+    loadStatus();
+    
+    if (!proprietarioId) {
+      const loadProprietarios = async () => {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/proprietarios`);
+        const data = await response.json();
+        setProprietarios(data);
+      };
+      loadProprietarios();
+    }
+  }, [proprietarioId]);
+
+
+  useEffect(() => {
+    if (isModalOpen) {
+      const storedId = proprietarioId || localStorage.getItem('selectedProprietarioId') || undefined;
+      if (storedId) {
+        setCurrentStatus(prev => ({
+          ...prev,
+          proprietario_id: storedId
+        }));
+      }
+    }
+  }, [isModalOpen, proprietarioId]);
 
   const openModal = (status?: Status) => {
     if (status) {
@@ -60,16 +102,23 @@ export default function Status() {
   };
 
   const handleCreate = async () => {
-    if (currentStatus.nome && currentStatus.propriedade) {
+    if (currentStatus.nome && currentStatus.propriedade && currentStatus.proprietario_id) {
       const statusToSave = {
         nome: currentStatus.nome,
-        propriedade: currentStatus.propriedade 
+        propriedade: currentStatus.propriedade,
+        proprietario_id: Number(currentStatus.proprietario_id)
       };
 
-      const created = await createStatus(statusToSave);
-      setStatus([...status, created]);
-      setIsModalOpen(false);
-      setCurrentStatus({});
+      try {
+        console.log('Dados sendo enviados:', statusToSave); // Debug
+        const created = await createStatus(statusToSave);
+        setStatus([...status, created]);
+        setIsModalOpen(false);
+        setCurrentStatus({});
+      } catch (error: any) {
+        console.error('Erro ao criar status:', error);
+        console.error('Dados do erro:', error.response?.data);
+      }
     }
   };
 
@@ -77,7 +126,7 @@ export default function Status() {
     if (currentStatus.id && currentStatus.nome && currentStatus.propriedade) {
       const statusToUpdate = {
         nome: currentStatus.nome,
-        propriedade: currentStatus.propriedade 
+        propriedade: currentStatus.propriedade
       };
 
       const updated = await updateStatus(currentStatus.id, statusToUpdate);
@@ -86,7 +135,6 @@ export default function Status() {
       setCurrentStatus({});
     }
   };
-
   const handleDelete = async (id: string) => {
     await deleteStatus(id);
     setStatus(status.filter(s => s.id !== id));
@@ -100,7 +148,9 @@ export default function Status() {
     <div className="min-h-screen">
       <div className="p-4 sm:p-6">
         <div className="flex justify-between items-center mb-6 mt-[70px] lg:mt-0">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">Status</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">
+            {proprietarioId ? 'Status do Escritório' : 'Status'}
+          </h1>
           <div className="flex gap-2">
             <button 
               onClick={() => openModal()}
@@ -186,6 +236,18 @@ export default function Status() {
                 </button>
               </div>
               <div className="space-y-4 sm:space-y-6">
+              <div className="text-gray-700">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Proprietário</label>
+                  <select
+                    value={currentStatus.proprietario_id || ''}
+                    disabled={true}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
+                  >
+                    <option value={currentStatus.proprietario_id}>
+                      {proprietarios.find(p => p.id === Number(currentStatus.proprietario_id))?.nome || 'Carregando...'}
+                    </option>
+                  </select>
+                </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Nome</label>
                   <input 
@@ -288,23 +350,7 @@ export default function Status() {
                     </div>
                   </div>
                 </div>
-                <div>
-                  <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-2">Propriedade</h3>
-                  <p 
-                    className={`text-gray-800 bg-gray-50 p-4 rounded-md text-sm sm:text-base ${determinarCorTexto(selectedStatusDetails.propriedade)}`} 
-                    style={{ backgroundColor: selectedStatusDetails.propriedade }}
-                  >
-                    {selectedStatusDetails.nome || 'Não informado'}
-                  </p>
-                </div>
-                <div className="flex justify-end">
-                  <button 
-                    onClick={() => setSelectedStatusDetails(null)}
-                    className="px-3 py-2 sm:px-4 sm:py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center gap-2 text-sm sm:text-base"
-                  >
-                    Fechar <ChevronRight className="w-4 h-4" />
-                  </button>
-                </div>
+               not
               </div>
             </div>
           </div>

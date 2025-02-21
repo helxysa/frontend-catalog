@@ -40,6 +40,7 @@ export default function Proprietario() {
   }, []);
 
   const handleProprietarioClick = (id: number) => {
+    localStorage.removeItem('selectedProprietarioId');
     localStorage.setItem('selectedProprietarioId', id.toString());
     router.push(`/proprietario/${id}/dashboard`);
   };

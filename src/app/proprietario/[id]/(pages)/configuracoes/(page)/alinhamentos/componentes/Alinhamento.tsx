@@ -9,80 +9,143 @@ import {
 } from '../actions/actions';
 import { 
   Plus, 
+  Filter, 
   Edit2, 
   Trash2, 
   X, 
   Info,
   ChevronRight,
+  Menu 
 } from 'lucide-react';
 import type { Alinhamento } from '../types/types';
 
-export default function Alinhamento() {
+interface Proprietario {
+  id: number;
+  nome: string;
+}
+
+export default function Alinhamento({ proprietarioId }: { proprietarioId?: string }) {
   const [alinhamentos, setAlinhamentos] = useState<Alinhamento[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [currentDemand, setCurrentDemand] = useState<Partial<Alinhamento>>({});
+  const [currentAlinhamento, setCurrentAlinhamento] = useState<Partial<Alinhamento>>(() => ({
+    // Initialize with proprietarioId from props or localStorage
+    proprietario_id: proprietarioId ? proprietarioId : 
+                    localStorage.getItem('selectedProprietarioId') || ''
+  }));
   const [isEditMode, setIsEditMode] = useState(false);
-  const [selectedDemandDetails, setSelectedDemandDetails] = useState<Alinhamento | null>(null);
+  const [selectedAlinhamentoDetails, setSelectedAlinhamentoDetails] = useState<Alinhamento | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [proprietarios, setProprietarios] = useState<Proprietario[]>([]);
 
   useEffect(() => {
-    getAlinhamentos().then(setAlinhamentos);
-  }, []);
+    const loadAlinhamentos = async () => {
+      setAlinhamentos([]); // Clear existing alinhamentos
+      
+      const storedId = proprietarioId || localStorage.getItem('selectedProprietarioId');
+      if (storedId) {
+        try {
+          console.log('Fetching alinhamentos for proprietarioId:', storedId);
+          const data = await getAlinhamentos(storedId);
+          console.log('Received data:', data);
+          
+          // Use data directly since getCategorias already filters by proprietario_id
+          setAlinhamentos(data);
+        } catch (error) {
+          console.error('Error loading alinhamentos:', error);
+          setAlinhamentos([]);
+        }
+      }
+    };
+    
+    loadAlinhamentos();
+    
+    // Only load proprietários if we're in the main alinhamentos view
+    if (!proprietarioId) {
+      const loadProprietarios = async () => {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/proprietarios`);
+        const data = await response.json();
+        setProprietarios(data);
+      };
+      loadProprietarios();
+    }
+  }, [proprietarioId]);
 
-  const openModal = (demand?: Alinhamento) => {
-    if (demand) {
-      setCurrentDemand(demand);
+  // When modal is opened, ensure proprietarioId is set
+  useEffect(() => {
+    if (isModalOpen) {
+      const storedId = proprietarioId || localStorage.getItem('selectedProprietarioId') || undefined;
+      if (storedId) {
+        setCurrentAlinhamento(prev => ({
+          ...prev,
+          proprietario_id: storedId
+        }));
+      }
+    }
+  }, [isModalOpen, proprietarioId]);
+
+  const openModal = (alinhamento?: Alinhamento) => {
+    if (alinhamento) {
+      setCurrentAlinhamento(alinhamento);
       setIsEditMode(true);
     } else {
-      setCurrentDemand({});
+      setCurrentAlinhamento({});
       setIsEditMode(false);
     }
     setIsModalOpen(true);
   };
 
   const handleCreate = async () => {
-    if (currentDemand.nome && currentDemand.descricao) {
-      const demandToSave = {
-        nome: currentDemand.nome,
-        descricao: currentDemand.descricao
+    if (currentAlinhamento.nome && currentAlinhamento.descricao && currentAlinhamento.proprietario_id) {
+      const alinhamentoToSave = {
+        nome: currentAlinhamento.nome,
+        descricao: currentAlinhamento.descricao,
+        proprietario_id: Number(currentAlinhamento.proprietario_id)
       };
 
-      const created = await createAlinhamento(demandToSave);
-      setAlinhamentos([...alinhamentos, created]);
-      setIsModalOpen(false);
-      setCurrentDemand({});
+      try {
+        console.log('Dados sendo enviados:', alinhamentoToSave); // Debug
+        const created = await createAlinhamento(alinhamentoToSave);
+        setAlinhamentos([...alinhamentos, created]);
+        setIsModalOpen(false);
+        setCurrentAlinhamento({});
+      } catch (error: any) {
+        console.error('Erro ao criar alinhamento:', error);
+        console.error('Dados do erro:', error.response?.data);
+      }
     }
   };
 
   const handleUpdate = async () => {
-    if (currentDemand.id && currentDemand.nome && currentDemand.descricao) {
-      const demandToUpdate = {
-        nome: currentDemand.nome,
-        descricao: currentDemand.descricao
+    if (currentAlinhamento.id && currentAlinhamento.nome && currentAlinhamento.descricao) {
+      const alinhamentoToUpdate = {
+        nome: currentAlinhamento.nome,
+        descricao: currentAlinhamento.descricao
       };
 
-      const updated = await updateAlinhamento(currentDemand.id, demandToUpdate);
-      setAlinhamentos(alinhamentos.map(a => (a.id === currentDemand.id ? updated : a)));
+      const updated = await updateAlinhamento(currentAlinhamento.id, alinhamentoToUpdate);
+      setAlinhamentos(alinhamentos.map(c => (c.id === currentAlinhamento.id ? updated : c)));
       setIsModalOpen(false);
-      setCurrentDemand({});
+      setCurrentAlinhamento({});
     }
   };
 
   const handleDelete = async (id: string) => {
     await deleteAlinhamento(id);
-    setAlinhamentos(alinhamentos.filter(a => a.id !== id));
+    setAlinhamentos(alinhamentos.filter(c => c.id !== id));
   };
 
-  const showDemandDetails = (demand: Alinhamento) => {
-    setSelectedDemandDetails(demand);
+  const showAlinhamentoDetails = (categoria: Alinhamento) => {
+    setSelectedAlinhamentoDetails(categoria);
   };
 
   return (
-    <div className="min-h-screen ">
+    <div className="min-h-screen">
       <div className="p-4 sm:p-6">
         {/* Header */}
         <div className="flex justify-between items-center mb-6 mt-[70px] lg:mt-0">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">Alinhamentos</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">
+            {proprietarioId ? 'Alinhamentos do Escritório' : 'Alinhamentos'}
+          </h1>
           <div className="flex gap-2">
             <button 
               onClick={() => openModal()}
@@ -116,7 +179,7 @@ export default function Alinhamento() {
                   <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
                     <div className="flex justify-end space-x-2">
                       <button 
-                        onClick={() => showDemandDetails(alinhamento)}
+                        onClick={() => showAlinhamentoDetails(alinhamento)}
                         className="text-blue-500 hover:text-blue-700 p-1 rounded-full hover:bg-blue-50 transition-colors"
                         title="Detalhes"
                       >
@@ -160,13 +223,25 @@ export default function Alinhamento() {
                 </button>
               </div>
               <div className="space-y-4 sm:space-y-6">
+                <div className="text-gray-700">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Proprietário</label>
+                  <select
+                    value={currentAlinhamento.proprietario_id || ''}
+                    disabled={true}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
+                  >
+                    <option value={currentAlinhamento.proprietario_id}>
+                      {proprietarios.find(p => p.id === Number(currentAlinhamento.proprietario_id))?.nome || 'Carregando...'}
+                    </option>
+                  </select>
+                </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Nome</label>
                   <input 
                     type="text" 
                     placeholder="Digite o nome do alinhamento" 
-                    value={currentDemand.nome || ''} 
-                    onChange={(e) => setCurrentDemand({ ...currentDemand, nome: e.target.value })}
+                    value={currentAlinhamento.nome || ''} 
+                    onChange={(e) => setCurrentAlinhamento({ ...currentAlinhamento, nome: e.target.value })}
                     className="w-full px-3 py-2 sm:px-4 sm:py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800 placeholder-gray-500 text-sm sm:text-base"
                   />
                 </div>
@@ -174,8 +249,8 @@ export default function Alinhamento() {
                   <label className="block text-sm font-medium text-gray-700 mb-2">Descrição</label>
                   <textarea 
                     placeholder="Descreva os detalhes do alinhamento" 
-                    value={currentDemand.descricao || ''} 
-                    onChange={(e) => setCurrentDemand({ ...currentDemand, descricao: e.target.value })}
+                    value={currentAlinhamento.descricao || ''} 
+                    onChange={(e) => setCurrentAlinhamento({ ...currentAlinhamento, descricao: e.target.value })}
                     className="w-full px-3 py-2 sm:px-4 sm:py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800 placeholder-gray-500 text-sm sm:text-base"
                     rows={4}
                   />
@@ -200,13 +275,13 @@ export default function Alinhamento() {
         )}
 
         {/* Details Modal - Responsive */}
-        {selectedDemandDetails && (
+        {selectedAlinhamentoDetails && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
             <div className="bg-white rounded-lg shadow-2xl p-6 w-full max-w-xl">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-xl sm:text-2xl font-bold text-gray-800">Detalhes do Alinhamento</h2>
                 <button 
-                  onClick={() => setSelectedDemandDetails(null)}
+                  onClick={() => setSelectedAlinhamentoDetails(null)}
                   className="text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full p-2"
                 >
                   <X className="w-5 sm:w-6 h-5 sm:h-6" />
@@ -218,23 +293,23 @@ export default function Alinhamento() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <p className="text-xs sm:text-sm text-gray-600 font-medium">Nome</p>
-                      <p className="text-gray-800 font-bold text-sm sm:text-base">{selectedDemandDetails.nome}</p>
+                      <p className="text-gray-800 font-bold text-sm sm:text-base">{selectedAlinhamentoDetails.nome}</p>
                     </div>
                     <div>
                       <p className="text-xs sm:text-sm text-gray-600 font-medium">ID</p>
-                      <p className="text-gray-800 font-bold text-sm sm:text-base">{selectedDemandDetails.id}</p>
+                      <p className="text-gray-800 font-bold text-sm sm:text-base">{selectedAlinhamentoDetails.id}</p>
                     </div>
                   </div>
                 </div>
                 <div>
                   <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-2">Descrição</h3>
                   <p className="text-gray-700 bg-gray-50 p-4 rounded-md text-sm sm:text-base">
-                    {selectedDemandDetails.descricao}
+                    {selectedAlinhamentoDetails.descricao}
                   </p>
                 </div>
                 <div className="flex justify-end">
                   <button 
-                    onClick={() => setSelectedDemandDetails(null)}
+                    onClick={() => setSelectedAlinhamentoDetails(null)}
                     className="px-3 py-2 sm:px-4 sm:py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center gap-2 text-sm sm:text-base"
                   >
                     Fechar <ChevronRight className="w-4 h-4" />
