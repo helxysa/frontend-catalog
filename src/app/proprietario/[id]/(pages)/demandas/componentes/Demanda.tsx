@@ -355,93 +355,132 @@ export default function Demanda() {
           </div>
         </div>
 
+        {/* Filters Section */}
         <div className="bg-white rounded-lg shadow-md p-4 mb-6">
-          <div className="grid grid-cols-6 gap-4">
+          <div className="mb-3">
+            <h2 className="text-base font-semibold text-gray-800">Filtros</h2>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
             <select
               name="demandante"
               value={filters.demandante}
               onChange={handleFilterChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md font-bold text-gray-800"
+              className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors"
             >
               <option value="">Demandante</option>
-              {[...new Set(demandas.map((d: DemandaType) => d.demandante))].map((demandante: string) => (
-                <option key={demandante} value={demandante}>{demandante}</option>
-              ))}
+              {[...new Set(demandas.map((d: DemandaType) => d.demandante))]
+                .filter(Boolean)
+                .sort()
+                .map((demandante: string) => (
+                  <option key={demandante} value={demandante}>{demandante}</option>
+                ))}
             </select>
 
             <select
-              name="fator_gerador"
+              name="fator gerador"
               value={filters.fator_gerador}
               onChange={handleFilterChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md font-bold text-gray-800"
+              className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors"
             >
               <option value="">Fator Gerador</option>
-              {[...new Set(demandas.map((d: DemandaType) => d.fatorGerador))].map((fator: string) => (
-                <option key={fator} value={fator}>{fator}</option>
-              ))}
+              {[...new Set(demandas.map((d: DemandaType) => d.fatorGerador))]
+                .filter(Boolean)
+                .sort()
+                .map((fator: string) => (
+                  <option key={fator} value={fator}>{fator}</option>
+                ))}
             </select>
 
             <select
               name="alinhamento_id"
               value={filters.alinhamento_id}
               onChange={handleFilterChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md font-bold text-gray-800"
+              className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors"
             >
               <option value="">Alinhamento</option>
-              {alinhamentos.map(a => (
-                <option key={a.id} value={a.id}>{a.nome}</option>
-              ))}
+              {alinhamentos
+                .sort((a, b) => a.nome.localeCompare(b.nome))
+                .map(a => (
+                  <option key={a.id} value={a.id}>{a.nome}</option>
+                ))}
             </select>
 
             <select
               name="prioridade_id"
               value={filters.prioridade_id}
               onChange={handleFilterChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md font-bold text-gray-800"
+              className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors"
             >
               <option value="">Prioridade</option>
-              {prioridades.map(p => (
-                <option key={p.id} value={p.id}>{p.nome}</option>
-              ))}
+              {prioridades
+                .sort((a, b) => a.nome.localeCompare(b.nome))
+                .map(p => (
+                  <option key={p.id} value={p.id}>{p.nome}</option>
+                ))}
             </select>
 
             <select
               name="responsavel_id"
               value={filters.responsavel_id}
               onChange={handleFilterChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md font-bold text-gray-800"
+              className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors"
             >
               <option value="">Responsável</option>
-              {responsaveis.map(r => (
-                <option key={r.id} value={r.id}>{r.nome}</option>
-              ))}
+              {responsaveis
+                .sort((a, b) => a.nome.localeCompare(b.nome))
+                .map(r => (
+                  <option key={r.id} value={r.id}>{r.nome}</option>
+                ))}
             </select>
 
             <select
               name="status_id"
               value={filters.status_id}
               onChange={handleFilterChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md font-bold text-gray-800"
+              className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors"
             >
               <option value="">Status</option>
-              {statusList.map(s => (
-                <option key={s.id} value={s.id}>{s.nome}</option>
-              ))}
+              {statusList
+                .sort((a, b) => a.nome.localeCompare(b.nome))
+                .map(s => (
+                  <option key={s.id} value={s.id}>{s.nome}</option>
+                ))}
             </select>
           </div>
+
+          {/* Active Filters */}
+          {Object.values(filters).some(value => value) && (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {Object.entries(filters).map(([key, value]) => value && (
+                <span key={key} className="inline-flex items-center px-2 py-1 text-xs rounded-md bg-blue-50 text-blue-700">
+                  {key.replace('_id', '').replace('_', ' ').charAt(0).toUpperCase() + key.slice(1).replace('_id', '')}
+                  <button
+                    onClick={() => {
+                      setFilters(prev => ({ ...prev, [key]: '' }));
+                      applyFilters();
+                    }}
+                    className="ml-1 hover:text-blue-900"
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
           
-          <div className="flex justify-end mt-4 space-x-2">
+          <div className="flex justify-end mt-3 space-x-2">
             <button
               onClick={clearFilters}
-              className="px-4 py-2 text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200"
+              className="px-3 py-1.5 text-sm text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
             >
-              Limpar Filtros
+              Limpar
             </button>
             <button
               onClick={applyFilters}
-              className="px-4 py-2 text-white bg-blue-600 rounded-md hover:bg-blue-700"
+              className="px-3 py-1.5 text-sm text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors"
             >
-              Aplicar Filtros
+              Aplicar
             </button>
           </div>
         </div>

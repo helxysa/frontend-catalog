@@ -10,6 +10,12 @@ interface Proprietario {
   logo: string;
 }
 
+interface PageProps {
+  params: Promise<{
+    id: string;
+  }>;
+}
+
 async function getProprietario(id: string): Promise<Proprietario | null> {
   try {
     const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/proprietarios/${id}`);
@@ -21,15 +27,17 @@ async function getProprietario(id: string): Promise<Proprietario | null> {
   }
 }
 
-export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
-  const proprietario = await getProprietario(params.id);
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { id } = await params;
+  const proprietario = await getProprietario(id);
   return {
     title: proprietario ? `Escritório: ${proprietario.nome}` : 'Escritório não encontrado',
   };
 }
 
-export default async function ProprietarioDetails({ params }: { params: { id: string } }) {
-  const proprietario = await getProprietario(params.id);
+export default async function ProprietarioDetails({ params }: PageProps) {
+  const { id } = await params;
+  const proprietario = await getProprietario(id);
 
   if (!proprietario) {
     return (
@@ -64,7 +72,7 @@ export default async function ProprietarioDetails({ params }: { params: { id: st
 
         {/* Categories Section */}
         <Suspense fallback={<div>Carregando categorias...</div>}>
-          <Categoria proprietarioId={params.id} />
+          <Categoria proprietarioId={id} />
         </Suspense>
       </div>
     </div>

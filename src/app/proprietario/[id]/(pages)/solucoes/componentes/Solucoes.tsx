@@ -96,6 +96,7 @@ export default function Solucao() {
   });
   const [filteredSolucoes, setFilteredSolucoes] = useState<SolucaoType[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [tempSearchTerm, setTempSearchTerm] = useState('');
 
   const determinarCorTexto = (corHex: string | undefined) => {
     if (!corHex) return 'text-gray-800'; 
@@ -317,6 +318,10 @@ export default function Solucao() {
     }));
   };
 
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setTempSearchTerm(e.target.value);
+  };
+
   const clearFilters = () => {
     setFilters({
       demanda_id: '',
@@ -327,6 +332,8 @@ export default function Solucao() {
       responsavel_id: '',
       status_id: ''
     });
+    setTempSearchTerm('');
+    setSearchTerm('');
     setFilteredSolucoes(solucoes);
   };
 
@@ -334,8 +341,8 @@ export default function Solucao() {
     let filtered = [...solucoes] as SolucaoType[];
     
     // Aplicar filtro de texto
-    if (searchTerm) {
-      const searchLower = searchTerm.toLowerCase();
+    if (tempSearchTerm) {
+      const searchLower = tempSearchTerm.toLowerCase();
       filtered = filtered.filter(s => 
         s.nome?.toLowerCase().includes(searchLower) ||
         s.sigla?.toLowerCase().includes(searchLower) ||
@@ -350,7 +357,7 @@ export default function Solucao() {
       );
     }
     
-    // Aplicar outros filtros existentes
+    // Aplicar outros filtros
     if (filters.demanda_id) {
       filtered = filtered.filter(s => s.demanda?.id === Number(filters.demanda_id));
     }
@@ -373,12 +380,9 @@ export default function Solucao() {
       filtered = filtered.filter(s => s.status?.id === Number(filters.status_id));
     }
     
+    setSearchTerm(tempSearchTerm);
     setFilteredSolucoes(filtered);
   };
-
-  useEffect(() => {
-    filterSolucoes();
-  }, [searchTerm, solucoes, filters]);
 
   return (
     <div className="min-h-screen">
@@ -397,12 +401,16 @@ export default function Solucao() {
         </div>
 
         <div className="bg-white rounded-lg shadow-md p-4 mb-6">
-          <div className="grid grid-cols-7 gap-4">
+          <div className="mb-3">
+            <h2 className="text-base font-semibold text-gray-800">Filtros</h2>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-3">
             <select
               name="demanda_id"
               value={filters.demanda_id}
               onChange={handleFilterChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md font-bold text-gray-800"
+              className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors"
             >
               <option value="">Demanda</option>
               {demanda.map((d) => (
@@ -414,7 +422,7 @@ export default function Solucao() {
               name="tipo_id"
               value={filters.tipo_id}
               onChange={handleFilterChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md font-bold text-gray-800"
+              className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors"
             >
               <option value="">Tipo</option>
               {tipos.map((t) => (
@@ -426,7 +434,7 @@ export default function Solucao() {
               name="linguagem_id"
               value={filters.linguagem_id}
               onChange={handleFilterChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md font-bold text-gray-800"
+              className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors"
             >
               <option value="">Linguagem</option>
               {linguagens.map((l) => (
@@ -438,7 +446,7 @@ export default function Solucao() {
               name="desenvolvedor_id"
               value={filters.desenvolvedor_id}
               onChange={handleFilterChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md font-bold text-gray-800"
+              className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors"
             >
               <option value="">Desenvolvedor</option>
               {desenvolvedores.map((d) => (
@@ -450,7 +458,7 @@ export default function Solucao() {
               name="categoria_id"
               value={filters.categoria_id}
               onChange={handleFilterChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md font-bold text-gray-800"
+              className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors"
             >
               <option value="">Categoria</option>
               {categorias.map((c) => (
@@ -462,7 +470,7 @@ export default function Solucao() {
               name="responsavel_id"
               value={filters.responsavel_id}
               onChange={handleFilterChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md font-bold text-gray-800"
+              className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors"
             >
               <option value="">Responsável</option>
               {responsaveis.map((r) => (
@@ -474,7 +482,7 @@ export default function Solucao() {
               name="status_id"
               value={filters.status_id}
               onChange={handleFilterChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md font-bold text-gray-800"
+              className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors"
             >
               <option value="">Status</option>
               {statusList.map((s) => (
@@ -483,29 +491,30 @@ export default function Solucao() {
             </select>
           </div>
           
-          <div className="mt-4 flex items-center justify-between">
+          <div className="mt-3 flex items-center justify-between">
             <div className="flex-1 max-w-md">
               <input
                 type="text"
                 placeholder="Buscar soluções..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800 placeholder-gray-500 transition duration-200 ease-in-out"
-                style={{ backgroundColor: 'white', color: 'black' }}
+                value={tempSearchTerm}
+                onChange={handleSearchChange}
+                className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors"
               />
+              
             </div>
+            
             <div className="flex space-x-2">
               <button
                 onClick={clearFilters}
-                className="px-4 py-2 text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200"
+                className="px-3 py-1.5 text-sm text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
               >
-                Limpar Filtros
+                Limpar
               </button>
               <button
                 onClick={filterSolucoes}
-                className="px-4 py-2 text-white bg-blue-600 rounded-md hover:bg-blue-700"
+                className="px-3 py-1.5 text-sm text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors"
               >
-                Aplicar Filtros
+                Aplicar
               </button>
             </div>
           </div>
@@ -637,7 +646,7 @@ export default function Solucao() {
                       name="nome" 
                       value={formData.nome || ''} 
                       onChange={handleInputChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-md text-gray-500" 
+                      className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors" 
                     />
                   </div>
 
@@ -648,7 +657,7 @@ export default function Solucao() {
                       name="sigla" 
                       value={formData.sigla || ''} 
                       onChange={handleInputChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-md text-gray-500" 
+                      className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors" 
                     />
                   </div>
 
@@ -658,7 +667,7 @@ export default function Solucao() {
                       name="descricao" 
                       value={formData.descricao || ''} 
                       onChange={handleInputChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-md text-gray-500" 
+                      className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors" 
                     />
                   </div>
 
@@ -669,10 +678,9 @@ export default function Solucao() {
                       name="versao" 
                       value={formData.versao || ''} 
                       onChange={handleInputChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-md text-gray-500"
+                      className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors"
                     />
                   </div>
-
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Tipo</label>
@@ -680,7 +688,7 @@ export default function Solucao() {
                       name="tipo_id" 
                       value={formData.tipo_id || ''}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-md text-gray-500"
+                      className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors"
                     >
                       <option value="">Selecione um tipo</option>
                       {tipos.map((tipo) => (
@@ -695,7 +703,7 @@ export default function Solucao() {
                       name="linguagem_id" 
                       value={formData.linguagem_id || ''}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-md text-gray-500"
+                      className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors"
                     >
                       <option value="">Selecione uma linguagem</option>
                       {linguagens.map((linguagem) => (
@@ -710,7 +718,7 @@ export default function Solucao() {
                       name="desenvolvedor_id" 
                       value={formData.desenvolvedor_id || ''}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-md text-gray-500"
+                      className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors"
                     >
                       <option value="">Selecione um desenvolvedor</option>
                       {desenvolvedores.map((desenvolvedor) => (
@@ -725,7 +733,7 @@ export default function Solucao() {
                       name="categoria_id" 
                       value={formData.categoria_id || ''}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-md text-gray-500"
+                      className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors"
                     >
                       <option value="">Selecione uma categoria</option>
                       {categorias.map((categoria) => (
@@ -740,7 +748,7 @@ export default function Solucao() {
                       name="demanda_id" 
                       value={formData.demanda_id || ''}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-md text-gray-500"
+                      className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors"
                     >
                       <option value="">Selecione uma demanda</option>
                       {demanda.map((demanda) => (
@@ -755,7 +763,7 @@ export default function Solucao() {
                       name="responsavel_id" 
                       value={formData.responsavel_id || ''}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-md text-gray-500"
+                      className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors"
                     >
                       <option value="">Selecione um responsável</option>
                       {responsaveis.map((resp) => (
@@ -770,7 +778,7 @@ export default function Solucao() {
                       name="status_id" 
                       value={formData.status_id || ''}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-md text-gray-500"
+                      className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors"
                     >
                       <option value="">Selecione um status</option>
                       {statusList.map((status) => (
@@ -786,22 +794,22 @@ export default function Solucao() {
                       name="data_status" 
                       value={formData.data_status || ''} 
                       onChange={handleInputChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-md text-gray-500" 
+                      className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors" 
                     />
                   </div>
                 </div>
 
-                <div className="flex justify-end space-x-4 mt-6">
+                <div className="flex justify-end space-x-2 mt-6">
                   <button 
                     type="button"
                     onClick={() => setIsModalOpen(false)}
-                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
+                    className="px-3 py-1.5 text-sm text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
                   >
                     Cancelar
                   </button>
                   <button 
                     type="submit"
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                    className="px-3 py-1.5 text-sm text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors"
                   >
                     Salvar
                   </button>
