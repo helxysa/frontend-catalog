@@ -20,8 +20,7 @@ export async function getDemandas() {
   if (!storedId) {
       throw new Error("ProprietarioId not found in localStorage");
   }
-  
-  const response = await axios.get(`${url}/proprietarios/${storedId}/demandas?preload[0]=alinhamento`);
+  const response = await axios.get(`${url}/proprietarios/${storedId}/demandas/`);
   console.log('Dados brutos das demandas:', response.data);
   return response.data;
 }

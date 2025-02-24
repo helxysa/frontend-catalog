@@ -1,21 +1,23 @@
-'use client';
+'use client'
 
 import React from 'react';
 import { Sidebar } from '../../../componentes/Sidebar/Sidebar';
+import Navbar from '../../../componentes/Sidebar/Navbar';
 import { useState, useEffect } from 'react';
+
 export default function AdminLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
   
-
   return (
-        <div className="flex bg-gray-100">
-          <Sidebar />
-          <main className="flex-1 p-8">
-            {children}
-          </main>
-        </div>
+    <div className="min-h-screen bg-gray-100">
+      <Navbar />
+      <Sidebar />
+      <main className="ml-[250px] pt-16 p-8">
+        {children}
+      </main>
+    </div>
   );
 }

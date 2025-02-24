@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const baseURL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3333';
+export const baseURL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3333';
 const url = `${baseURL}/proprietarios`;
 
 // Define interface for proprietario data
@@ -8,7 +8,7 @@ interface CreateProprietarioData {
   nome: string;
   sigla: string;
   descricao?: string;
-  logo?: string;
+  logo?: File;
 }
 
 export async function getProprietario() {
@@ -62,17 +62,26 @@ export async function createProprietario(proprietario: CreateProprietarioData) {
       throw new Error('Nome e sigla são campos obrigatórios');
     }
 
-    // Clean up the data before sending
-    const proprietarioData = {
-      nome: proprietario.nome.trim(),
-      sigla: proprietario.sigla.trim(),
-      descricao: proprietario.descricao?.trim() || null,
-      logo: proprietario.logo || null
-    };
+    // Create FormData instance
+    const formData = new FormData();
+    formData.append('nome', proprietario.nome.trim());
+    formData.append('sigla', proprietario.sigla.trim());
+    
+    if (proprietario.descricao) {
+      formData.append('descricao', proprietario.descricao.trim());
+    }
+    
+    if (proprietario.logo) {
+      formData.append('logo', proprietario.logo);
+    }
 
-    console.log('Creating proprietario with data:', proprietarioData); // Debug log
+    console.log('Creating proprietario with data:', Object.fromEntries(formData)); // Debug log
 
-    const response = await axios.post(url, proprietarioData);
+    const response = await axios.post(url, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error)) {
@@ -129,4 +138,3 @@ export async function deleteProprietario(id: string) {
     throw new Error('Erro ao excluir proprietário');
   }
 }
-

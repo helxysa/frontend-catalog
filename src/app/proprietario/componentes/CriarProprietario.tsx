@@ -12,8 +12,9 @@ export default function CriarProprietario({ onClose, onSuccess }: CriarProprieta
     nome: "",
     sigla: "",
     descricao: "",
-    logo: ""
   });
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -23,6 +24,16 @@ export default function CriarProprietario({ onClose, onSuccess }: CriarProprieta
       ...prev,
       [name]: value
     }));
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setLogoFile(file);
+      // Create preview URL
+      const url = URL.createObjectURL(file);
+      setPreviewUrl(url);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -36,7 +47,10 @@ export default function CriarProprietario({ onClose, onSuccess }: CriarProprieta
         throw new Error('Nome e sigla são campos obrigatórios');
       }
 
-      await createProprietario(formData);
+      await createProprietario({
+        ...formData,
+        logo: logoFile || undefined
+      });
       onSuccess();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao criar proprietário');
@@ -81,8 +95,8 @@ export default function CriarProprietario({ onClose, onSuccess }: CriarProprieta
                 value={formData.nome}
                 onChange={handleChange}
                 required
-                placeholder="Digite o nome da unidade"
-                className="pl-10 pr-3 py-2 block w-full rounded-lg border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                placeholder="Ex: Escola de Tecnologia"
+                className="pl-10 pr-3 py-2.5 block w-full rounded-lg border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all text-gray-900 placeholder:text-gray-500 bg-gray-50 hover:bg-gray-50/80"
               />
             </div>
           </div>
@@ -99,8 +113,8 @@ export default function CriarProprietario({ onClose, onSuccess }: CriarProprieta
                 value={formData.sigla}
                 onChange={handleChange}
                 required
-                placeholder="Ex: ESC"
-                className="pl-10 pr-3 py-2 block w-full rounded-lg border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                placeholder="Ex: ETEC"
+                className="pl-10 pr-3 py-2.5 block w-full rounded-lg border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all text-gray-900 placeholder:text-gray-500 bg-gray-50 hover:bg-gray-50/80"
                 maxLength={5}
               />
             </div>
@@ -112,26 +126,57 @@ export default function CriarProprietario({ onClose, onSuccess }: CriarProprieta
               name="descricao"
               value={formData.descricao}
               onChange={handleChange}
-              placeholder="Descreva a unidade..."
+              placeholder="Ex: Unidade responsável pelo desenvolvimento tecnológico..."
               rows={3}
-              className="block w-full rounded-lg border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all resize-none"
+              className="block w-full rounded-lg border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all resize-none py-2.5 px-3 text-gray-900 placeholder:text-gray-500 bg-gray-50 hover:bg-gray-50/80"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">URL do Logo</label>
-            <div className="relative">
-              <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-              <input
-                type="url"
-                name="logo"
-                value={formData.logo}
-                onChange={handleChange}
-                placeholder="https://exemplo.com/logo.png"
-                className="pl-10 pr-3 py-2 block w-full rounded-lg border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
-              />
+            <label className="block text-sm font-medium text-gray-700 mb-1">Logo</label>
+            <div className="space-y-2">
+              {previewUrl && (
+                <div className="relative w-24 h-24 rounded-lg overflow-hidden">
+                  <img
+                    src={previewUrl}
+                    alt="Preview"
+                    className="w-full h-full object-cover"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setLogoFile(null);
+                      setPreviewUrl(null);
+                    }}
+                    className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                  >
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M6 18L18 6M6 6l12 12" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </button>
+                </div>
+              )}
+              <div className="flex items-center justify-center w-full">
+                <label className="w-full flex flex-col items-center px-4 py-6 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300 cursor-pointer hover:border-blue-500 hover:bg-gray-50/80 transition-colors">
+                  <svg className="w-8 h-8 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                  <span className="mt-2 text-sm text-gray-500">
+                    {logoFile ? 'Trocar imagem' : 'Carregar logo'}
+                  </span>
+                  <input
+                    type="file"
+                    className="hidden"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                  />
+                </label>
+              </div>
+              {logoFile && (
+                <p className="text-sm text-gray-500">
+                  Arquivo selecionado: {logoFile.name}
+                </p>
+              )}
             </div>
           </div>
 

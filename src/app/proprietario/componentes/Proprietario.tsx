@@ -1,6 +1,6 @@
 "use client"
 import { useState, useEffect } from "react";
-import { getProprietario } from "../actions/actions";
+import { getProprietario, baseURL } from "../actions/actions";
 import CriarProprietario from "./CriarProprietario";
 import { useRouter } from 'next/navigation';
 import { Building2 } from 'lucide-react';
@@ -10,7 +10,7 @@ interface Proprietario {
   nome: string;
   sigla: string;
   descricao: string | null;
-  logo: string;
+  logo: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -105,17 +105,28 @@ export default function Proprietario() {
                 className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow cursor-pointer"
               >
                 <div className="flex items-center space-x-4">
-                  {escritorio.logo ? (
-                    <img
-                      src={escritorio.logo}
-                      alt={`Logo ${escritorio.nome}`}
-                      className="h-12 w-12 rounded-full object-cover"
-                    />
-                  ) : (
-                    <div className="h-12 w-12 rounded-full bg-gray-200 flex items-center justify-center">
+                  <div className="relative h-12 w-12">
+                    {escritorio.logo ? (
+                      <img
+                        src={`${baseURL}${escritorio.logo}`}
+                        alt={`Logo ${escritorio.nome}`}
+                        className="rounded-full object-cover h-full w-full"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).style.display = 'none';
+                          const parent = (e.target as HTMLImageElement).parentElement;
+                          if (parent) {
+                            const fallback = parent.querySelector('.fallback-icon');
+                            if (fallback) {
+                              fallback.classList.remove('hidden');
+                            }
+                          }
+                        }}
+                      />
+                    ) : null}
+                    <div className={`fallback-icon ${escritorio.logo ? 'hidden' : ''} absolute inset-0 rounded-full bg-gray-200 flex items-center justify-center`}>
                       <Building2 className="h-6 w-6 text-gray-400" />
                     </div>
-                  )}
+                  </div>
                   <div>
                     <h2 className="text-lg font-semibold text-gray-900">{escritorio.nome}</h2>
                     <p className="text-sm text-gray-500">{escritorio.sigla}</p>

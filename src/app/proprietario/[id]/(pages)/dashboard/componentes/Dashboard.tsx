@@ -65,19 +65,20 @@ export default function Dashboard() {
     fetchData();
   }, []);
 
-
-
-
-
-
   // Processamento dos dados reais
   const processAlinhamentoData = () => {
     const counts: { [key: string]: number } = {};
-
+    
+    console.log('Processando demandas:', dashboardData.demandas);
+    
     dashboardData.demandas.forEach(demanda => {
-      const alinhamentoNome = demanda.alinhamento?.nome || 'Erro ao buscar alinhamento';
+      console.log('Demanda:', demanda);
+      console.log('Alinhamento:', demanda.alinhamento);
+      const alinhamentoNome = demanda.alinhamento?.nome || 'Sem alinhamento';
       counts[alinhamentoNome] = (counts[alinhamentoNome] || 0) + 1;
     });
+
+    console.log('Contagem de alinhamentos:', counts);
 
     return {
       labels: Object.keys(counts),
@@ -89,10 +90,6 @@ export default function Dashboard() {
     };
   };
 
-
-
-
-
   const processSolucaoData = () => {
     const counts: { [key: string]: number } = {};
     dashboardData.solucoes.forEach(solucao => {
@@ -100,7 +97,6 @@ export default function Dashboard() {
       counts[tipoNome] = (counts[tipoNome] || 0) + 1;
     });
 
-    
     return {
       labels: Object.keys(counts),
       datasets: [{
@@ -110,13 +106,6 @@ export default function Dashboard() {
       }],
     };
   };
-
-
-
-
-
-
-
 
   const processStatusData = () => {
     const counts: { [key: string]: number } = {};
@@ -155,7 +144,6 @@ export default function Dashboard() {
   const ativos = dashboardData.solucoes.filter(s => s.status?.propriedade === 'ativo').length;
   const inativos = dashboardData.solucoes.filter(s => s.status?.propriedade === 'inativo').length;
 
-  
   const chartOptions = {
     responsive: true,
     plugins: {
@@ -166,76 +154,154 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
-      <div className="grid grid-cols-3 md:grid-cols-4 gap-6 mb-6">
-        <div className="bg-white p-6 rounded-lg shadow-lg">
+    <div className="min-h-screen bg-gray-100 p-3 sm:p-6">
+      {/* Stats Cards - Single column on mobile */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-3 sm:mb-6">
+        <div className="bg-white p-4 sm:p-6 rounded-lg shadow-lg">
           <h3 className="text-gray-500 text-sm font-medium">Demanda</h3>
-          <p className="text-3xl font-bold text-gray-800">{dashboardData.demandas.length}</p>
+          <p className="text-2xl sm:text-3xl font-bold text-gray-800">{dashboardData.demandas.length}</p>
         </div>
-        <div className="bg-white p-6 rounded-lg shadow-lg">
+        <div className="bg-white p-4 sm:p-6 rounded-lg shadow-lg">
           <h3 className="text-gray-500 text-sm font-medium">Soluções</h3>
-          <p className="text-3xl font-bold text-gray-800">{dashboardData.solucoes.length}</p>
+          <p className="text-2xl sm:text-3xl font-bold text-gray-800">{dashboardData.solucoes.length}</p>
         </div>
-        <div className="bg-white p-6 rounded-lg shadow-lg">
+        <div className="bg-white p-4 sm:p-6 rounded-lg shadow-lg">
           <h3 className="text-gray-500 text-sm font-medium">Ativos</h3>
-          <p className="text-3xl font-bold text-gray-800">{ativos}</p>
+          <p className="text-2xl sm:text-3xl font-bold text-gray-800">{ativos}</p>
         </div>
-        <div className="bg-white p-6 rounded-lg shadow-lg">
+        <div className="bg-white p-4 sm:p-6 rounded-lg shadow-lg">
           <h3 className="text-gray-500 text-sm font-medium">Inativos</h3>
-          <p className="text-3xl font-bold text-gray-800">{inativos}</p>
+          <p className="text-2xl sm:text-3xl font-bold text-gray-800">{inativos}</p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-        {/* <div className="bg-white p-6 rounded-lg shadow-lg">
-          <h3 className="text-gray-800 font-semibold mb-4">Alinhamentos</h3>
-          <div className="h-[300px] flex items-center justify-center">
-            <Doughnut data={processAlinhamentoData()} options={chartOptions} />
-          </div>
-        </div> */}
-
-      <div className="bg-white p-6 rounded-lg shadow-lg">
-          <h3 className="text-gray-800 font-semibold mb-4">Alinhamento</h3>
-          <div className="h-[300px] flex items-center justify-center">
-            <Pie data={processAlinhamentoData()} options={chartOptions} />
-          </div>
-        </div>
-
-
-
-        <div className="bg-white p-6 rounded-lg shadow-lg">
-          <h3 className="text-gray-800 font-semibold mb-4">Tipos de Soluções</h3>
-          <div className="h-[300px] flex items-center justify-center">
-            <Pie data={processSolucaoData()} options={chartOptions} />
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-lg shadow-lg">
-          <h3 className="text-gray-800 font-semibold mb-4">Status das Soluções</h3>
-          <div className="h-[300px] flex items-center justify-center">
-            <Doughnut data={processStatusData()} options={chartOptions} />
-          </div>
-        </div>
-        <div className="bg-white p-6 rounded-lg shadow-lg">
-        <h3 className="text-gray-800 font-semibold mb-4">Categorias das Soluções</h3>
-        <div className="h-[300px]">
-          <Bar 
-            data={processCategoriaData()} 
-            options={{
-              ...chartOptions,
-              scales: {
-                y: {
-                  beginAtZero: true
+      {/* Charts Grid - Single column on mobile */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
+        <div className="bg-white p-4 sm:p-6 rounded-lg shadow-lg">
+          <h3 className="text-gray-800 text-base font-semibold mb-4">Alinhamento</h3>
+          <div className="h-[300px] w-full flex items-center justify-center">
+            <Pie 
+              data={processAlinhamentoData()} 
+              options={{
+                ...chartOptions,
+                maintainAspectRatio: false,
+                plugins: {
+                  ...chartOptions.plugins,
+                  legend: {
+                    ...chartOptions.plugins.legend,
+                    position: 'bottom' as const,
+                    labels: {
+                      boxWidth: 12,
+                      padding: 8,
+                      font: {
+                        size: 12
+                      }
+                    }
+                  }
                 }
-              }
-            }} 
-          />
+              }} 
+            />
+          </div>
+        </div>
+
+        <div className="bg-white p-4 sm:p-6 rounded-lg shadow-lg">
+          <h3 className="text-gray-800 text-base font-semibold mb-4">Tipos de Soluções</h3>
+          <div className="h-[300px] w-full flex items-center justify-center">
+            <Pie 
+              data={processSolucaoData()} 
+              options={{
+                ...chartOptions,
+                maintainAspectRatio: false,
+                plugins: {
+                  ...chartOptions.plugins,
+                  legend: {
+                    ...chartOptions.plugins.legend,
+                    position: 'bottom' as const,
+                    labels: {
+                      boxWidth: 12,
+                      padding: 8,
+                      font: {
+                        size: 12
+                      }
+                    }
+                  }
+                }
+              }} 
+            />
+          </div>
+        </div>
+
+        <div className="bg-white p-4 sm:p-6 rounded-lg shadow-lg">
+          <h3 className="text-gray-800 text-base font-semibold mb-4">Status das Soluções</h3>
+          <div className="h-[300px] w-full flex items-center justify-center">
+            <Doughnut 
+              data={processStatusData()} 
+              options={{
+                ...chartOptions,
+                maintainAspectRatio: false,
+                plugins: {
+                  ...chartOptions.plugins,
+                  legend: {
+                    ...chartOptions.plugins.legend,
+                    position: 'bottom' as const,
+                    labels: {
+                      boxWidth: 12,
+                      padding: 8,
+                      font: {
+                        size: 12
+                      }
+                    }
+                  }
+                }
+              }} 
+            />
+          </div>
+        </div>
+
+        <div className="bg-white p-4 sm:p-6 rounded-lg shadow-lg">
+          <h3 className="text-gray-800 text-base font-semibold mb-4">Categorias das Soluções</h3>
+          <div className="h-[300px] w-full">
+            <Bar 
+              data={processCategoriaData()} 
+              options={{
+                ...chartOptions,
+                maintainAspectRatio: false,
+                scales: {
+                  y: {
+                    beginAtZero: true,
+                    ticks: {
+                      font: {
+                        size: 12
+                      }
+                    }
+                  },
+                  x: {
+                    ticks: {
+                      font: {
+                        size: 12
+                      }
+                    }
+                  }
+                },
+                plugins: {
+                  ...chartOptions.plugins,
+                  legend: {
+                    ...chartOptions.plugins.legend,
+                    position: 'bottom' as const,
+                    labels: {
+                      boxWidth: 12,
+                      padding: 8,
+                      font: {
+                        size: 12
+                      }
+                    }
+                  }
+                }
+              }} 
+            />
+          </div>
         </div>
       </div>
-      </div>
-
-      {/* Gráfico de barras em linha separada */}
-     
     </div>
   );
 }

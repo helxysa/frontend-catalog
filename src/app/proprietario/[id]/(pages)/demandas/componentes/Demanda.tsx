@@ -1,69 +1,5 @@
 'use client'
 
-interface DemandaFormData {
-  proprietario_id: number;
-  nome: string;
-  sigla: string;
-  descricao: string;
-  demandante: string;
-  fator_gerador: string;
-  alinhamento_id: number;
-  prioridade_id: number;
-  responsavel_id: number;
-  status_id: number;
-  data_status: string;
-}
-
-interface HistoricoType {
-  id: number;
-  demandaId: number;
-  usuario: string;
-  descricao: string;
-  createdAt: string;
-  updatedAt: string;
-  demanda: {
-    id: number;
-    nome: string;
-    proprietarioId: number;
-    sigla: string;
-    descricao: string;
-    demandante: string;
-    fatorGerador: string;
-    alinhamentoId: number;
-    prioridadeId: number;
-    responsavelId: number;
-    statusId: number;
-    dataStatus: string;
-    createdAt: string;
-    updatedAt: string;
-  };
-}
-
-interface AlinhamentoType {
-  id: number;
-  nome: string;
-}
-
-interface PrioridadeType {
-  id: number;
-  nome: string;
-}
-
-interface StatusType {
-  id: number;
-  nome: string;
-}
-
-interface ProprietarioType {
-  id: number;
-  nome: string;
-}
-
-interface ResponsavelType {
-  id: number;
-  nome: string;
-}
-
 import { useEffect, useState } from 'react';
 import { 
   getDemandas, 
@@ -78,7 +14,7 @@ import {
   getHistoricoDemandas
 } from "../actions/actions";
 import { Plus, Edit2, Trash2, X, Info, ChevronRight } from 'lucide-react';
-import { DemandaType } from '../types/types';
+import { DemandaType, ResponsavelType, AlinhamentoType, PrioridadeType, StatusType, ProprietarioType, HistoricoType, DemandaFormData   } from '../types/types';
 import DeleteConfirmationModal from './ModalConfirmacao/DeleteConfirmationModal';
 
 
@@ -87,7 +23,6 @@ export default function Demanda() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedDemandDetails, setSelectedDemandDetails] = useState<DemandaType | null>(null);
   const [formData, setFormData] = useState<DemandaFormData>(() => {
-    // Inicializa o formData com o proprietario_id do localStorage
     const storedId = localStorage.getItem('selectedProprietarioId');
     return {
       proprietario_id: storedId ? Number(storedId) : 0,
@@ -142,6 +77,18 @@ export default function Demanda() {
     } catch (error) {
       return 'text-gray-800'; // cor padrão em caso de erro
     }
+  };
+
+  const formatDate = (dateString: string, includeTime: boolean = false) => {
+    if (!dateString) return '-';
+    const date = new Date(dateString);
+    const formattedDate = date.toLocaleDateString('pt-BR');
+    if (includeTime) {
+      const hours = date.getHours().toString().padStart(2, '0');
+      const minutes = date.getMinutes().toString().padStart(2, '0');
+      return `${formattedDate} às ${hours}:${minutes}`;
+    }
+    return formattedDate;
   };
 
   useEffect(() => {
@@ -234,11 +181,6 @@ export default function Demanda() {
   };
 
   
-  const formatDate = (dateString: string) => {
-    if (!dateString) return '-';
-    return new Date(dateString).toLocaleDateString('pt-BR');
-  };
-
   const handleDeleteClick = (id: string) => {
     setItemToDeleteId(id);
     setIsDeleteModalOpen(true);
@@ -637,22 +579,13 @@ export default function Demanda() {
               
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2 font-bold">Proprietário</label>
-                    <select 
-                      name="proprietario_id" 
-                      value={formData.proprietario_id || ''}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-md text-gray-500"
-                    >
-                      <option value="">Selecione um proprietário</option>
-                      {proprietarios.map((prop: any) => (
-                        <option key={prop.id} value={prop.id}>{prop.nome}</option>
-                      ))}
-                    </select>
-                  </div>
+                  <input 
+                    type="hidden" 
+                    name="proprietario_id" 
+                    value={formData.proprietario_id || ''}
+                  />
                   
-                  <div>
+                  <div className="col-span-2">
                     <label className="block text-sm font-medium text-gray-700 mb-2 font-bold">Nome</label>
                     <input 
                       type="text" 
@@ -895,7 +828,7 @@ export default function Demanda() {
                           </p>
                           <p className="text-sm">
                             <span className="font-medium text-gray-700">Data Status:</span>{' '}
-                            <span className="text-gray-900">{formatDate(selectedDemandDetails.dataStatus)}</span>
+                            <span className="text-gray-900">{formatDate(selectedDemandDetails.dataStatus, true)}</span>
                           </p>
                           <p className="text-sm">
                             <span className="font-medium text-gray-700">Prioridade:</span>{' '}
@@ -921,46 +854,98 @@ export default function Demanda() {
                   </div>
                 ) : (
                   <div className="bg-gray-50 rounded-lg p-6">
+                    <div className="mb-6">
+                      <h3 className="text-lg font-semibold text-gray-900">Histórico de Alterações</h3>
+                      <p className="text-sm text-gray-600">Acompanhe todas as mudanças realizadas nesta demanda</p>
+                    </div>
                     <div className="flow-root">
                       <ul role="list" className="-mb-8">
                         {historicoDemanda.map((evento: HistoricoType, index: number) => (
                           <li key={evento.id}>
                             <div className="relative pb-8">
                               {index !== historicoDemanda.length - 1 && (
-                                <span className="absolute left-4 top-4 -ml-px h-full w-0.5 bg-blue-200" aria-hidden="true" />
+                                <span className="absolute left-5 top-5 -ml-px h-full w-0.5 bg-gradient-to-b from-blue-500 via-blue-300 to-gray-200" aria-hidden="true" />
                               )}
                               <div className="relative flex items-start space-x-3">
                                 <div className="relative">
-                                  <span className="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center ring-8 ring-white">
-                                    <ChevronRight className="h-5 w-5 text-white" />
-                                  </span>
-                                </div>
-                                <div className="flex-1 min-w-0 bg-white rounded-lg shadow-sm p-4">
-                                  <div className="flex justify-between items-center mb-1">
-                                    <div className="flex items-center gap-2">
-                                      <span className="text-sm font-medium text-gray-900">
-                                        {evento.usuario}
-                                      </span>
-                                      {index === 0 && (
-                                        <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
-                                          Recente
-                                        </span>
-                                      )}
-                                    </div>
-                                    <time className="text-sm text-gray-500">
-                                      {formatDate(evento.createdAt)}
-                                    </time>
+                                  <div className={`h-12 w-12 rounded-full flex items-center justify-center ring-8 ring-white shadow-md
+                                    ${index === 0 ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}`}>
+                                    <span className="text-xs font-medium text-center">
+                                      {formatDate(evento.createdAt).split('/').slice(0, 2).join('/')}
+                                    </span>
                                   </div>
-                                  <p className="text-sm text-gray-500 mb-2">
-                                    {formatHistoricoDescricao(evento.descricao, evento)}
-                                  </p>
-                                  <div className="mt-2 text-xs text-gray-500 bg-gray-50 rounded p-2">
-                                    <div className="grid grid-cols-2 gap-2">
-                                      <p><span className="font-medium">Nome:</span> {evento.demanda.nome}</p>
-                                      <p><span className="font-medium">Sigla:</span> {evento.demanda.sigla}</p>
-                                      <p><span className="font-medium">Demandante:</span> {evento.demanda.demandante}</p>
-                                      <p><span className="font-medium">Fator Gerador:</span> {evento.demanda.fatorGerador}</p>
-                                      <p><span className="font-medium">Data Status:</span> {formatDate(evento.demanda.dataStatus)}</p>
+                                  {index !== historicoDemanda.length - 1 && (
+                                    <span className="absolute left-6 top-12 -ml-px h-full w-0.5 bg-gradient-to-b from-blue-500 via-blue-300 to-gray-200" aria-hidden="true" />
+                                  )}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="bg-white rounded-lg shadow-sm p-4 hover:shadow-md transition-all duration-200 border border-gray-100">
+                                    <div className="flex justify-between items-center mb-4">
+                                      <div className="flex items-center gap-3">
+                                        <span className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                                          <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                                          {evento.usuario}
+                                        </span>
+                                        {index === 0 && (
+                                          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100">
+                                            Mais recente
+                                          </span>
+                                        )}
+                                      </div>
+                                      <time className="text-sm text-gray-500 flex items-center gap-2">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-gray-300"></span>
+                                        {formatDate(evento.createdAt, true)}
+                                      </time>
+                                    </div>
+                                    
+                                    <div className="text-sm text-gray-700 mb-4">
+                                      <div className="bg-gradient-to-r from-blue-50 to-white p-4 rounded-lg border-l-4 border-blue-500">
+                                        {formatHistoricoDescricao(evento.descricao, evento)}
+                                      </div>
+                                    </div>
+
+                                    <div className="mt-3 text-xs space-y-3">
+                                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div className="bg-gray-50 p-4 rounded-lg border border-gray-100 shadow-sm">
+                                          <h4 className="font-semibold text-gray-900 mb-3 pb-2 border-b border-gray-200">
+                                            Informações Básicas
+                                          </h4>
+                                          <div className="space-y-3">
+                                            <p className="flex items-center justify-between group hover:bg-white hover:shadow-sm p-2 rounded-md transition-all">
+                                              <span className="font-medium text-gray-600">Nome:</span>
+                                              <span className="text-gray-900 font-medium group-hover:text-blue-600">{evento.demanda.nome}</span>
+                                            </p>
+                                            <p className="flex items-center justify-between group hover:bg-white hover:shadow-sm p-2 rounded-md transition-all">
+                                              <span className="font-medium text-gray-600">Sigla:</span>
+                                              <span className="text-gray-900 font-medium group-hover:text-blue-600">{evento.demanda.sigla}</span>
+                                            </p>
+                                            <p className="flex items-center justify-between group hover:bg-white hover:shadow-sm p-2 rounded-md transition-all">
+                                              <span className="font-medium text-gray-600">Demandante:</span>
+                                              <span className="text-gray-900 font-medium group-hover:text-blue-600">{evento.demanda.demandante}</span>
+                                            </p>
+                                          </div>
+                                        </div>
+                                        
+                                        <div className="bg-gray-50 p-4 rounded-lg border border-gray-100 shadow-sm">
+                                          <h4 className="font-semibold text-gray-900 mb-3 pb-2 border-b border-gray-200">
+                                            Detalhes do Status
+                                          </h4>
+                                          <div className="space-y-3">
+                                            <p className="flex items-center justify-between group hover:bg-white hover:shadow-sm p-2 rounded-md transition-all">
+                                              <span className="font-medium text-gray-600">Fator Gerador:</span>
+                                              <span className="text-gray-900 font-medium group-hover:text-blue-600">{evento.demanda.fatorGerador}</span>
+                                            </p>
+                                            <p className="flex items-center justify-between group hover:bg-white hover:shadow-sm p-2 rounded-md transition-all">
+                                              <span className="font-medium text-gray-600">Data Status:</span>
+                                              <span className="text-gray-900 font-medium group-hover:text-blue-600">{formatDate(evento.demanda.dataStatus, true)}</span>
+                                            </p>
+                                            <p className="flex items-center justify-between group hover:bg-white hover:shadow-sm p-2 rounded-md transition-all">
+                                              <span className="font-medium text-gray-600">Atualizado:</span>
+                                              <span className="text-gray-900 font-medium group-hover:text-blue-600">{formatDate(evento.updatedAt, true)}</span>
+                                            </p>
+                                          </div>
+                                        </div>
+                                      </div>
                                     </div>
                                   </div>
                                 </div>
