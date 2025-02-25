@@ -149,7 +149,11 @@ export default function Solucao() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     
+    
     try {
+
+      
+      
       const formDataToSubmit = {
         nome: formData.nome || '-',
         sigla: formData.sigla || '-',
@@ -266,9 +270,8 @@ export default function Solucao() {
   };
 
   const handleEditClick = (solucao: SolucaoType) => {
-    console.log('Solução para editar:', solucao); // Debug
 
-    // Garantir que todos os IDs sejam números
+    
     const formDataToSet = {
       nome: solucao.nome,
       sigla: solucao.sigla,
@@ -284,10 +287,11 @@ export default function Solucao() {
       data_status: solucao.dataStatus
     };
 
-    console.log('Form data sendo setado:', formDataToSet); // Debug
+    
     setFormData(formDataToSet);
     setIsEditing(solucao.id.toString());
     setIsModalOpen(true);
+    
   };
 
   const handleFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -472,7 +476,7 @@ export default function Solucao() {
           </div>
           
           <div className="mt-3 flex items-center justify-between">
-            <div className="flex-1 max-w-md">
+            {/* <div className="flex-1 max-w-md">
               <input
                 type="text"
                 placeholder="Buscar soluções..."
@@ -482,7 +486,10 @@ export default function Solucao() {
               />
               
             </div>
-            
+             */}
+             <div>
+              
+             </div>
             <div className="flex space-x-2">
               <button
                 onClick={clearFilters}

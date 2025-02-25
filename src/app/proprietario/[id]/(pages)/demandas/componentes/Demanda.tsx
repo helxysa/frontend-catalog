@@ -59,6 +59,8 @@ export default function Demanda() {
   });
   const [filteredDemandas, setFilteredDemandas] = useState<DemandaType[]>([]);
   const [shouldRefresh, setShouldRefresh] = useState(0);
+  const [tempSearchTerm, setTempSearchTerm] = useState('');
+
 
 
   const determinarCorTexto = (corHex: string | undefined) => {
@@ -89,6 +91,10 @@ export default function Demanda() {
       return `${formattedDate} às ${hours}:${minutes}`;
     }
     return formattedDate;
+  };
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setTempSearchTerm(e.target.value);
   };
 
   useEffect(() => {
@@ -469,7 +475,11 @@ export default function Demanda() {
             </div>
           )} */}
           
+
+          
+          
           <div className="flex justify-end mt-3 space-x-2">
+            
             <button
               onClick={clearFilters}
               className="px-3 py-1.5 text-sm text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"

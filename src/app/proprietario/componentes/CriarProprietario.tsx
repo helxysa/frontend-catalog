@@ -95,7 +95,7 @@ export default function CriarProprietario({ onClose, onSuccess }: CriarProprieta
                 value={formData.nome}
                 onChange={handleChange}
                 required
-                placeholder="Ex: Escola de Tecnologia"
+                placeholder="Ex: Divisão de Sistema de Informação"
                 className="pl-10 pr-3 py-2.5 block w-full rounded-lg border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all text-gray-900 placeholder:text-gray-500 bg-gray-50 hover:bg-gray-50/80"
               />
             </div>
@@ -113,9 +113,9 @@ export default function CriarProprietario({ onClose, onSuccess }: CriarProprieta
                 value={formData.sigla}
                 onChange={handleChange}
                 required
-                placeholder="Ex: ETEC"
+                placeholder="Ex: DSIS"
                 className="pl-10 pr-3 py-2.5 block w-full rounded-lg border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all text-gray-900 placeholder:text-gray-500 bg-gray-50 hover:bg-gray-50/80"
-                maxLength={5}
+                maxLength={10}
               />
             </div>
           </div>

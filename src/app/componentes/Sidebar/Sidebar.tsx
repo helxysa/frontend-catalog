@@ -151,7 +151,7 @@ export function Sidebar() {
         </Link>
 
         {/* Relatórios Dropdown */}
-        <div className="relative">
+        {/* <div className="relative">
           <button 
             className={`w-full ${getItemClasses('/relatorios')}`}
             onClick={toggleReportMenu}
@@ -174,7 +174,7 @@ export function Sidebar() {
               </div>
             </Link>
           </div>
-        </div>
+        </div> */}
 
         {/* Configurações Dropdown */}
         <div className="relative">
