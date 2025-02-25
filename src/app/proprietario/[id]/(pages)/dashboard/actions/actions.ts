@@ -20,9 +20,27 @@ export async function getDemandas() {
   if (!storedId) {
       throw new Error("ProprietarioId not found in localStorage");
   }
-  const response = await axios.get(`${url}/proprietarios/${storedId}/demandas/`);
-  console.log('Dados brutos das demandas:', response.data);
-  return response.data;
+  try {
+    // Get demandas
+    const response = await axios.get(`${url}/proprietarios/${storedId}/demandas/`);
+    const demandas = response.data;
+    
+    // Get alinhamentos
+    const alinhamentosResponse = await axios.get(`${url}/proprietarios/${storedId}/alinhamentos`);
+    const alinhamentos = alinhamentosResponse.data;
+    
+    // Merge alinhamentos into demandas
+    const demandasWithAlinhamentos = demandas.map((demanda: any) => ({
+      ...demanda,
+      alinhamento: alinhamentos.find((a: any) => a.id === demanda.alinhamentoId)
+    }));
+    
+    console.log('Demandas with alinhamentos:', demandasWithAlinhamentos);
+    return demandasWithAlinhamentos;
+  } catch (error) {
+    console.error('Error fetching demandas:', error);
+    throw error;
+  }
 }
 
 export async function getSolucoes() {
@@ -63,8 +81,14 @@ export async function getAlinhamentos() {
   if (!storedId) {
       throw new Error("ProprietarioId not found in localStorage");
   }
-  const response = await axios.get(`${url}/proprietarios/${storedId}/alinhamentos`);
-  return response.data;
+  try {
+    const response = await axios.get(`${url}/proprietarios/${storedId}/alinhamentos`);
+    console.log('Alinhamentos response:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching alinhamentos:', error);
+    throw error;
+  }
 }
 
 export async function getStatus() {
@@ -84,4 +108,3 @@ export async function getCategorias() {
   const response = await axios.get(`${url}/proprietarios/${storedId}/categorias`);
   return response.data;
 }
-

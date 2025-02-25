@@ -143,8 +143,8 @@ export default function Prioridade({ proprietarioId }: { proprietarioId?: string
       <div className="p-4 sm:p-6">
         {/* Header */}
         <div className="flex justify-between items-center mb-6 mt-[70px] lg:mt-0">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">
-            {proprietarioId ? 'Prioridades do Escritório' : 'Prioridades'}
+        <h1 className="text-2xl sm:text-2xl font-bold text-gray-800">
+            Adicione uma prioridade
           </h1>
           <div className="flex gap-2">
             <button 

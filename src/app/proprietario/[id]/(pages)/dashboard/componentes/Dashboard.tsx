@@ -45,46 +45,61 @@ export default function Dashboard() {
 
   useEffect(() => {
     const fetchData = async () => {
-      const [demandas, solucoes, alinhamentos, status, categorias] = await Promise.all([
-        getDemandas(),
-        getSolucoes(),
-        getAlinhamentos(),
-        getStatus(),
-        getCategorias()
-      ]);
+      try {
+        const [demandas, solucoes, alinhamentos, status, categorias] = await Promise.all([
+          getDemandas(),
+          getSolucoes(),
+          getAlinhamentos(),
+          getStatus(),
+          getCategorias()
+        ]);
 
-      setDashboardData({
-        demandas,
-        solucoes,
-        alinhamentos,
-        status,
-        categorias
-      });
+        // Merge alinhamentos into demandas
+        const demandasWithAlinhamentos = demandas.map((demanda: any) => ({
+          ...demanda,
+          alinhamento: alinhamentos.find((a: any) => a.id === demanda.alinhamentoId)
+        }));
+
+        console.log('Demandas with alinhamentos:', demandasWithAlinhamentos);
+
+        setDashboardData({
+          demandas: demandasWithAlinhamentos,
+          solucoes,
+          alinhamentos,
+          status,
+          categorias
+        });
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error);
+      }
     };
 
     fetchData();
   }, []);
 
-  // Processamento dos dados reais
   const processAlinhamentoData = () => {
     const counts: { [key: string]: number } = {};
     
-    console.log('Processando demandas:', dashboardData.demandas);
-    
     dashboardData.demandas.forEach(demanda => {
-      console.log('Demanda:', demanda);
-      console.log('Alinhamento:', demanda.alinhamento);
       const alinhamentoNome = demanda.alinhamento?.nome || 'Sem alinhamento';
       counts[alinhamentoNome] = (counts[alinhamentoNome] || 0) + 1;
     });
 
-    console.log('Contagem de alinhamentos:', counts);
+    const sortedEntries = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+    const labels = sortedEntries.map(([label]) => label);
+    const data = sortedEntries.map(([, count]) => count);
+
+    // vai gerar as cores a+ qunado nao tiver mais [precisa de ajuste nn esta funcionando]
+    const colors = labels.map((_, index) => {
+      const hue = (index * 137.5) % 360; 
+      return `hsl(${hue}, 70%, 60%)`;
+    });
 
     return {
-      labels: Object.keys(counts),
+      labels,
       datasets: [{
-        data: Object.values(counts),
-        backgroundColor: ['#4285F4', '#34A853', '#FBBC05', '#EA4335'],
+        data,
+        backgroundColor: ['#4285F4', '#34A853', '#FBBC05', '#EA4335', '#673AB7', '#FF4081', `${colors}`],
         borderWidth: 1,
       }],
     };
@@ -132,12 +147,13 @@ export default function Dashboard() {
     });
 
     return {
-      labels: Object.keys(counts),
-      datasets: [{
-        label: 'Quantidade',
-        data: Object.values(counts),
-        backgroundColor: '#4285F4',
-      }],
+      labels: [''],
+      datasets: Object.entries(counts).map(([label, value], index) => ({
+        label,
+        data: [value],
+        backgroundColor: ['#4285F4', '#34A853', '#FBBC05', '#EA4335', '#673AB7', '#FF4081'][index % 6],
+        borderWidth: 1,
+      })),
     };
   };
 
@@ -178,7 +194,7 @@ export default function Dashboard() {
       {/* Charts Grid - Single column on mobile */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
         <div className="bg-white p-4 sm:p-6 rounded-lg shadow-lg">
-          <h3 className="text-gray-800 text-base font-semibold mb-4">Alinhamento</h3>
+          <h3 className="text-gray-800 text-base font-semibold mb-4">Alinhamento da Solução</h3>
           <div className="h-[300px] w-full flex items-center justify-center">
             <Pie 
               data={processAlinhamentoData()} 
@@ -270,23 +286,19 @@ export default function Dashboard() {
                   y: {
                     beginAtZero: true,
                     ticks: {
+                      stepSize: 1,
                       font: {
                         size: 12
                       }
                     }
                   },
                   x: {
-                    ticks: {
-                      font: {
-                        size: 12
-                      }
-                    }
+                    display: false
                   }
                 },
                 plugins: {
                   ...chartOptions.plugins,
                   legend: {
-                    ...chartOptions.plugins.legend,
                     position: 'bottom' as const,
                     labels: {
                       boxWidth: 12,

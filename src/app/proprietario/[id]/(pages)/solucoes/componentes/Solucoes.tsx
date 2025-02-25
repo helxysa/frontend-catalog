@@ -150,45 +150,25 @@ export default function Solucao() {
     e.preventDefault();
     
     try {
-      const requiredFields = {
-        nome: 'Nome',
-        tipo_id: 'Tipo',
-        linguagem_id: 'Linguagem',
-        desenvolvedor_id: 'Desenvolvedor',
-        categoria_id: 'Categoria',
-        responsavel_id: 'Responsável',
-        status_id: 'Status'
-      };
-
-      const missingFields = Object.entries(requiredFields)
-        .filter(([field]) => !formData[field as keyof SolucaoFormData])
-        .map(([, label]) => label);
-
-      if (missingFields.length > 0) {
-        alert(`Por favor, preencha os seguintes campos obrigatórios: ${missingFields.join(', ')}`);
-        return;
-      }
-
       const formDataToSubmit = {
-        nome: formData.nome,
-        sigla: formData.sigla,
-        descricao: formData.descricao,
-        versao: formData.versao,
-        tipo_id: Number(formData.tipo_id),
-        linguagem_id: Number(formData.linguagem_id),
-        desenvolvedor_id: Number(formData.desenvolvedor_id),
-        categoria_id: Number(formData.categoria_id),
-        responsavel_id: Number(formData.responsavel_id),
-        status_id: Number(formData.status_id)
+        nome: formData.nome || '-',
+        sigla: formData.sigla || '-',
+        descricao: formData.descricao || '-',
+        versao: formData.versao || '-',
+        tipo_id: formData.tipo_id ? Number(formData.tipo_id) : 1,
+        linguagem_id: formData.linguagem_id ? Number(formData.linguagem_id) : 1,
+        desenvolvedor_id: formData.desenvolvedor_id ? Number(formData.desenvolvedor_id) : 1,
+        categoria_id: formData.categoria_id ? Number(formData.categoria_id) : 1,
+        responsavel_id: formData.responsavel_id ? Number(formData.responsavel_id) : 1,
+        status_id: formData.status_id ? Number(formData.status_id) : 1,
+        demanda_id: formData.demanda_id ? Number(formData.demanda_id) : 1,
+        data_status: formData.data_status || new Date().toISOString().split('T')[0]
       };
 
       if (isEditing) {
         await updateSolucao(isEditing, formDataToSubmit);
       } else {
-        await createSolucao({
-          ...formDataToSubmit,
-          demanda_id: Number(formData.demanda_id)
-        });
+        await createSolucao(formDataToSubmit);
       }
       
       const updatedSolucoes = await getSolucoes();
@@ -197,8 +177,8 @@ export default function Solucao() {
       setFormData({} as SolucaoFormData);
       setIsEditing(null);
     } catch (error: any) {
-      alert('Erro ao salvar a solução. Por favor, tente novamente.');
       console.error('Error details:', error);
+      alert('Erro ao salvar a solução. Por favor, tente novamente.');
     }
   };
 
@@ -388,7 +368,7 @@ export default function Solucao() {
     <div className="min-h-screen">
       <div className="p-6">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-gray-800">Soluções</h1>
+          <h1 className="text-2xl font-bold text-gray-800">Crie sua solução</h1>
           <div className="flex gap-2">
             <button 
               onClick={() => setIsModalOpen(true)}

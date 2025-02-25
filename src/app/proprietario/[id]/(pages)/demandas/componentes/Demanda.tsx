@@ -343,7 +343,7 @@ export default function Demanda() {
     <div className="min-h-screen">
       <div className="p-6">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-gray-800">Demandas</h1>
+          <h1 className="text-2xl font-bold text-gray-800">Crie sua demanda</h1>
           <div className="flex gap-2">
             <button 
               onClick={() => setIsModalOpen(true)}
@@ -450,7 +450,7 @@ export default function Demanda() {
           </div>
 
           {/* Active Filters */}
-          {Object.values(filters).some(value => value) && (
+          {/* {Object.values(filters).some(value => value) && (
             <div className="mt-3 flex flex-wrap gap-2">
               {Object.entries(filters).map(([key, value]) => value && (
                 <span key={key} className="inline-flex items-center px-2 py-1 text-xs rounded-md bg-blue-50 text-blue-700">
@@ -467,7 +467,7 @@ export default function Demanda() {
                 </span>
               ))}
             </div>
-          )}
+          )} */}
           
           <div className="flex justify-end mt-3 space-x-2">
             <button

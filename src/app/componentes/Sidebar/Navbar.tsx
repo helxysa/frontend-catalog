@@ -19,6 +19,38 @@ export default function Navbar() {
   const [proprietario, setProprietario] = useState<Proprietario | null>(null);
   const pathname = usePathname();
 
+  const getPageTitle = () => {
+    if (pathname === '/proprietario') {
+      return 'Proprietários';
+    }
+    
+    if (pathname.includes('/dashboard')) {
+      return 'Dashboard';
+    }
+    
+    if (pathname.includes('/demandas')) {
+      return 'Demandas';
+    }
+    
+    if (pathname.includes('/solucoes')) {
+      return 'Soluções';
+    }
+    
+    if (pathname.includes('/relatorios')) {
+      return 'Relatórios';
+    }
+    
+    if (pathname.includes('/configuracoes')) {
+      const configPath = pathname.split('/').pop();
+      if (configPath && configPath !== 'configuracoes') {
+        return configPath.charAt(0).toUpperCase() + configPath.slice(1);
+      }
+      return 'Configurações';
+    }
+    
+    return '';
+  };
+
   useEffect(() => {
     const handleResize = () => {
       setIsMobileView(window.innerWidth < 768);
@@ -53,7 +85,12 @@ export default function Navbar() {
       ${isMobileView ? 'left-0' : 'left-64'}
       z-50
     `}>
-      <div className="h-16 flex items-center justify-end pr-4">
+      <div className="h-16 flex items-center justify-between px-6">
+        {/* Page Title */}
+        <h1 className="text-xl font-semibold text-gray-800">
+          {getPageTitle()}
+        </h1>
+
         {/* Unit Switcher and Mobile Menu */}
         <div className="flex items-center gap-2">
           <div className="relative z-20 w-[250px]">

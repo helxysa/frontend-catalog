@@ -1,5 +1,5 @@
 'use client'
-import { Sidebar } from '../componentes/Sidebar/Sidebar'
+import { Sidebar } from './Sidebar'
 import { usePathname } from 'next/navigation'
 
 export function AppWrapper({

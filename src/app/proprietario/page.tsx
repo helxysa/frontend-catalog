@@ -1,6 +1,12 @@
 import Proprietario from "./componentes/Proprietario";
-
+import Navbar from "../componentes/Sidebar/Navbar";
 export default function ProprietarioPage() {
-  return <Proprietario />;
+
+  return (
+  <div>
+    <Proprietario />;
+  </div> 
+  )
+  
 }
 

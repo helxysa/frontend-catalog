@@ -14,6 +14,7 @@ import {
   Building2
 } from 'lucide-react';
 import { getProprietario, baseURL } from '../../proprietario/actions/actions'
+import Image from 'next/image';
 
 interface Proprietario {
   id: number;
@@ -295,6 +296,26 @@ export function Sidebar() {
         <nav className="flex-1 mt-4 overflow-y-auto">
           {renderMenuItems()}
         </nav>
+
+        {/* Footer with MP-AP info */}
+        <div className="px-4 py-4 border-t border-gray-100 bg-gray-50/50">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 relative flex-shrink-0">
+              <Image
+                src="/images.webp"
+                alt="MP-AP Logo"
+                width={40}
+                height={40}
+                className="object-contain w-full h-full opacity-90"
+                sizes="40px"
+              />
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-gray-700 truncate">Ministério Público</p>
+              <p className="text-xs text-gray-600 truncate">do Estado do Amapá</p>
+            </div>
+          </div>
+        </div>
       </aside>
 
       
@@ -314,10 +335,30 @@ export function Sidebar() {
           md:hidden overflow-y-auto
         `}
       >
-        <div className="h-full overflow-y-auto pb-20">
-          <nav className="p-4">
+        <div className="h-full overflow-y-auto pb-20 flex flex-col">
+          <nav className="p-4 flex-1">
             {renderMenuItems(true)}
           </nav>
+
+          {/* Mobile Footer with MP-AP info */}
+          <div className="px-6 py-4 border-t border-gray-100 bg-gray-50/50 mt-auto">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 relative flex-shrink-0">
+                <Image
+                  src="/images.webp"
+                  alt="MP-AP Logo"
+                  width={40}
+                  height={40}
+                  className="object-contain w-full h-full opacity-90"
+                  sizes="40px"
+                />
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-gray-700 truncate">Ministério Público</p>
+                <p className="text-xs text-gray-600 truncate">do Estado do Amapá</p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
