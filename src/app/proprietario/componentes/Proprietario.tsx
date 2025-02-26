@@ -25,12 +25,22 @@ export default function Proprietario() {
 
   const fetchEscritorios = async () => {
     try {
-      const data = await getProprietario();
-      setEscritorios(data || []);
+      setLoading(true);
       setError(null);
-    } catch (err: any) {
-      setError(err.message || "Erro ao carregar os escritórios");
-      console.error(err);
+      const result = await getProprietario();
+      
+      // Verifica se o resultado é um objeto de erro
+      if (result && 'error' in result) {
+        setError(result.message);
+        setEscritorios([]);
+      } else {
+        // Se não for erro, é um array de escritórios
+        setEscritorios(result || []);
+      }
+    } catch (err) {
+      console.error('Erro ao carregar escritórios:', err);
+      setError('Ocorreu um erro ao carregar os escritórios. Por favor, tente novamente.');
+      setEscritorios([]);
     } finally {
       setLoading(false);
     }
@@ -39,6 +49,11 @@ export default function Proprietario() {
   useEffect(() => {
     fetchEscritorios();
   }, []);
+
+  // Adicione um handler para retry com delay
+  const handleRetry = () => {
+    setTimeout(fetchEscritorios, 1000); // Adiciona um delay de 1 segundo antes de tentar novamente
+  };
 
   const handleProprietarioClick = (id: number) => {
     localStorage.removeItem('selectedProprietarioId');
@@ -73,7 +88,7 @@ export default function Proprietario() {
               <h3 className="text-xl font-bold text-gray-900 mb-2">Ops! Algo deu errado</h3>
               <p className="text-red-500 mb-6">{error}</p>
               <button
-                onClick={fetchEscritorios}
+                onClick={handleRetry}
                 className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transform transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
               >
                 Tentar novamente

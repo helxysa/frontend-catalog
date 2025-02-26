@@ -13,30 +13,46 @@ interface CreateProprietarioData {
 
 export async function getProprietario() {
   try {
-    console.log('Fetching from URL:', url); // Debug log
     const response = await axios.get(url);
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error)) {
-      // Handle database not found error
-      if (error.response?.status === 500) {
-        if (error.response?.data?.message?.includes('não existe')) {
-          // Database table doesn't exist
-          return []; // Return empty array to show "create first" screen
-        }
+      // Erro de conexão
+      if (!error.response) {
+        // Em vez de throw new Error, retorne um objeto de erro
+        return {
+          error: true,
+          message: 'Não foi possível conectar ao servidor. Verifique sua conexão com a internet.'
+        };
       }
-      
-      // Log detailed error information
-      console.error('Axios Error Details:', {
-        status: error.response?.status,
-        statusText: error.response?.statusText,
-        data: error.response?.data,
-        message: error.message
-      });
+
+      // Erro 500 - Database não existe
+      if (error.response.status === 500 && error.response.data?.message?.includes('não existe')) {
+        return [];
+      }
+
+      // Outros erros do servidor
+      if (error.response.status >= 500) {
+        return {
+          error: true,
+          message: 'Erro interno do servidor. Por favor, tente novamente mais tarde.'
+        };
+      }
+
+      // Erros específicos da API
+      if (error.response.data?.message) {
+        return {
+          error: true,
+          message: error.response.data.message
+        };
+      }
     }
     
-    // Throw a generic error that will be caught by the component
-    throw new Error('Não foi possível conectar ao servidor. Por favor, tente novamente mais tarde.');
+    // Erro genérico
+    return {
+      error: true,
+      message: 'Ocorreu um erro inesperado. Por favor, tente novamente.'
+    };
   }
 }
 
