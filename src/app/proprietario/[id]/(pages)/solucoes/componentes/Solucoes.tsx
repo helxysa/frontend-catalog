@@ -97,6 +97,7 @@ export default function Solucao() {
   const [filteredSolucoes, setFilteredSolucoes] = useState<SolucaoType[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [tempSearchTerm, setTempSearchTerm] = useState('');
+  const [shouldRefresh, setShouldRefresh] = useState(0);
 
   const determinarCorTexto = (corHex: string | undefined) => {
     if (!corHex) return 'text-gray-800'; 
@@ -144,7 +145,7 @@ export default function Solucao() {
       setStatusList(statusData);
       setDemanda(demandasFiltradas);
     });
-  }, []);
+  }, [shouldRefresh]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -175,8 +176,7 @@ export default function Solucao() {
         await createSolucao(formDataToSubmit);
       }
       
-      const updatedSolucoes = await getSolucoes();
-      setSolucoes(updatedSolucoes);
+      setShouldRefresh(prev => prev + 1);
       setIsModalOpen(false);
       setFormData({} as SolucaoFormData);
       setIsEditing(null);
@@ -210,8 +210,7 @@ export default function Solucao() {
     if (itemToDeleteId) {
       try {
         await deleteSolucao(itemToDeleteId);
-        const updatedSolucoes = await getSolucoes();
-        setSolucoes(updatedSolucoes);
+        setShouldRefresh(prev => prev + 1);
       } catch (error) {
         console.error('Error deleting solucao:', error);
       }
