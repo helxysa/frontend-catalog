@@ -98,6 +98,10 @@ export default function Solucao() {
   const [searchTerm, setSearchTerm] = useState('');
   const [tempSearchTerm, setTempSearchTerm] = useState('');
   const [shouldRefresh, setShouldRefresh] = useState(0);
+  const [formErrors, setFormErrors] = useState({
+    nome: false,
+    demanda_id: false
+  });
 
   const determinarCorTexto = (corHex: string | undefined) => {
     if (!corHex) return 'text-gray-800'; 
@@ -149,24 +153,37 @@ export default function Solucao() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    
-    
-    try {
 
-      
-      
+    // Reset dos erros
+    setFormErrors({
+      nome: false,
+      demanda_id: false
+    });
+
+    // Validação dos campos obrigatórios
+    const errors = {
+      nome: !formData.nome,
+      demanda_id: !formData.demanda_id
+    };
+
+    if (errors.nome || errors.demanda_id) {
+      setFormErrors(errors);
+      return;
+    }
+
+    try {
       const formDataToSubmit = {
         nome: formData.nome || '-',
         sigla: formData.sigla || '-',
         descricao: formData.descricao || '-',
         versao: formData.versao || '-',
-        tipo_id: formData.tipo_id ? Number(formData.tipo_id) : 1,
-        linguagem_id: formData.linguagem_id ? Number(formData.linguagem_id) : 1,
-        desenvolvedor_id: formData.desenvolvedor_id ? Number(formData.desenvolvedor_id) : 1,
-        categoria_id: formData.categoria_id ? Number(formData.categoria_id) : 1,
-        responsavel_id: formData.responsavel_id ? Number(formData.responsavel_id) : 1,
-        status_id: formData.status_id ? Number(formData.status_id) : 1,
-        demanda_id: formData.demanda_id ? Number(formData.demanda_id) : 1,
+        tipo_id: formData.tipo_id ? Number(formData.tipo_id) : null,
+        linguagem_id: formData.linguagem_id ? Number(formData.linguagem_id) : null,
+        desenvolvedor_id: formData.desenvolvedor_id ? Number(formData.desenvolvedor_id) : null,
+        categoria_id: formData.categoria_id ? Number(formData.categoria_id) : null,
+        responsavel_id: formData.responsavel_id ? Number(formData.responsavel_id) : null,
+        status_id: formData.status_id ? Number(formData.status_id) : null,
+        demanda_id: Number(formData.demanda_id),
         data_status: formData.data_status || new Date().toISOString().split('T')[0]
       };
 
@@ -182,7 +199,16 @@ export default function Solucao() {
       setIsEditing(null);
     } catch (error: any) {
       console.error('Error details:', error);
-      alert('Erro ao salvar a solução. Por favor, tente novamente.');
+      if (error.response) {
+        // Se houver uma resposta do servidor
+        alert(`Erro ao salvar a solução: ${error.response.data.message || 'Erro desconhecido'}`);
+      } else if (error.request) {
+        // Se a requisição foi feita mas não houve resposta
+        alert('Erro de conexão com o servidor. Verifique sua internet.');
+      } else {
+        // Outros erros
+        alert('Erro ao processar a solicitação. Por favor, tente novamente.');
+      }
     }
   };
 
@@ -302,7 +328,28 @@ export default function Solucao() {
   };
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setTempSearchTerm(e.target.value);
+    const value = e.target.value;
+    setTempSearchTerm(value);
+    
+    // Aplicar filtro imediatamente enquanto o usuário digita
+    if (value) {
+      const searchLower = value.toLowerCase();
+      const filtered = solucoes.filter((s: SolucaoType) => 
+        s.nome?.toLowerCase().includes(searchLower) ||
+        s.sigla?.toLowerCase().includes(searchLower) ||
+        s.descricao?.toLowerCase().includes(searchLower) ||
+        s.versao?.toLowerCase().includes(searchLower) ||
+        s.tipo?.nome.toLowerCase().includes(searchLower) ||
+        s.linguagem?.nome.toLowerCase().includes(searchLower) ||
+        s.desenvolvedor?.nome.toLowerCase().includes(searchLower) ||
+        s.categoria?.nome.toLowerCase().includes(searchLower) ||
+        s.responsavel?.nome.toLowerCase().includes(searchLower) ||
+        s.status?.nome.toLowerCase().includes(searchLower)
+      );
+      setFilteredSolucoes(filtered);
+    } else {
+      setFilteredSolucoes(solucoes);
+    }
   };
 
   const clearFilters = () => {
@@ -475,20 +522,22 @@ export default function Solucao() {
           </div>
           
           <div className="mt-3 flex items-center justify-between">
-            {/* <div className="flex-1 max-w-md">
-              <input
-                type="text"
-                placeholder="Buscar soluções..."
-                value={tempSearchTerm}
-                onChange={handleSearchChange}
-                className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors"
-              />
-              
+            <div className="mb-6">
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Buscar soluções..."
+                  value={tempSearchTerm}
+                  onChange={handleSearchChange}
+                  className="w-full px-4 py-2 pl-10 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white text-gray-700 placeholder-gray-400"
+                />
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <svg className="h-5 w-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+              </div>
             </div>
-             */}
-             <div>
-              
-             </div>
             <div className="flex space-x-2">
               <button
                 onClick={clearFilters}
@@ -626,14 +675,23 @@ export default function Solucao() {
                 <div className="grid grid-cols-2 gap-4">
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Nome</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Nome <span className="text-red-500">*</span>
+                    </label>
                     <input 
                       type="text" 
                       name="nome" 
                       value={formData.nome || ''} 
                       onChange={handleInputChange}
-                      className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors" 
+                      className={`w-full px-2 py-1.5 text-sm border ${
+                        formErrors.nome ? 'border-red-500' : 'border-gray-300'
+                      } rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors`}
                     />
+                    {formErrors.nome && (
+                      <p className="mt-1 text-sm text-red-500">
+                        Este campo é obrigatório
+                      </p>
+                    )}
                   </div>
 
                   <div>
@@ -729,18 +787,27 @@ export default function Solucao() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Demanda</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Demanda <span className="text-red-500">*</span>
+                    </label>
                     <select 
                       name="demanda_id" 
                       value={formData.demanda_id || ''}
                       onChange={handleInputChange}
-                      className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors"
+                      className={`w-full px-2 py-1.5 text-sm border ${
+                        formErrors.demanda_id ? 'border-red-500' : 'border-gray-300'
+                      } rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors`}
                     >
                       <option value="">Selecione uma demanda</option>
                       {demanda.map((demanda) => (
                         <option key={demanda.id} value={demanda.id}>{demanda.sigla || demanda.nome}</option>
                       ))}
                     </select>
+                    {formErrors.demanda_id && (
+                      <p className="mt-1 text-sm text-red-500">
+                        Este campo é obrigatório
+                      </p>
+                    )}
                   </div>
 
                   <div>
@@ -852,123 +919,204 @@ export default function Solucao() {
 
               <div className="max-h-[60vh] overflow-y-auto pr-4">
                 {activeTab === 'details' ? (
-                  <div className="grid grid-cols-2 gap-6">
-                    <div className="space-y-4">
-                      <div className="bg-white p-4 rounded-lg border border-gray-200">
-                        <h3 className="text-sm font-medium text-gray-700 mb-2">Informações Básicas</h3>
-                        <div className="space-y-2">
-                          <p className="text-sm">
-                            <span className="font-medium text-gray-700">Nome:</span>{' '}
-                            <span className="text-gray-900">{selectedDemandDetails.nome}</span>
-                          </p>
-                          <p className="text-sm">
-                            <span className="font-medium text-gray-700">Sigla:</span>{' '}
-                            <span className="text-gray-900">{selectedDemandDetails.sigla}</span>
-                          </p>
-                          <p className="text-sm">
-                            <span className="font-medium text-gray-700">Versão:</span>{' '}
-                            <span className="text-gray-900">{selectedDemandDetails.versao}</span>
-                          </p>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* Informações Básicas */}
+                    <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100 w-full h-[300px]">
+                      <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                        <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        Informações Básicas
+                      </h3>
+                      <div className="space-y-3 overflow-y-auto h-[200px]">
+                        <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
+                          <span className="text-sm font-medium text-gray-600">Nome:</span>
+                          <span className="text-sm text-gray-800 font-medium">{selectedDemandDetails.nome}</span>
                         </div>
-                      </div>
-
-                      <div className="bg-white p-4 rounded-lg border border-gray-200">
-                        <h3 className="text-sm font-medium text-gray-700 mb-2">Detalhes Técnicos</h3>
-                        <div className="space-y-2">
-                          <p className="text-sm">
-                            <span className="font-medium text-gray-700">Tipo:</span>{' '}
-                            <span className="text-gray-900">{selectedDemandDetails.tipo?.nome}</span>
-                          </p>
-                          <p className="text-sm">
-                            <span className="font-medium text-gray-700">Linguagem:</span>{' '}
-                            <span className="text-gray-900">{selectedDemandDetails.linguagem?.nome}</span>
-                          </p>
-                          <p className="text-sm">
-                            <span className="font-medium text-gray-700">Descrição:</span>{' '}
-                            <span className="text-gray-900">{selectedDemandDetails.descricao}</span>
-                          </p>
+                        <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
+                          <span className="text-sm font-medium text-gray-600">Sigla:</span>
+                          <span className="text-sm text-gray-800 font-medium">{selectedDemandDetails.sigla}</span>
+                        </div>
+                        <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
+                          <span className="text-sm font-medium text-gray-600">Versão:</span>
+                          <span className="text-sm text-gray-800 font-medium">{selectedDemandDetails.versao}</span>
                         </div>
                       </div>
                     </div>
 
-                    <div className="space-y-4">
-                      <div className="bg-white p-4 rounded-lg border border-gray-200">
-                        <h3 className="text-sm font-medium text-gray-700 mb-2">Status e Categoria</h3>
-                        <div className="space-y-2">
-                          <p className="text-sm">
-                            <span className="font-medium text-gray-700">Status:</span>{' '}
-                            <span 
-                              className={`rounded-md px-2 py-1 ${determinarCorTexto(selectedDemandDetails.status?.propriedade)}`}
-                              style={{ backgroundColor: selectedDemandDetails.status?.propriedade }}
-                            >
-                              {selectedDemandDetails.status?.nome}
-                            </span>
-                          </p>
-                          <p className="text-sm">
-                            <span className="font-medium text-gray-700">Data Status:</span>{' '}
-                            <span className="text-gray-900">{formatDate(selectedDemandDetails.dataStatus)}</span>
-                          </p>
-                          <p className="text-sm">
-                            <span className="font-medium text-gray-700">Categoria:</span>{' '}
-                            <span className="text-gray-900">{selectedDemandDetails.categoria?.nome}</span>
-                          </p>
+                    {/* Detalhes da Solução */}
+                    <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100 w-full h-[300px]">
+                      <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                        <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                        </svg>
+                        Detalhes da Solução
+                      </h3>
+                      <div className="space-y-3 overflow-y-auto h-[200px]">
+                        <div className="p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
+                          <span className="text-sm font-medium text-gray-600">Descrição:</span>
+                          <div className="mt-2 p-3 bg-white rounded-md border border-gray-200">
+                            <p className="text-sm text-gray-800 leading-relaxed whitespace-pre-line">
+                              {selectedDemandDetails.descricao || 'Nenhuma descrição fornecida'}
+                            </p>
+                          </div>
                         </div>
                       </div>
+                    </div>
 
-                      <div className="bg-white p-4 rounded-lg border border-gray-200">
-                        <h3 className="text-sm font-medium text-gray-700 mb-2">Responsabilidades</h3>
-                        <div className="space-y-2">
-                          <p className="text-sm">
-                            <span className="font-medium text-gray-700">Desenvolvedor:</span>{' '}
-                            <span className="text-gray-900">{selectedDemandDetails.desenvolvedor?.nome}</span>
-                          </p>
-                          <p className="text-sm">
-                            <span className="font-medium text-gray-700">Responsável:</span>{' '}
-                            <span className="text-gray-900">{selectedDemandDetails.responsavel?.nome}</span>
-                          </p>
-                          <p className="text-sm">
-                            <span className="font-medium text-gray-700">Demanda:</span>{' '}
-                            <span className="text-gray-900">{selectedDemandDetails.demanda?.nome}</span>
-                          </p>
+                    {/* Configurações Técnicas */}
+                    <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100 w-full h-[300px]">
+                      <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                        <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                        </svg>
+                        Configurações Técnicas
+                      </h3>
+                      <div className="space-y-3 overflow-y-auto h-[200px]">
+                        <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
+                          <span className="text-sm font-medium text-gray-600">Tipo:</span>
+                          <span className="text-sm text-gray-800 font-medium">
+                            {tipos.find(tipo => tipo.id === selectedDemandDetails.tipo?.id)?.nome || '-'}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
+                          <span className="text-sm font-medium text-gray-600">Linguagem:</span>
+                          <span className="text-sm text-gray-800 font-medium">{selectedDemandDetails.linguagem?.nome || '-'}</span>
+                        </div>
+                        <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
+                          <span className="text-sm font-medium text-gray-600">Desenvolvedor:</span>
+                          <span className="text-sm text-gray-800 font-medium">{selectedDemandDetails.desenvolvedor?.nome || '-'}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Responsabilidades */}
+                    <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100 w-full h-[300px]">
+                      <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                        <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                        </svg>
+                        Responsabilidades
+                      </h3>
+                      <div className="space-y-3 overflow-y-auto h-[200px]">
+                        <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
+                          <span className="text-sm font-medium text-gray-600">Categoria:</span>
+                          <span className="text-sm text-gray-800 font-medium">{selectedDemandDetails.categoria?.nome || '-'}</span>
+                        </div>
+                        <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
+                          <span className="text-sm font-medium text-gray-600">Responsável:</span>
+                          <span className="text-sm text-gray-800 font-medium">{selectedDemandDetails.responsavel?.nome || '-'}</span>
+                        </div>
+                        <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
+                          <span className="text-sm font-medium text-gray-600">Status:</span>
+                          <span 
+                            className={`rounded-md px-3 py-1 text-sm font-medium ${determinarCorTexto(selectedDemandDetails.status?.propriedade)}`}
+                            style={{ backgroundColor: selectedDemandDetails.status?.propriedade }}
+                          >
+                            {selectedDemandDetails.status?.nome || '-'}
+                          </span>
                         </div>
                       </div>
                     </div>
                   </div>
                 ) : (
                   <div className="bg-gray-50 rounded-lg p-6">
+                    <div className="mb-6">
+                      <h3 className="text-lg font-semibold text-gray-900">Histórico de Alterações</h3>
+                      <p className="text-sm text-gray-600">Acompanhe todas as mudanças realizadas nesta solução</p>
+                    </div>
                     <div className="flow-root">
                       <ul role="list" className="-mb-8">
                         {historicoSolucao.map((evento: HistoricoType, index: number) => (
                           <li key={evento.id}>
                             <div className="relative pb-8">
                               {index !== historicoSolucao.length - 1 && (
-                                <span className="absolute left-4 top-4 -ml-px h-full w-0.5 bg-blue-200" aria-hidden="true" />
+                                <span className="absolute left-5 top-5 -ml-px h-full w-0.5 bg-gradient-to-b from-blue-500 via-blue-300 to-gray-200" aria-hidden="true" />
                               )}
                               <div className="relative flex items-start space-x-3">
                                 <div className="relative">
-                                  <span className="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center ring-8 ring-white">
-                                    <ChevronRight className="h-5 w-5 text-white" />
-                                  </span>
-                                </div>
-                                <div className="flex-1 min-w-0 bg-white rounded-lg shadow-sm p-4">
-                                  <div className="flex justify-between items-center mb-1">
-                                    <div className="flex items-center gap-2">
-                                      <span className="text-sm font-medium text-gray-900">
-                                        {evento.usuario}
-                                      </span>
-                                      {index === 0 && (
-                                        <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
-                                          Recente
-                                        </span>
-                                      )}
-                                    </div>
-                                    <time className="text-sm text-gray-500">
-                                      {formatDate(evento.createdAt)}
-                                    </time>
+                                  <div className={`h-12 w-12 rounded-full flex items-center justify-center ring-8 ring-white shadow-md
+                                    ${index === 0 ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}`}>
+                                    <span className="text-xs font-medium text-center">
+                                      {formatDate(evento.createdAt).split('/').slice(0, 2).join('/')}
+                                    </span>
                                   </div>
-                                  <p className="text-sm text-gray-500 mb-2">
-                                    {formatHistoricoDescricao(evento.descricao, evento)}
-                                  </p>
+                                  {index !== historicoSolucao.length - 1 && (
+                                    <span className="absolute left-6 top-12 -ml-px h-full w-0.5 bg-gradient-to-b from-blue-500 via-blue-300 to-gray-200" aria-hidden="true" />
+                                  )}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="bg-white rounded-lg shadow-sm p-4 hover:shadow-md transition-all duration-200 border border-gray-100">
+                                    <div className="flex justify-between items-center mb-4">
+                                      <div className="flex items-center gap-3">
+                                        <span className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                                          <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                                          {evento.usuario}
+                                        </span>
+                                        {index === 0 && (
+                                          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100">
+                                            Mais recente
+                                          </span>
+                                        )}
+                                      </div>
+                                      <time className="text-sm text-gray-500 flex items-center gap-2">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-gray-300"></span>
+                                        {formatDate(evento.createdAt)}
+                                      </time>
+                                    </div>
+                                    
+                                    <div className="text-sm text-gray-700 mb-4">
+                                      <div className="bg-gradient-to-r from-blue-50 to-white p-4 rounded-lg border-l-4 border-blue-500">
+                                        {formatHistoricoDescricao(evento.descricao, evento)}
+                                      </div>
+                                    </div>
+
+                                    <div className="mt-3 text-xs space-y-3">
+                                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div className="bg-gray-50 p-4 rounded-lg border border-gray-100 shadow-sm">
+                                          <h4 className="font-semibold text-gray-900 mb-3 pb-2 border-b border-gray-200">
+                                            Informações Básicas
+                                          </h4>
+                                          <div className="space-y-3">
+                                            <p className="flex items-center justify-between group hover:bg-white hover:shadow-sm p-2 rounded-md transition-all">
+                                              <span className="font-medium text-gray-600">Nome:</span>
+                                              <span className="text-gray-900 font-medium group-hover:text-blue-600">{evento.solucao.nome}</span>
+                                            </p>
+                                            <p className="flex items-center justify-between group hover:bg-white hover:shadow-sm p-2 rounded-md transition-all">
+                                              <span className="font-medium text-gray-600">Sigla:</span>
+                                              <span className="text-gray-900 font-medium group-hover:text-blue-600">{evento.solucao.sigla}</span>
+                                            </p>
+                                            <p className="flex items-center justify-between group hover:bg-white hover:shadow-sm p-2 rounded-md transition-all">
+                                              <span className="font-medium text-gray-600">Versão:</span>
+                                              <span className="text-gray-900 font-medium group-hover:text-blue-600">{evento.solucao.versao}</span>
+                                            </p>
+                                          </div>
+                                        </div>
+                                        
+                                        <div className="bg-gray-50 p-4 rounded-lg border border-gray-100 shadow-sm">
+                                          <h4 className="font-semibold text-gray-900 mb-3 pb-2 border-b border-gray-200">
+                                            Detalhes Técnicos
+                                          </h4>
+                                          <div className="space-y-3">
+                                            <p className="flex items-center justify-between group hover:bg-white hover:shadow-sm p-2 rounded-md transition-all">
+                                              <span className="font-medium text-gray-600">Tipo:</span>
+                                              <span className="text-gray-900 font-medium group-hover:text-blue-600">
+                                                {tipos.find(tipo => tipo.id === evento.solucao.tipoId)?.nome || '-'}
+                                              </span>
+                                            </p>
+                                            <p className="flex items-center justify-between group hover:bg-white hover:shadow-sm p-2 rounded-md transition-all">
+                                              <span className="font-medium text-gray-600">Linguagem:</span>
+                                              <span className="text-gray-900 font-medium group-hover:text-blue-600">{evento.solucao.linguagemId || '-'}</span>
+                                            </p>
+                                            <p className="flex items-center justify-between group hover:bg-white hover:shadow-sm p-2 rounded-md transition-all">
+                                              <span className="font-medium text-gray-600">Status:</span>
+                                              <span className="text-gray-900 font-medium group-hover:text-blue-600">{evento.solucao.statusId || '-'}</span>
+                                            </p>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
                                 </div>
                               </div>
                             </div>

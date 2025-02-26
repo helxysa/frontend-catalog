@@ -3,9 +3,10 @@ export interface SolucaoType {
     sigla: string;
     nome: string;
     descricao: string;
+    createdAt: string | Date;
     proprietario_id: number;
     versao: string;
-    tipo: {
+    tipo?: {
       id: number;
       nome: string;
     };

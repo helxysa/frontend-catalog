@@ -43,6 +43,9 @@ export async function getDemandas() {
   }
 }
 
+
+
+
 export async function getSolucoes() {
   const storedId = localStorage.getItem('selectedProprietarioId');
   if (!storedId) {
@@ -107,4 +110,15 @@ export async function getCategorias() {
   }
   const response = await axios.get(`${url}/proprietarios/${storedId}/categorias`);
   return response.data;
+}
+
+
+export async function getDesenvolvedores(){
+  const storedId = localStorage.getItem('selectedProprietarioId');
+  if (!storedId) {
+      throw new Error("ProprietarioId not found in localStorage");
+  }
+  const response = await axios.get(`${url}/proprietarios/${storedId}/desenvolvedores`);
+  return response.data;
+
 }

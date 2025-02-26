@@ -7,28 +7,53 @@ if (!baseUrl) {
 const url = `${baseUrl}/demandas`;
 
 export async function getDemandas() {
-  const response = await axios.get(url);
-  return response.data;
+  try {
+    const response = await axios.get(url);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching demandas:", error);
+    return null;
+  }
 }
 
 export async function getDemandasById(id: string) {
-  const response = await axios.get(`${url}/${id}`);
-  return response.data;
+  try {
+    const response = await axios.get(`${url}/${id}`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching demanda by ID:", error);
+    return null;
+  }
 }
 
 export async function createDemanda(demanda: any) {
-  const response = await axios.post(`${url}`, demanda);
-  return response.data;
+  try {
+    const response = await axios.post(`${url}`, demanda);
+    return response.data;
+  } catch (error) {
+    console.error("Error creating demanda:", error);
+    return null;
+  }
 }
 
 export async function updateDemanda(id: string, demanda: any) {
-  const response = await axios.put(`${url}/${id}`, demanda);
-  return response.data;
+  try {
+    const response = await axios.put(`${url}/${id}`, demanda);
+    return response.data;
+  } catch (error) {
+    console.error("Error updating demanda:", error);
+    return null;
+  }
 }
 
 export async function deleteDemanda(id: string) {
-  const response = await axios.delete(`${url}/${id}`);
-  return response.data;
+  try {
+    const response = await axios.delete(`${url}/${id}`);
+    return response.data;
+  } catch (error) {
+    console.error("Error deleting demanda:", error);
+    return null;
+  }
 }
 
 
@@ -38,53 +63,83 @@ export async function deleteDemanda(id: string) {
 const urlSelect = `${baseUrl}`;
 
 export async function getProprietarios() {
+  try {
     const response = await axios.get(`${urlSelect}/proprietarios`);
     return response.data;
+  } catch (error) {
+    console.error("Error fetching proprietarios:", error);
+    return null;
+  }
 }
 
 export async function getAlinhamentos() {
-  const storedId = localStorage.getItem('selectedProprietarioId');
-  if (!storedId) {
+  try {
+    const storedId = localStorage.getItem('selectedProprietarioId');
+    if (!storedId) {
       throw new Error("ProprietarioId not found in localStorage");
+    }
+    const response = await axios.get(`${urlSelect}/proprietarios/${storedId}/alinhamentos`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching alinhamentos:", error);
+    return null;
   }
-  const response = await axios.get(`${urlSelect}/proprietarios/${storedId}/alinhamentos`);
-  return response.data;
 }
 
 
 export async function getPrioridades() {
-  const storedId = localStorage.getItem('selectedProprietarioId');
-  if (!storedId) {
+  try {
+    const storedId = localStorage.getItem('selectedProprietarioId');
+    if (!storedId) {
       throw new Error("ProprietarioId not found in localStorage");
+    }
+    const response = await axios.get(`${urlSelect}/proprietarios/${storedId}/prioridades`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching prioridades:", error);
+    return null;
   }
-  const response = await axios.get(`${urlSelect}/proprietarios/${storedId}/prioridades`);
-  return response.data;
 }
 
 
 export async function getResponsaveis() {
-  const storedId = localStorage.getItem('selectedProprietarioId');
-  if (!storedId) {
+  try {
+    const storedId = localStorage.getItem('selectedProprietarioId');
+    if (!storedId) {
       throw new Error("ProprietarioId not found in localStorage");
+    }
+    const response = await axios.get(`${urlSelect}/proprietarios/${storedId}/responsaveis`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching responsaveis:", error);
+    return null;
   }
-  const response = await axios.get(`${urlSelect}/proprietarios/${storedId}/responsaveis`);
-  return response.data;
 }
 
 
 export async function getStatus() {
-  const storedId = localStorage.getItem('selectedProprietarioId');
-  if (!storedId) {
+  try {
+    const storedId = localStorage.getItem('selectedProprietarioId');
+    if (!storedId) {
       throw new Error("ProprietarioId not found in localStorage");
+    }
+    const response = await axios.get(`${urlSelect}/proprietarios/${storedId}/status`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching status:", error);
+    return null;
   }
-  const response = await axios.get(`${urlSelect}/proprietarios/${storedId}/status`);
-  return response.data;
 }
 
 
 export async function getHistoricoDemandas() {
+  try {
     const response = await axios.get(`${urlSelect}/historico_demandas`);
     return response.data;
+  } catch (error) {
+    console.error("Error fetching historico demandas:", error);
+    return null;
+  }
 }
 
 

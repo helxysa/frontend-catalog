@@ -94,7 +94,26 @@ export default function Demanda() {
   };
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setTempSearchTerm(e.target.value);
+    const value = e.target.value;
+    setTempSearchTerm(value);
+    
+    // Aplicar filtro imediatamente enquanto o usuário digita
+    if (value) {
+      const searchLower = value.toLowerCase();
+      const filtered = demandas.filter((d: DemandaType) => 
+        d.nome?.toLowerCase().includes(searchLower) ||
+        d.sigla?.toLowerCase().includes(searchLower) ||
+        d.fatorGerador?.toLowerCase().includes(searchLower) ||
+        d.demandante?.toLowerCase().includes(searchLower) ||
+        d.alinhamento?.nome.toLowerCase().includes(searchLower) ||
+        d.prioridade?.nome.toLowerCase().includes(searchLower) ||
+        d.responsavel?.nome.toLowerCase().includes(searchLower) ||
+        d.status?.nome.toLowerCase().includes(searchLower)
+      );
+      setFilteredDemandas(filtered);
+    } else {
+      setFilteredDemandas(demandas);
+    }
   };
 
   useEffect(() => {
@@ -323,6 +342,22 @@ export default function Demanda() {
   const applyFilters = () => {
     let filtered = [...demandas] as DemandaType[];
     
+    // Aplicar filtro de texto
+    if (tempSearchTerm) {
+      const searchLower = tempSearchTerm.toLowerCase();
+      filtered = filtered.filter(d => 
+        d.nome?.toLowerCase().includes(searchLower) ||
+        d.sigla?.toLowerCase().includes(searchLower) ||
+        d.fatorGerador?.toLowerCase().includes(searchLower) ||
+        d.demandante?.toLowerCase().includes(searchLower) ||
+        d.alinhamento?.nome.toLowerCase().includes(searchLower) ||
+        d.prioridade?.nome.toLowerCase().includes(searchLower) ||
+        d.responsavel?.nome.toLowerCase().includes(searchLower) ||
+        d.status?.nome.toLowerCase().includes(searchLower)
+      );
+    }
+    
+    // Aplicar outros filtros
     if (filters.demandante) {
       filtered = filtered.filter(d => d.demandante === filters.demandante);
     }
@@ -455,43 +490,37 @@ export default function Demanda() {
             </select>
           </div>
 
-          {/* Active Filters */}
-          {/* {Object.values(filters).some(value => value) && (
-            <div className="mt-3 flex flex-wrap gap-2">
-              {Object.entries(filters).map(([key, value]) => value && (
-                <span key={key} className="inline-flex items-center px-2 py-1 text-xs rounded-md bg-blue-50 text-blue-700">
-                  {key.replace('_id', '').replace('_', ' ').charAt(0).toUpperCase() + key.slice(1).replace('_id', '')}
-                  <button
-                    onClick={() => {
-                      setFilters(prev => ({ ...prev, [key]: '' }));
-                      applyFilters();
-                    }}
-                    className="ml-1 hover:text-blue-900"
-                  >
-                    ×
-                  </button>
-                </span>
-              ))}
+          <div className="mt-3 flex items-center justify-between">
+            <div className="mb-6">
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Buscar demandas..."
+                  value={tempSearchTerm}
+                  onChange={handleSearchChange}
+                  className="w-full px-4 py-2 pl-10 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white text-gray-700 placeholder-gray-400"
+                />
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <svg className="h-5 w-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+              </div>
             </div>
-          )} */}
-          
-
-          
-          
-          <div className="flex justify-end mt-3 space-x-2">
-            
-            <button
-              onClick={clearFilters}
-              className="px-3 py-1.5 text-sm text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
-            >
-              Limpar
-            </button>
-            <button
-              onClick={applyFilters}
-              className="px-3 py-1.5 text-sm text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors"
-            >
-              Aplicar
-            </button>
+            <div className="flex space-x-2">
+              <button
+                onClick={clearFilters}
+                className="px-3 py-1.5 text-sm text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
+              >
+                Limpar
+              </button>
+              <button
+                onClick={applyFilters}
+                className="px-3 py-1.5 text-sm text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors"
+              >
+                Aplicar
+              </button>
+            </div>
           </div>
         </div>
 
@@ -827,76 +856,94 @@ export default function Demanda() {
 
               <div className="max-h-[60vh] overflow-y-auto pr-4">
                 {activeTab === 'details' ? (
-                  <div className="grid grid-cols-2 gap-6">
-                    <div className="space-y-4">
-                      <div className="bg-white p-4 rounded-lg border border-gray-200">
-                        <h3 className="text-sm font-medium text-gray-700 mb-2">Informações Básicas</h3>
-                        <div className="space-y-2">
-                          <p className="text-sm">
-                            <span className="font-medium text-gray-700">Nome:</span>{' '}
-                            <span className="text-gray-900">{selectedDemandDetails.nome}</span>
-                          </p>
-                          <p className="text-sm">
-                            <span className="font-medium text-gray-700">Sigla:</span>{' '}
-                            <span className="text-gray-900">{selectedDemandDetails.sigla}</span>
-                          </p>
-                          <p className="text-sm">
-                            <span className="font-medium text-gray-700">Demandante:</span>{' '}
-                            <span className="text-gray-900">{selectedDemandDetails.demandante}</span>
-                          </p>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100 w-full h-[300px]">
+                      <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                        <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        Informações Básicas
+                      </h3>
+                      <div className="space-y-3 overflow-y-auto h-[200px]">
+                        <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
+                          <span className="text-sm font-medium text-gray-600">Nome:</span>
+                          <span className="text-sm text-gray-800 font-medium">{selectedDemandDetails.nome}</span>
+                        </div>
+                        <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
+                          <span className="text-sm font-medium text-gray-600">Sigla:</span>
+                          <span className="text-sm text-gray-800 font-medium">{selectedDemandDetails.sigla}</span>
+                        </div>
+                        <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
+                          <span className="text-sm font-medium text-gray-600">Demandante:</span>
+                          <span className="text-sm text-gray-800 font-medium">{selectedDemandDetails.demandante}</span>
                         </div>
                       </div>
+                    </div>
 
-                      <div className="bg-white p-4 rounded-lg border border-gray-200">
-                        <h3 className="text-sm font-medium text-gray-700 mb-2">Detalhes do Projeto</h3>
-                        <div className="space-y-2">
-                          <p className="text-sm">
-                            <span className="font-medium text-gray-700">Fator Gerador:</span>{' '}
-                            <span className="text-gray-900">{selectedDemandDetails.fatorGerador}</span>
-                          </p>
-                          <p className="text-sm">
-                            <span className="font-medium text-gray-700">Descrição:</span>{' '}
-                            <span className="text-gray-900">{selectedDemandDetails.descricao}</span>
+                    <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100 w-full h-[300px]">
+                      <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                        <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                        </svg>
+                        Detalhes do Projeto
+                      </h3>
+                      <div className="space-y-3 overflow-y-auto h-[200px]">
+                        <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
+                          <span className="text-sm font-medium text-gray-600">Fator Gerador:</span>
+                          <span className="text-sm text-gray-800 font-medium">{selectedDemandDetails.fatorGerador}</span>
+                        </div>
+                        <div className="p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
+                          <span className="text-sm font-medium text-gray-600">Descrição:</span>
+                          <p className="text-sm text-gray-800 mt-1 leading-relaxed">
+                            {selectedDemandDetails.descricao || 'Nenhuma descrição fornecida'}
                           </p>
                         </div>
                       </div>
                     </div>
 
-                    <div className="space-y-4">
-                      <div className="bg-white p-4 rounded-lg border border-gray-200">
-                        <h3 className="text-sm font-medium text-gray-700 mb-2">Status e Prioridade</h3>
-                        <div className="space-y-2">
-                          <p className="text-sm">
-                            <span className="font-medium text-gray-700">Status:</span>{' '}
-                            <span 
-                              className={`rounded-md px-2 py-1 ${determinarCorTexto(selectedDemandDetails.status?.propriedade)}`}
-                              style={{ backgroundColor: selectedDemandDetails.status?.propriedade }}
-                            >
-                              {selectedDemandDetails.status?.nome}
-                            </span>
-                          </p>
-                          <p className="text-sm">
-                            <span className="font-medium text-gray-700">Data Status:</span>{' '}
-                            <span className="text-gray-900">{formatDate(selectedDemandDetails.dataStatus, true)}</span>
-                          </p>
-                          <p className="text-sm">
-                            <span className="font-medium text-gray-700">Prioridade:</span>{' '}
-                            <span className="text-gray-900">{selectedDemandDetails.prioridade?.nome}</span>
-                          </p>
+                    <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100 w-full h-[300px]">
+                      <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                        <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        Status e Prioridade
+                      </h3>
+                      <div className="space-y-3 overflow-y-auto h-[200px]">
+                        <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
+                          <span className="text-sm font-medium text-gray-600">Status:</span>
+                          <span 
+                            className={`rounded-md px-3 py-1 text-sm font-medium ${determinarCorTexto(selectedDemandDetails.status?.propriedade)}`}
+                            style={{ backgroundColor: selectedDemandDetails.status?.propriedade }}
+                          >
+                            {selectedDemandDetails.status?.nome}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
+                          <span className="text-sm font-medium text-gray-600">Data Status:</span>
+                          <span className="text-sm text-gray-800 font-medium">{formatDate(selectedDemandDetails.dataStatus, true)}</span>
+                        </div>
+                        <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
+                          <span className="text-sm font-medium text-gray-600">Prioridade:</span>
+                          <span className="text-sm text-gray-800 font-medium">{selectedDemandDetails.prioridade?.nome}</span>
                         </div>
                       </div>
+                    </div>
 
-                      <div className="bg-white p-4 rounded-lg border border-gray-200">
-                        <h3 className="text-sm font-medium text-gray-700 mb-2">Responsabilidades</h3>
-                        <div className="space-y-2">
-                          <p className="text-sm">
-                            <span className="font-medium text-gray-700">Responsável:</span>{' '}
-                            <span className="text-gray-900">{selectedDemandDetails.responsavel?.nome}</span>
-                          </p>
-                          <p className="text-sm">
-                            <span className="font-medium text-gray-700">Alinhamento:</span>{' '}
-                            <span className="text-gray-900">{selectedDemandDetails.alinhamento?.nome}</span>
-                          </p>
+                    <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100 w-full h-[300px]">
+                      <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                        <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                        </svg>
+                        Responsabilidades
+                      </h3>
+                      <div className="space-y-3 overflow-y-auto h-[200px]">
+                        <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
+                          <span className="text-sm font-medium text-gray-600">Responsável:</span>
+                          <span className="text-sm text-gray-800 font-medium">{selectedDemandDetails.responsavel?.nome}</span>
+                        </div>
+                        <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
+                          <span className="text-sm font-medium text-gray-600">Alinhamento:</span>
+                          <span className="text-sm text-gray-800 font-medium">{selectedDemandDetails.alinhamento?.nome}</span>
                         </div>
                       </div>
                     </div>

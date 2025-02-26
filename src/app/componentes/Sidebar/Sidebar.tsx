@@ -149,9 +149,9 @@ export function Sidebar() {
             <span className="ml-3 text-sm font-medium">Soluções</span>
           </div>
         </Link>
-
-        {/* Relatórios Dropdown */}
-        {/* <div className="relative">
+{/* 
+       
+       <div className="relative">
           <button 
             className={`w-full ${getItemClasses('/relatorios')}`}
             onClick={toggleReportMenu}
@@ -167,14 +167,15 @@ export function Sidebar() {
           <div 
             className={`${isReportMenuOpen ? 'block' : 'hidden'} ${isMobile ? 'ml-2 mt-1 space-y-2' : 'ml-4 mt-1 space-y-1'} py-1`}
           >
-            <Link href="/relatorios/demandas" className="block">
+            <Link href={`/proprietario/${proprietarioId}/relatorios/demandas`} className="block">
               <div className={getItemClasses('/relatorios/demandas')}>
                 <ListChecks className={`w-4 h-4 ${isActive('/relatorios/demandas') ? 'text-blue-600' : 'text-gray-400'} group-hover:text-gray-600`} />
                 <span className="ml-3 text-sm">Demandas</span>
               </div>
             </Link>
           </div>
-        </div> */}
+        </div>  */}
+
 
         {/* Configurações Dropdown */}
         <div className="relative">
