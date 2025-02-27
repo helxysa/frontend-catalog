@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    container_name: frontend_catalog
+    ports:
+      - "8012:3333"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    restart: unless-stopped
