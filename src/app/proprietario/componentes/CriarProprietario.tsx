@@ -1,22 +1,37 @@
 "use client"
-import { useState } from "react";
-import { createProprietario } from "../actions/actions";
+import { useState, useEffect } from "react";
+import { baseURL, createProprietario, updateProprietario } from "../actions/actions";
 
 interface CriarProprietarioProps {
   onClose: () => void;
   onSuccess: () => void;
+  proprietario?: {
+    id: number;
+    nome: string;
+    sigla: string;
+    descricao: string | null;
+    logo: string | null;
+  };
 }
 
-export default function CriarProprietario({ onClose, onSuccess }: CriarProprietarioProps) {
+export default function CriarProprietario({ onClose, onSuccess, proprietario }: CriarProprietarioProps) {
   const [formData, setFormData] = useState({
-    nome: "",
-    sigla: "",
-    descricao: "",
+    nome: proprietario?.nome || "",
+    sigla: proprietario?.sigla || "",
+    descricao: proprietario?.descricao || "",
   });
   const [logoFile, setLogoFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(
+    proprietario?.logo ? `${baseURL}${proprietario.logo}` : null
+  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (proprietario?.logo) {
+      setPreviewUrl(`${baseURL}${proprietario.logo}`);
+    }
+  }, [proprietario]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -30,10 +45,28 @@ export default function CriarProprietario({ onClose, onSuccess }: CriarProprieta
     const file = e.target.files?.[0];
     if (file) {
       setLogoFile(file);
-      // Create preview URL
+      if (previewUrl && !previewUrl.startsWith(baseURL)) {
+        URL.revokeObjectURL(previewUrl);
+      }
       const url = URL.createObjectURL(file);
       setPreviewUrl(url);
     }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (previewUrl && !previewUrl.startsWith(baseURL)) {
+        URL.revokeObjectURL(previewUrl);
+      }
+    };
+  }, [previewUrl]);
+
+  const handleRemoveLogo = () => {
+    if (previewUrl && !previewUrl.startsWith(baseURL)) {
+      URL.revokeObjectURL(previewUrl);
+    }
+    setLogoFile(null);
+    setPreviewUrl(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -42,18 +75,23 @@ export default function CriarProprietario({ onClose, onSuccess }: CriarProprieta
     setLoading(true);
 
     try {
-      // Validate required fields
       if (!formData.nome.trim() || !formData.sigla.trim()) {
         throw new Error('Nome e sigla são campos obrigatórios');
       }
 
-      await createProprietario({
+      const submitData = {
         ...formData,
         logo: logoFile || undefined
-      });
+      };
+
+      if (proprietario) {
+        await updateProprietario(proprietario.id.toString(), submitData);
+      } else {
+        await createProprietario(submitData);
+      }
       onSuccess();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao criar proprietário');
+      setError(err instanceof Error ? err.message : `Erro ao ${proprietario ? 'atualizar' : 'criar'} proprietário`);
       console.error('Error:', err);
     } finally {
       setLoading(false);
@@ -64,7 +102,9 @@ export default function CriarProprietario({ onClose, onSuccess }: CriarProprieta
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fadeIn">
       <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-xl transform transition-all animate-slideIn">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">Criar Nova Unidade</h2>
+          <h2 className="text-2xl font-bold text-gray-900">
+            {proprietario ? 'Editar Unidade' : 'Criar Nova Unidade'}
+          </h2>
           <button
             onClick={onClose}
             className="p-2 rounded-full hover:bg-gray-100 transition-colors"
@@ -141,13 +181,13 @@ export default function CriarProprietario({ onClose, onSuccess }: CriarProprieta
                     src={previewUrl}
                     alt="Preview"
                     className="w-full h-full object-cover"
+                    onError={(e) => {
+                      handleRemoveLogo();
+                    }}
                   />
                   <button
                     type="button"
-                    onClick={() => {
-                      setLogoFile(null);
-                      setPreviewUrl(null);
-                    }}
+                    onClick={handleRemoveLogo}
                     className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
                   >
                     <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -199,10 +239,10 @@ export default function CriarProprietario({ onClose, onSuccess }: CriarProprieta
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
-                  Criando...
+                  {proprietario ? 'Atualizando...' : 'Criando...'}
                 </span>
               ) : (
-                "Criar Unidade"
+                proprietario ? "Atualizar Unidade" : "Criar Unidade"
               )}
             </button>
           </div>

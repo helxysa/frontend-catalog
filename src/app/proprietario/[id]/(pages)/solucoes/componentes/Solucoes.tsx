@@ -262,33 +262,116 @@ export default function Solucao() {
   };
 
   const formatHistoricoDescricao = (descricao: string, evento: HistoricoType) => {
+    // Função para formatar valores nulos
+    const formatNullValue = (value: string | null) => value === null ? 'Nulo (não informado)' : value;
+
+    // Lista de mapeamentos de campos
+    const camposMapeados: { [key: string]: { nome: string, getValue: (evento: HistoricoType) => string } } = {
+        'tipo_id': {
+            nome: 'Tipo',
+            getValue: (e) => {
+                const value = e.solucao.tipoId;
+                if (value === null) return 'Nulo (não informado)';
+                return tipos.find((t: BaseType) => t.id === Number(value))?.nome || 'Desconhecido';
+            }
+        },
+        'linguagem_id': {
+            nome: 'Linguagem',
+            getValue: (e) => {
+                const value = e.solucao.linguagemId;
+                if (value === null) return 'Nulo (não informado)';
+                return linguagens.find((l: BaseType) => l.id === Number(value))?.nome || 'Desconhecido';
+            }
+        },
+        'desenvolvedor_id': {
+            nome: 'Desenvolvedor',
+            getValue: (e) => {
+                const value = e.solucao.desenvolvedorId;
+                if (value === null) return 'Nulo (não informado)';
+                return desenvolvedores.find((d: BaseType) => d.id === Number(value))?.nome || 'Desconhecido';
+            }
+        },
+        'categoria_id': {
+            nome: 'Categoria',
+            getValue: (e) => {
+                const value = e.solucao.categoriaId;
+                if (value === null) return 'Nulo (não informado)';
+                return categorias.find((c: BaseType) => c.id === Number(value))?.nome || 'Desconhecido';
+            }
+        },
+        'responsavel_id': {
+            nome: 'Responsável',
+            getValue: (e) => {
+                const value = e.solucao.responsavelId;
+                if (value === null) return 'Nulo (não informado)';
+                return responsaveis.find((r: BaseType) => r.id === Number(value))?.nome || 'Desconhecido';
+            }
+        },
+        'status_id': {
+            nome: 'Status',
+            getValue: (e) => {
+                const value = e.solucao.statusId;
+                if (value === null) return 'Nulo (não informado)';
+                return statusList.find((s: BaseType) => s.id === Number(value))?.nome || 'Desconhecido';
+            }
+        },
+        'demanda_id': {
+            nome: 'Demanda',
+            getValue: (e) => {
+                const value = e.solucao.demandaId;
+                if (value === null) return 'Nulo (não informado)';
+                return demanda.find((d: any) => d.id === Number(value))?.nome || 'Desconhecido';
+            }
+        }
+    };
+
+    // Procura por diferentes padrões possíveis
     const patterns = [
-      /tipo_id: (null|\d+) -> (\d+)/g,
-      /categoria_id: (null|\d+) -> (\d+)/g,
-      /status_id: (null|\d+) -> (\d+)/g
+        /(\w+)_id: (\d+|null) -> (\d+|null)/g,    // padrão: campo_id: 1 -> 2 ou null -> 2
+        /(\w+)_id:(\d+|null)->(\d+|null)/g,       // padrão: campo_id:1->2 ou null->2
+        /(\w+): (\d+|null) -> (\d+|null)/g,       // padrão: campo: 1 -> 2 ou null -> 2
+        /(\w+):(\d+|null)->(\d+|null)/g           // padrão: campo:1->2 ou null->2
     ];
 
     let formattedDesc = descricao;
-
+    
     patterns.forEach(pattern => {
-      formattedDesc = formattedDesc.replace(pattern, (match, oldId, newId) => {
-        if (match.startsWith('tipo_id')) {
-          const oldTipo = oldId === 'null' ? '-' : tipos.find(t => t.id === Number(oldId))?.nome || oldId;
-          const newTipo = tipos.find(t => t.id === Number(newId))?.nome || newId;
-          return `Tipo: ${oldTipo} → ${newTipo}`;
-        }
-        if (match.startsWith('categoria_id')) {
-          const oldCategoria = oldId === 'null' ? '-' : categorias.find(c => c.id === Number(oldId))?.nome || oldId;
-          const newCategoria = categorias.find(c => c.id === Number(newId))?.nome || newId;
-          return `Categoria: ${oldCategoria} → ${newCategoria}`;
-        }
-        if (match.startsWith('status_id')) {
-          const oldStatus = oldId === 'null' ? '-' : statusList.find(s => s.id === Number(oldId))?.nome || oldId;
-          const newStatus = statusList.find(s => s.id === Number(newId))?.nome || newId;
-          return `Status: ${oldStatus} → ${newStatus}`;
-        }
-        return match;
-      });
+        formattedDesc = formattedDesc.replace(pattern, (match, campo, valorAntigo, valorNovo) => {
+            const campoNormalizado = campo.toLowerCase().endsWith('_id') ? campo : `${campo}_id`;
+            
+            if (camposMapeados[campoNormalizado]) {
+                const mapeamento = camposMapeados[campoNormalizado];
+                const antigoObj: HistoricoType = { 
+                    ...evento,
+                    solucao: { 
+                        ...evento.solucao, 
+                        [`${campoNormalizado.replace('_id', '')}Id`]: valorAntigo === 'null' ? null : Number(valorAntigo)
+                    }
+                };
+                const novoObj: HistoricoType = {
+                    ...antigoObj,
+                    solucao: {
+                        ...evento.solucao,
+                        [`${campoNormalizado.replace('_id', '')}Id`]: valorNovo === 'null' ? null : Number(valorNovo)
+                    }
+                };
+                
+                const nomeAntigo = mapeamento.getValue(antigoObj);
+                const nomeNovo = mapeamento.getValue(novoObj);
+                
+                return `${mapeamento.nome}: ${nomeAntigo} → ${nomeNovo}`;
+            }
+            return match;
+        });
+    });
+
+    // Formata datas
+    formattedDesc = formattedDesc.replace(/(data_status): (.*?) -> (.*?)(,|$)/g, (match, campo, dataAntiga, dataNova) => {
+        const formatDate = (dateString: string | null) => {
+            if (dateString === null || dateString === 'null') return 'Nulo (não informado)';
+            return new Date(dateString).toLocaleDateString('pt-BR');
+        };
+        return `${campo}: ${formatDate(dataAntiga)} → ${formatDate(dataNova)}`;
     });
 
     return formattedDesc;

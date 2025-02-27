@@ -124,7 +124,27 @@ export async function createProprietario(proprietario: CreateProprietarioData) {
 
 export async function updateProprietario(id: string, proprietario: Partial<CreateProprietarioData>) {
   try {
-    const response = await axios.put(`${url}/${id}`, proprietario);
+    // Create FormData instance
+    const formData = new FormData();
+    
+    if (proprietario.nome) {
+      formData.append('nome', proprietario.nome.trim());
+    }
+    if (proprietario.sigla) {
+      formData.append('sigla', proprietario.sigla.trim());
+    }
+    if (proprietario.descricao !== undefined) {
+      formData.append('descricao', proprietario.descricao.trim());
+    }
+    if (proprietario.logo) {
+      formData.append('logo', proprietario.logo);
+    }
+
+    const response = await axios.put(`${url}/${id}`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error)) {

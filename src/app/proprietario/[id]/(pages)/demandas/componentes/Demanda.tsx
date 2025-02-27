@@ -241,79 +241,100 @@ export default function Demanda() {
   };
 
   const formatHistoricoDescricao = (descricao: string, evento: HistoricoType) => {
-    console.log('Descrição original:', descricao); // Para debug
+    // Função para formatar valores nulos
+    const formatNullValue = (value: string | null) => value === null ? 'Nulo (não informado)' : value;
 
     // Lista de mapeamentos de campos
     const camposMapeados: { [key: string]: { nome: string, getValue: (evento: HistoricoType) => string } } = {
-      'alinhamento_id': {
-        nome: 'Alinhamento',
-        getValue: (e) => alinhamentos.find((a: AlinhamentoType) => a.id === Number(e.demanda.alinhamentoId))?.nome || ''
-      },
-      'prioridade_id': {
-        nome: 'Prioridade',
-        getValue: (e) => prioridades.find((p: PrioridadeType) => p.id === Number(e.demanda.prioridadeId))?.nome || ''
-      },
-      'responsavel_id': {
-        nome: 'Responsável',
-        getValue: (e) => responsaveis.find((r: ResponsavelType) => r.id === Number(e.demanda.responsavelId))?.nome || ''
-      },
-      'status_id': {
-        nome: 'Status',
-        getValue: (e) => statusList.find((s: StatusType) => s.id === Number(e.demanda.statusId))?.nome || ''
-      },
-      'proprietario_id': {
-        nome: 'Proprietário',
-        getValue: (e) => proprietarios.find((p: ProprietarioType) => p.id === Number(e.demanda.proprietarioId))?.nome || ''
-      }
+        'alinhamento_id': {
+            nome: 'Alinhamento',
+            getValue: (e) => {
+                const value = e.demanda.alinhamentoId;
+                if (value === null) return 'Nulo (não informado)';
+                return alinhamentos.find((a: AlinhamentoType) => a.id === Number(value))?.nome || 'Desconhecido';
+            }
+        },
+        'prioridade_id': {
+            nome: 'Prioridade',
+            getValue: (e) => {
+                const value = e.demanda.prioridadeId;
+                if (value === null) return 'Nulo (não informado)';
+                return prioridades.find((p: PrioridadeType) => p.id === Number(value))?.nome || 'Desconhecido';
+            }
+        },
+        'responsavel_id': {
+            nome: 'Responsável',
+            getValue: (e) => {
+                const value = e.demanda.responsavelId;
+                if (value === null) return 'Nulo (não informado)';
+                return responsaveis.find((r: ResponsavelType) => r.id === Number(value))?.nome || 'Desconhecido';
+            }
+        },
+        'status_id': {
+            nome: 'Status',
+            getValue: (e) => {
+                const value = e.demanda.statusId;
+                if (value === null) return 'Nulo (não informado)';
+                return statusList.find((s: StatusType) => s.id === Number(value))?.nome || 'Desconhecido';
+            }
+        },
+        'proprietario_id': {
+            nome: 'Proprietário',
+            getValue: (e) => {
+                const value = e.demanda.proprietarioId;
+                if (value === null) return 'Nulo (não informado)';
+                return proprietarios.find((p: ProprietarioType) => p.id === Number(value))?.nome || 'Desconhecido';
+            }
+        }
     };
 
     // Procura por diferentes padrões possíveis
     const patterns = [
-      /(\w+)_id: (\d+) -> (\d+)/g,    // padrão: campo_id: 1 -> 2
-      /(\w+)_id:(\d+)->(\d+)/g,       // padrão: campo_id:1->2
-      /(\w+): (\d+) -> (\d+)/g,       // padrão: campo: 1 -> 2
-      /(\w+):(\d+)->(\d+)/g           // padrão: campo:1->2
+        /(\w+)_id: (\d+|null) -> (\d+|null)/g,    // padrão: campo_id: 1 -> 2 ou null -> 2
+        /(\w+)_id:(\d+|null)->(\d+|null)/g,       // padrão: campo_id:1->2 ou null->2
+        /(\w+): (\d+|null) -> (\d+|null)/g,       // padrão: campo: 1 -> 2 ou null -> 2
+        /(\w+):(\d+|null)->(\d+|null)/g           // padrão: campo:1->2 ou null->2
     ];
 
     let formattedDesc = descricao;
     
     patterns.forEach(pattern => {
-      formattedDesc = formattedDesc.replace(pattern, (match, campo, valorAntigo, valorNovo) => {
-        console.log('Match encontrado:', { campo, valorAntigo, valorNovo }); // Para debug
-        
-        const campoNormalizado = campo.toLowerCase().endsWith('_id') ? campo : `${campo}_id`;
-        
-        if (camposMapeados[campoNormalizado]) {
-          const mapeamento = camposMapeados[campoNormalizado];
-          const antigoObj: HistoricoType = { 
-            id: evento.id,
-            demandaId: evento.demandaId,
-            usuario: evento.usuario,
-            descricao: evento.descricao,
-            createdAt: evento.createdAt,
-            updatedAt: evento.updatedAt,
-            demanda: { 
-              ...evento.demanda, 
-              [`${campoNormalizado.replace('_id', '')}Id`]: Number(valorAntigo) 
+        formattedDesc = formattedDesc.replace(pattern, (match, campo, valorAntigo, valorNovo) => {
+            const campoNormalizado = campo.toLowerCase().endsWith('_id') ? campo : `${campo}_id`;
+            
+            if (camposMapeados[campoNormalizado]) {
+                const mapeamento = camposMapeados[campoNormalizado];
+                const antigoObj: HistoricoType = { 
+                    ...evento,
+                    demanda: { 
+                        ...evento.demanda, 
+                        [`${campoNormalizado.replace('_id', '')}Id`]: valorAntigo === 'null' ? null : Number(valorAntigo)
+                    }
+                };
+                const novoObj: HistoricoType = {
+                    ...antigoObj,
+                    demanda: {
+                        ...evento.demanda,
+                        [`${campoNormalizado.replace('_id', '')}Id`]: valorNovo === 'null' ? null : Number(valorNovo)
+                    }
+                };
+                
+                const nomeAntigo = mapeamento.getValue(antigoObj);
+                const nomeNovo = mapeamento.getValue(novoObj);
+                
+                return `${mapeamento.nome}: ${nomeAntigo} → ${nomeNovo}`;
             }
-          };
-          const novoObj: HistoricoType = {
-            ...antigoObj,
-            demanda: {
-              ...evento.demanda,
-              [`${campoNormalizado.replace('_id', '')}Id`]: Number(valorNovo)
-            }
-          };
-          
-          const nomeAntigo = mapeamento.getValue(antigoObj);
-          const nomeNovo = mapeamento.getValue(novoObj);
-          
-          console.log('Nomes encontrados:', { nomeAntigo, nomeNovo }); // Para debug
-          
-          return `${mapeamento.nome}: ${nomeAntigo} → ${nomeNovo}`;
-        }
-        return match;
-      });
+            return match;
+        });
+    });
+
+    // Formata datas
+    formattedDesc = formattedDesc.replace(/(data_status): (.*?) -> (.*?)(,|$)/g, (match, campo, dataAntiga, dataNova) => {
+        const formatDate = (dateString: string | null) => {
+            if (dateString === null || dateString === 'null') return 'Nulo (não informado)';
+            return new Date(dateString).toLocaleDateString('pt-BR');
+        };
+        return `${campo}: ${formatDate(dataAntiga)} → ${formatDate(dataNova)}`;
     });
 
     return formattedDesc;
@@ -894,9 +915,11 @@ export default function Demanda() {
                         </div>
                         <div className="p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
                           <span className="text-sm font-medium text-gray-600">Descrição:</span>
-                          <p className="text-sm text-gray-800 mt-1 leading-relaxed">
-                            {selectedDemandDetails.descricao || 'Nenhuma descrição fornecida'}
-                          </p>
+                          <div className="mt-2 p-3 bg-white rounded-md border border-gray-200">
+                            <p className="text-sm text-gray-800 leading-relaxed whitespace-pre-line">
+                              {selectedDemandDetails.descricao || 'Nenhuma descrição fornecida'}
+                            </p>
+                          </div>
                         </div>
                       </div>
                     </div>

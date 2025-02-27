@@ -149,7 +149,7 @@ export function Sidebar() {
             <span className="ml-3 text-sm font-medium">Soluções</span>
           </div>
         </Link>
-{/* 
+
        
        <div className="relative">
           <button 
@@ -174,7 +174,7 @@ export function Sidebar() {
               </div>
             </Link>
           </div>
-        </div>  */}
+        </div>  
 
 
         {/* Configurações Dropdown */}

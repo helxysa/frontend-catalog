@@ -21,6 +21,7 @@ export default function Proprietario() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
+  const [selectedProprietario, setSelectedProprietario] = useState<Proprietario | null>(null);
   const router = useRouter();
 
   const fetchEscritorios = async () => {
@@ -59,6 +60,12 @@ export default function Proprietario() {
     localStorage.removeItem('selectedProprietarioId');
     localStorage.setItem('selectedProprietarioId', id.toString());
     router.push(`/proprietario/${id}/dashboard`);
+  };
+
+  const handleEdit = (proprietario: Proprietario, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent card click event
+    setSelectedProprietario(proprietario);
+    setShowModal(true);
   };
 
   if (loading) {
@@ -138,8 +145,18 @@ export default function Proprietario() {
                 <div
                   key={escritorio.id}
                   onClick={() => handleProprietarioClick(escritorio.id)}
-                  className="group bg-white rounded-xl shadow-md hover:shadow-xl border border-gray-200 p-6 transition-all duration-200 transform hover:-translate-y-1 cursor-pointer"
+                  className="group bg-white rounded-xl shadow-md hover:shadow-xl border border-gray-200 p-6 transition-all duration-200 transform hover:-translate-y-1 cursor-pointer relative"
                 >
+                  <button
+                    onClick={(e) => handleEdit(escritorio, e)}
+                    className="absolute top-4 right-4 p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors"
+                    aria-label="Editar"
+                  >
+                    <svg className="w-4 h-4 text-gray-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" strokeLinecap="round" strokeLinejoin="round"/>
+                      <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </button>
                   <div className="flex items-start space-x-4">
                     <div className="relative h-16 w-16 flex-shrink-0 rounded-lg overflow-hidden">
                       {escritorio.logo ? (
@@ -187,11 +204,16 @@ export default function Proprietario() {
 
           {showModal && (
             <CriarProprietario
-              onClose={() => setShowModal(false)}
+              onClose={() => {
+                setShowModal(false);
+                setSelectedProprietario(null);
+              }}
               onSuccess={() => {
                 fetchEscritorios();
                 setShowModal(false);
+                setSelectedProprietario(null);
               }}
+              proprietario={selectedProprietario || undefined}
             />
           )}
         </div>
