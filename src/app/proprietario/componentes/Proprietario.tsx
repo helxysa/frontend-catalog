@@ -1,6 +1,6 @@
 "use client"
 import { useState, useEffect } from "react";
-import { getProprietario, baseURL } from "../actions/actions";
+import { getProprietario, baseURL, cloneProprietario } from "../actions/actions";
 import CriarProprietario from "./CriarProprietario";
 import { useRouter } from 'next/navigation';
 import { Building2 } from 'lucide-react';
@@ -147,16 +147,36 @@ export default function Proprietario() {
                   onClick={() => handleProprietarioClick(escritorio.id)}
                   className="group bg-white rounded-xl shadow-md hover:shadow-xl border border-gray-200 p-6 transition-all duration-200 transform hover:-translate-y-1 cursor-pointer relative"
                 >
-                  <button
-                    onClick={(e) => handleEdit(escritorio, e)}
-                    className="absolute top-4 right-4 p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors"
-                    aria-label="Editar"
-                  >
-                    <svg className="w-4 h-4 text-gray-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" strokeLinecap="round" strokeLinejoin="round"/>
-                      <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  </button>
+                  <div className="absolute top-4 right-4 flex gap-2">
+                    <button
+                      onClick={(e) => handleEdit(escritorio, e)}
+                      className="p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors"
+                      aria-label="Editar"
+                    >
+                      <svg className="w-4 h-4 text-gray-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </button>
+                    <button
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        try {
+                          await cloneProprietario(escritorio.id.toString());
+                          fetchEscritorios(); // Recarregar a lista após clonar
+                        } catch (error) {
+                          console.error('Error cloning:', error);
+                          // Você pode adicionar uma notificação de erro aqui
+                        }
+                      }}
+                      className="p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors"
+                      aria-label="Clonar"
+                    >
+                      <svg className="w-4 h-4 text-gray-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </button>
+                  </div>
                   <div className="flex items-start space-x-4">
                     <div className="relative h-16 w-16 flex-shrink-0 rounded-lg overflow-hidden">
                       {escritorio.logo ? (

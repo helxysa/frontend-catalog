@@ -174,3 +174,18 @@ export async function deleteProprietario(id: string) {
     throw new Error('Erro ao excluir proprietário');
   }
 }
+
+export async function cloneProprietario(id: string) {
+  try {
+    const response = await axios.post(`${url}/${id}/clone`);
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      console.error('Error cloning proprietario:', error.response?.data);
+      if (error.response?.status === 404) {
+        throw new Error('Proprietário não encontrado');
+      }
+    }
+    throw new Error('Erro ao clonar proprietário');
+  }
+}

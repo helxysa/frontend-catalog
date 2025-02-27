@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react';
 import { getDemandas } from '../actions/action';
 import { DemandaType } from '../types/type';
 import { PDFDownloadLink, Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
-import { FileText } from 'lucide-react';
+import { FileText, FileSpreadsheet } from 'lucide-react';
+import * as XLSX from 'xlsx';
 
 // Estilos para o PDF
 const styles = StyleSheet.create({
@@ -175,17 +176,18 @@ const normalizeDemandas = (demandas: DemandaType[]) => {
 
 export default function DemandasComponent() {
   const [demandas, setDemandas] = useState<DemandaType[]>([]);
+  const [isExporting, setIsExporting] = useState(false);
 
   // Carrega as demandas ao montar o componente
   useEffect(() => {
     const fetchDemandas = async () => {
       const data = await getDemandas();
-      const storedId = localStorage.getItem('selectedProprietarioId'); // Pega o ID do proprietário
+      const storedId = localStorage.getItem('selectedProprietarioId'); 
       if (storedId) {
         const demandasFiltradas = data.filter(
           (demanda: DemandaType) => demanda.proprietario?.id === Number(storedId)
         );
-        setDemandas(demandasFiltradas); // Filtra as demandas pelo proprietário
+        setDemandas(demandasFiltradas); 
       }
     };
     fetchDemandas();
@@ -193,25 +195,59 @@ export default function DemandasComponent() {
 
   const normalizedDemandas = normalizeDemandas(demandas);
 
+  const exportToExcel = async () => {
+    setIsExporting(true);
+    try {
+      // Prepara os dados para o Excel
+      const excelData = normalizedDemandas.map(demanda => ({
+        Sigla: demanda.sigla,
+        Nome: demanda.nome,
+        Status: demanda.status.nome,
+        Prioridade: demanda.prioridade.nome,
+        Responsável: demanda.responsavel.nome
+      }));
+
+      // Cria uma nova planilha
+      const ws = XLSX.utils.json_to_sheet(excelData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Demandas");
+
+      // Gera e faz download do arquivo
+      XLSX.writeFile(wb, "relatorio_demandas.xlsx");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col items-center  bg-gray-50 pt-4 pb-20">
       <div className="w-full max-w-6xl p-8 bg-white rounded-lg shadow-md">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-2xl font-bold text-gray-800">Relatório de Demandas</h1>
-          <PDFDownloadLink
-            document={<DemandasPDF demandas={normalizedDemandas} />}
-            fileName="relatorio_demandas.pdf"
-          >
-            {({ loading }) => (
-              <button
-                className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors flex items-center gap-2"
-                disabled={loading}
-              >
-                <FileText className="w-4 h-4" />
-                {loading ? 'Gerando PDF...' : 'Gerar PDF'}
-              </button>
-            )}
-          </PDFDownloadLink>
+          <div className="flex gap-4">
+            <button
+              onClick={exportToExcel}
+              disabled={isExporting}
+              className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors flex items-center gap-2 disabled:bg-green-400"
+            >
+              <FileSpreadsheet className="w-4 h-4" />
+              {isExporting ? 'Gerando Excel...' : 'Exportar Excel'}
+            </button>
+            <PDFDownloadLink
+              document={<DemandasPDF demandas={normalizedDemandas} />}
+              fileName="relatorio_demandas.pdf"
+            >
+              {({ loading }) => (
+                <button
+                  className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors flex items-center gap-2 disabled:bg-blue-400"
+                  disabled={loading}
+                >
+                  <FileText className="w-4 h-4" />
+                  {loading ? 'Gerando PDF...' : 'Gerar PDF'}
+                </button>
+              )}
+            </PDFDownloadLink>
+          </div>
         </div>
         <div className="overflow-x-auto rounded-lg border border-gray-200">
           <table className="min-w-full">
