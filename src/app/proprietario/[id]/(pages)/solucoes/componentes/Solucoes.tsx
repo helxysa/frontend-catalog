@@ -7,7 +7,7 @@ interface SolucaoFormData {
   descricao: string;
   versao: string;
   tipo_id: number;
-  linguagem_id: number;
+  linguagem_id: number | string | null;
   desenvolvedor_id: number;
   categoria_id: number;
   responsavel_id: number;
@@ -66,6 +66,12 @@ import { Plus, Edit2, Trash2, X, Info, ChevronRight } from 'lucide-react';
 import { SolucaoType } from '../types/types';
 import DeleteConfirmationModal from './ModalConfirmacao/DeleteConfirmationModal';
 
+type CustomChangeEvent = {
+  target: {
+    name: string;
+    value: string;
+  };
+};
 
 export default function Solucao() {
   const [solucoes, setSolucoes] = useState([]);
@@ -95,13 +101,14 @@ export default function Solucao() {
     status_id: ''
   });
   const [filteredSolucoes, setFilteredSolucoes] = useState<SolucaoType[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [search, setSearch] = useState('');
   const [tempSearchTerm, setTempSearchTerm] = useState('');
   const [shouldRefresh, setShouldRefresh] = useState(0);
   const [formErrors, setFormErrors] = useState({
     nome: false,
     demanda_id: false
   });
+  const [selectedLanguages, setSelectedLanguages] = useState<number[]>([]);
 
   const determinarCorTexto = (corHex: string | undefined) => {
     if (!corHex) return 'text-gray-800'; 
@@ -151,6 +158,13 @@ export default function Solucao() {
     });
   }, [shouldRefresh]);
 
+  useEffect(() => {
+    if (isEditing && formData.linguagem_id) {
+      const ids = String(formData.linguagem_id).split(',').map(Number);
+      setSelectedLanguages(ids);
+    }
+  }, [isEditing, formData.linguagem_id]);
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
@@ -172,13 +186,17 @@ export default function Solucao() {
     }
 
     try {
+      // Converte o array de linguagens para string
+      const linguagemValue = selectedLanguages.length > 0 ? selectedLanguages.join(',') : null;
+
       const formDataToSubmit = {
+        ...formData,
         nome: formData.nome || '-',
         sigla: formData.sigla || '-',
         descricao: formData.descricao || '-',
         versao: formData.versao || '-',
         tipo_id: formData.tipo_id ? Number(formData.tipo_id) : null,
-        linguagem_id: formData.linguagem_id ? Number(formData.linguagem_id) : null,
+        linguagem_id: linguagemValue,  // String com IDs separados por vírgula
         desenvolvedor_id: formData.desenvolvedor_id ? Number(formData.desenvolvedor_id) : null,
         categoria_id: formData.categoria_id ? Number(formData.categoria_id) : null,
         responsavel_id: formData.responsavel_id ? Number(formData.responsavel_id) : null,
@@ -186,6 +204,8 @@ export default function Solucao() {
         demanda_id: Number(formData.demanda_id),
         data_status: formData.data_status || new Date().toISOString().split('T')[0]
       };
+
+      console.log('Dados sendo enviados:', formDataToSubmit); // Para debug
 
       if (isEditing) {
         await updateSolucao(isEditing, formDataToSubmit);
@@ -196,24 +216,23 @@ export default function Solucao() {
       setShouldRefresh(prev => prev + 1);
       setIsModalOpen(false);
       setFormData({} as SolucaoFormData);
+      setSelectedLanguages([]);
       setIsEditing(null);
     } catch (error: any) {
       console.error('Error details:', error);
       if (error.response) {
-        // Se houver uma resposta do servidor
+        console.error('Response data:', error.response.data);
         alert(`Erro ao salvar a solução: ${error.response.data.message || 'Erro desconhecido'}`);
       } else if (error.request) {
-        // Se a requisição foi feita mas não houve resposta
         alert('Erro de conexão com o servidor. Verifique sua internet.');
       } else {
-        // Outros erros
         alert('Erro ao processar a solicitação. Por favor, tente novamente.');
       }
     }
   };
 
   
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement> | CustomChangeEvent) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
@@ -279,8 +298,11 @@ export default function Solucao() {
             nome: 'Linguagem',
             getValue: (e) => {
                 const value = e.solucao.linguagemId;
-                if (value === null) return 'Nulo (não informado)';
-                return linguagens.find((l: BaseType) => l.id === Number(value))?.nome || 'Desconhecido';
+                if (!value) return 'Nulo (não informado)';
+                return String(value).split(',')
+                    .map(id => linguagens.find((l: BaseType) => l.id === Number(id))?.nome)
+                    .filter(Boolean)
+                    .join(', ') || 'Desconhecido';
             }
         },
         'desenvolvedor_id': {
@@ -378,28 +400,25 @@ export default function Solucao() {
   };
 
   const handleEditClick = (solucao: SolucaoType) => {
-
-    
     const formDataToSet = {
+      ...formData,
+      tipo_id: Number(solucao.tipo?.id),
+      linguagem_id: solucao.linguagem_id,
+      desenvolvedor_id: Number(solucao.desenvolvedor?.id),
+      categoria_id: Number(solucao.categoria?.id),
       nome: solucao.nome,
       sigla: solucao.sigla,
       descricao: solucao.descricao,
       versao: solucao.versao,
-      tipo_id: Number(solucao.tipo?.id),
-      linguagem_id: Number(solucao.linguagem?.id),
-      desenvolvedor_id: Number(solucao.desenvolvedor?.id),
-      categoria_id: Number(solucao.categoria?.id),
       responsavel_id: Number(solucao.responsavel?.id),
       status_id: Number(solucao.status?.id),
       demanda_id: Number(solucao.demanda?.id),
       data_status: solucao.dataStatus
     };
 
-    
     setFormData(formDataToSet);
     setIsEditing(solucao.id.toString());
     setIsModalOpen(true);
-    
   };
 
   const handleFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -417,18 +436,13 @@ export default function Solucao() {
     // Aplicar filtro imediatamente enquanto o usuário digita
     if (value) {
       const searchLower = value.toLowerCase();
-      const filtered = solucoes.filter((s: SolucaoType) => 
-        s.nome?.toLowerCase().includes(searchLower) ||
-        s.sigla?.toLowerCase().includes(searchLower) ||
-        s.descricao?.toLowerCase().includes(searchLower) ||
-        s.versao?.toLowerCase().includes(searchLower) ||
-        s.tipo?.nome.toLowerCase().includes(searchLower) ||
-        s.linguagem?.nome.toLowerCase().includes(searchLower) ||
-        s.desenvolvedor?.nome.toLowerCase().includes(searchLower) ||
-        s.categoria?.nome.toLowerCase().includes(searchLower) ||
-        s.responsavel?.nome.toLowerCase().includes(searchLower) ||
-        s.status?.nome.toLowerCase().includes(searchLower)
-      );
+      const filtered = solucoes?.filter((s: SolucaoType) => {
+        return (
+          s.status?.nome.toLowerCase().includes(searchLower) ||
+          s.nome?.toLowerCase().includes(searchLower) ||
+          s.sigla?.toLowerCase().includes(searchLower)
+        );
+      }) || [];
       setFilteredSolucoes(filtered);
     } else {
       setFilteredSolucoes(solucoes);
@@ -446,7 +460,7 @@ export default function Solucao() {
       status_id: ''
     });
     setTempSearchTerm('');
-    setSearchTerm('');
+    setSearch('');
     setFilteredSolucoes(solucoes);
   };
 
@@ -462,7 +476,8 @@ export default function Solucao() {
         s.descricao?.toLowerCase().includes(searchLower) ||
         s.versao?.toLowerCase().includes(searchLower) ||
         s.tipo?.nome.toLowerCase().includes(searchLower) ||
-        s.linguagem?.nome.toLowerCase().includes(searchLower) ||
+        (s.linguagem_id ? s.linguagem_id.split(',')
+          .some(id => linguagens.find(l => l.id === Number(id))?.nome.toLowerCase().includes(searchLower)) : false) ||
         s.desenvolvedor?.nome.toLowerCase().includes(searchLower) ||
         s.categoria?.nome.toLowerCase().includes(searchLower) ||
         s.responsavel?.nome.toLowerCase().includes(searchLower) ||
@@ -478,7 +493,7 @@ export default function Solucao() {
       filtered = filtered.filter(s => s.tipo?.id === Number(filters.tipo_id));
     }
     if (filters.linguagem_id) {
-      filtered = filtered.filter(s => s.linguagem?.id === Number(filters.linguagem_id));
+      filtered = filtered.filter(s => s.linguagem_id?.split(',').includes(filters.linguagem_id));
     }
     if (filters.desenvolvedor_id) {
       filtered = filtered.filter(s => s.desenvolvedor?.id === Number(filters.desenvolvedor_id));
@@ -493,9 +508,74 @@ export default function Solucao() {
       filtered = filtered.filter(s => s.status?.id === Number(filters.status_id));
     }
     
-    setSearchTerm(tempSearchTerm);
+    setSearch(tempSearchTerm);
     setFilteredSolucoes(filtered);
   };
+
+  const handleLanguageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = Number(e.target.value);
+    if (!selectedLanguages.includes(value)) {
+      const newSelected = [...selectedLanguages, value];
+      setSelectedLanguages(newSelected);
+      handleInputChange({
+        target: {
+          name: 'linguagem_id',
+          value: newSelected.join(',')
+        }
+      });
+    }
+  };
+
+  const removeLanguage = (langId: number) => {
+    const newSelected = selectedLanguages.filter(id => id !== langId);
+    setSelectedLanguages(newSelected);
+    handleInputChange({
+      target: {
+        name: 'linguagem_id',
+        value: newSelected.join(',')
+      }
+    });
+  };
+
+  // Função auxiliar para renderizar as linguagens
+  const renderLinguagensChips = (linguagemIds: string | null) => {
+    if (!linguagemIds) return '-';
+    
+    return (
+      <div className="flex flex-wrap gap-1">
+        {linguagemIds.split(',').map(id => {
+          const linguagem = linguagens.find(l => l.id === Number(id.trim()));
+          if (!linguagem) return null;
+          
+          return (
+            <span 
+              key={id}
+              className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-700 rounded-full"
+            >
+              {linguagem.nome}
+            </span>
+          );
+        })}
+      </div>
+    );
+  };
+
+  useEffect(() => {
+    if (search) {
+      const searchLower = search.toLowerCase();
+      const filtered = solucoes?.filter((s: SolucaoType) => {
+        return (
+          s.status?.nome.toLowerCase().includes(searchLower) ||
+          s.nome?.toLowerCase().includes(searchLower) ||
+          s.sigla?.toLowerCase().includes(searchLower)
+        );
+      }) || [];
+
+      setFilteredSolucoes(filtered);
+    } else {
+      setFilteredSolucoes(solucoes);
+    }
+  }, [search, solucoes, linguagens]);
 
   return (
     <div className="min-h-screen">
@@ -674,8 +754,10 @@ export default function Solucao() {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                     {solucao.tipo?.nome || '-'}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                    {solucao.linguagem?.nome || '-'}
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
+                    <div className="flex items-center">
+                      {renderLinguagensChips(solucao.linguagem_id)}
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                     {solucao.desenvolvedor?.nome || '-'}
@@ -713,7 +795,7 @@ export default function Solucao() {
                         <Edit2 className="w-5 h-5" />
                       </button>
                       <button 
-                        onClick={() => handleDeleteClick(solucao.id)}
+                        onClick={() => handleDeleteClick(String(solucao.id))}
                         className="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50 transition-colors"
                       >
                        
@@ -825,18 +907,55 @@ export default function Solucao() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Linguagem</label>
-                    <select 
-                      name="linguagem_id" 
-                      value={formData.linguagem_id || ''}
-                      onChange={handleInputChange}
-                      className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors"
-                    >
-                      <option value="">Selecione uma linguagem</option>
-                      {linguagens.map((linguagem) => (
-                        <option key={linguagem.id} value={linguagem.id}>{linguagem.nome}</option>
-                      ))}
-                    </select>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Linguagens
+                    </label>
+                    <div className="space-y-2">
+                      <div className="flex flex-wrap gap-2 min-h-[2.5rem] p-2 bg-gray-50 border border-gray-200 rounded-md">
+                        {selectedLanguages.map((langId) => {
+                          const language = linguagens.find(l => l.id === langId);
+                          return (
+                            <div
+                              key={langId}
+                              className="flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-sm"
+                            >
+                              <span>{language?.nome}</span>
+                              <button
+                                type="button"
+                                onClick={() => removeLanguage(langId)}
+                                className="w-4 h-4 flex items-center justify-center rounded-full hover:bg-blue-200 transition-colors"
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      
+                      <div className="relative">
+                        <select
+                          onChange={handleLanguageChange}
+                          value=""
+                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md text-gray-700 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors appearance-none"
+                        >
+                          <option value="">Adicionar linguagem...</option>
+                          {linguagens
+                            .filter(lang => !selectedLanguages.includes(lang.id))
+                            .map((lang) => (
+                              <option key={lang.id} value={lang.id}>
+                                {lang.nome}
+                              </option>
+                            ))}
+                        </select>
+                        <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+                          <ChevronRight className="w-4 h-4 text-gray-400" />
+                        </div>
+                      </div>
+                      
+                      <p className="text-xs text-gray-500 mt-1">
+                        Selecione uma ou mais linguagens para esta solução
+                      </p>
+                    </div>
                   </div>
                   
                   <div>
@@ -1064,11 +1183,18 @@ export default function Solucao() {
                         </div>
                         <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
                           <span className="text-sm font-medium text-gray-600">Linguagem:</span>
-                          <span className="text-sm text-gray-800 font-medium">{selectedDemandDetails.linguagem?.nome || '-'}</span>
+                          <span className="text-sm text-gray-800 font-medium">
+                            {renderLinguagensChips(String(selectedDemandDetails.linguagem_id))}
+                          </span>
                         </div>
                         <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
-                          <span className="text-sm font-medium text-gray-600">Desenvolvedor:</span>
-                          <span className="text-sm text-gray-800 font-medium">{selectedDemandDetails.desenvolvedor?.nome || '-'}</span>
+                          <span className="text-sm font-medium text-gray-600">Status:</span>
+                          <span 
+                            className={`rounded-md px-3 py-1 text-sm font-medium ${determinarCorTexto(selectedDemandDetails.status?.propriedade)}`}
+                            style={{ backgroundColor: selectedDemandDetails.status?.propriedade }}
+                          >
+                            {selectedDemandDetails.status?.nome || '-'}
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -1189,7 +1315,9 @@ export default function Solucao() {
                                             </p>
                                             <p className="flex items-center justify-between group hover:bg-white hover:shadow-sm p-2 rounded-md transition-all">
                                               <span className="font-medium text-gray-600">Linguagem:</span>
-                                              <span className="text-gray-900 font-medium group-hover:text-blue-600">{evento.solucao.linguagemId || '-'}</span>
+                                              <span className="text-gray-900 font-medium group-hover:text-blue-600">
+                                                {renderLinguagensChips(String(evento.solucao.linguagemId))}
+                                              </span>
                                             </p>
                                             <p className="flex items-center justify-between group hover:bg-white hover:shadow-sm p-2 rounded-md transition-all">
                                               <span className="font-medium text-gray-600">Status:</span>

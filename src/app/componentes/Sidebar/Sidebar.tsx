@@ -94,7 +94,7 @@ export function Sidebar() {
 
     return (
       <div className={`${isMobile ? 'space-y-2 p-4' : 'px-2 space-y-1'}`}>
-        <Link href="/proprietario" className="block">
+        <Link href="/proprietario" prefetch className="block">
           <div className={`${getItemClasses('/proprietario')} py-3`}>
             <div className="relative h-10 w-10 flex-shrink-0">
               {proprietario?.logo ? (
@@ -129,21 +129,21 @@ export function Sidebar() {
           </div>
         </Link>
 
-        <Link href={`/proprietario/${proprietarioId}/dashboard`} className="block">
+        <Link href={`/proprietario/${proprietarioId}/dashboard`} prefetch className="block">
           <div className={getItemClasses(`/proprietario/${proprietarioId}/dashboard`)}>
             <LayoutDashboard className={getIconClasses(`/proprietario/${proprietarioId}/dashboard`)} />
             <span className="ml-3 text-sm font-medium">Dashboard</span>
           </div>
         </Link>
 
-        <Link href={demandaLink} className="block">
+        <Link href={demandaLink} prefetch className="block">
           <div className={getItemClasses(`/proprietario/${proprietarioId}/demandas`)}>
             <ListChecks className={getIconClasses(`/proprietario/${proprietarioId}/demandas`)} />
             <span className="ml-3 text-sm font-medium">Demandas</span>
           </div>
         </Link>
 
-        <Link href={`/proprietario/${proprietarioId}/solucoes`} className="block">
+        <Link href={`/proprietario/${proprietarioId}/solucoes`} prefetch className="block">
           <div className={getItemClasses(`/proprietario/${proprietarioId}/solucoes`)}>
             <AppWindow className={getIconClasses(`/proprietario/${proprietarioId}/solucoes`)} />
             <span className="ml-3 text-sm font-medium">Soluções</span>
@@ -167,7 +167,7 @@ export function Sidebar() {
           <div 
             className={`${isReportMenuOpen ? 'block' : 'hidden'} ${isMobile ? 'ml-2 mt-1 space-y-2' : 'ml-4 mt-1 space-y-1'} py-1`}
           >
-            <Link href={`/proprietario/${proprietarioId}/relatorios/demandas`} className="block">
+            <Link href={`/proprietario/${proprietarioId}/relatorios/demandas`} prefetch className="block">
               <div className={getItemClasses('/relatorios/demandas')}>
                 <ListChecks className={`w-4 h-4 ${isActive('/relatorios/demandas') ? 'text-blue-600' : 'text-gray-400'} group-hover:text-gray-600`} />
                 <span className="ml-3 text-sm">Demandas</span>
@@ -197,7 +197,11 @@ export function Sidebar() {
               key={item}
               className={`${isConfigMenuOpen ? 'block' : 'hidden'} ${isMobile ? 'ml-2 mt-1 space-y-2' : 'ml-4 mt-1 space-y-1'} py-1`}
             >
-              <Link href={`/proprietario/${proprietarioId}/configuracoes/${item}`} className="block">
+              <Link 
+                href={`/proprietario/${proprietarioId}/configuracoes/${item}`} 
+                prefetch
+                className="block"
+              >
                 <div className={getItemClasses(`/proprietario/${proprietarioId}/configuracoes/${item}`)}>
                   <span className="ml-3 text-sm capitalize">{item}</span>
                 </div>

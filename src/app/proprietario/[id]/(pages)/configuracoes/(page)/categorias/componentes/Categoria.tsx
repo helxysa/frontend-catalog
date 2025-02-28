@@ -18,6 +18,7 @@ import {
   Menu 
 } from 'lucide-react';
 import type { Categoria } from '../types/types';
+import Loading from '@/app/componentes/Loading/Loading';
 
 interface Proprietario {
   id: number;
@@ -26,6 +27,7 @@ interface Proprietario {
 
 export default function Categoria({ proprietarioId }: { proprietarioId?: string }) {
   const [categorias, setCategorias] = useState<Categoria[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentCategoria, setCurrentCategoria] = useState<Partial<Categoria>>(() => ({
     proprietario_id: proprietarioId ? proprietarioId : 
@@ -38,7 +40,8 @@ export default function Categoria({ proprietarioId }: { proprietarioId?: string 
 
   useEffect(() => {
     const loadCategorias = async () => {
-      setCategorias([]); // Clear existing categories
+      setIsLoading(true);
+      setCategorias([]);
       
       const storedId = proprietarioId || localStorage.getItem('selectedProprietarioId');
       if (storedId) {
@@ -46,19 +49,17 @@ export default function Categoria({ proprietarioId }: { proprietarioId?: string 
           console.log('Fetching categories for proprietarioId:', storedId);
           const data = await getCategorias(storedId);
           console.log('Received data:', data);
-          
-          // Use data directly since getCategorias already filters by proprietario_id
           setCategorias(data);
         } catch (error) {
           console.error('Error loading categorias:', error);
           setCategorias([]);
         }
       }
+      setIsLoading(false);
     };
     
     loadCategorias();
     
-    // Only load proprietários if we're in the main categories view
     if (!proprietarioId) {
       const loadProprietarios = async () => {
         const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/proprietarios`);
@@ -69,7 +70,6 @@ export default function Categoria({ proprietarioId }: { proprietarioId?: string 
     }
   }, [proprietarioId]);
 
-  // When modal is opened, ensure proprietarioId is set
   useEffect(() => {
     if (isModalOpen) {
       const storedId = proprietarioId || localStorage.getItem('selectedProprietarioId') || undefined;
@@ -102,7 +102,7 @@ export default function Categoria({ proprietarioId }: { proprietarioId?: string 
       };
 
       try {
-        console.log('Dados sendo enviados:', categoriaToSave); // Debug
+        console.log('Dados sendo enviados:', categoriaToSave);
         const created = await createCategoria(categoriaToSave);
         setCategorias([...categorias, created]);
         setIsModalOpen(false);
@@ -155,57 +155,59 @@ export default function Categoria({ proprietarioId }: { proprietarioId?: string 
           </div>
         </div>
 
-        {/* Table with mobile scroll and responsive layout */}
-        <div className="bg-white rounded-lg shadow-md overflow-x-auto">
-          <table className="min-w-full">
-            <thead className="bg-gray-200">
-              <tr>
-                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
-                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nome</th>
-                <th className="px-4 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {Array.isArray(categorias) && categorias.map((categoria, index) => (
-                <tr key={categoria.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-600 hidden sm:table-cell">
-                    {index + 1}
-                  </td>
-                  <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-800">
-                    {categoria.nome}
-                  </td>
-                  <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
-                    <div className="flex justify-end space-x-2">
-                      <button 
-                        onClick={() => showCategoriaDetails(categoria)}
-                        className="text-blue-500 hover:text-blue-700 p-1 rounded-full hover:bg-blue-50 transition-colors"
-                        title="Detalhes"
-                      >
-                        <Info className="w-5 h-5" />
-                      </button>
-                      <button 
-                        onClick={() => openModal(categoria)}
-                        className="text-green-500 hover:text-green-700 p-1 rounded-full hover:bg-green-50 transition-colors"
-                        title="Editar"
-                      >
-                        <Edit2 className="w-5 h-5" />
-                      </button>
-                      <button 
-                        onClick={() => handleDelete(categoria.id)}
-                        className="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50 transition-colors"
-                        title="Excluir"
-                      >
-                        <Trash2 className="w-5 h-5" />
-                      </button>
-                    </div>
-                  </td>
+        {isLoading ? (
+          <Loading />
+        ) : (
+          <div className="bg-white rounded-lg shadow-md overflow-x-auto">
+            <table className="min-w-full">
+              <thead className="bg-gray-200">
+                <tr>
+                  <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
+                  <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nome</th>
+                  <th className="px-4 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {Array.isArray(categorias) && categorias.map((categoria, index) => (
+                  <tr key={categoria.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-600 hidden sm:table-cell">
+                      {index + 1}
+                    </td>
+                    <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-800">
+                      {categoria.nome}
+                    </td>
+                    <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
+                      <div className="flex justify-end space-x-2">
+                        <button 
+                          onClick={() => showCategoriaDetails(categoria)}
+                          className="text-blue-500 hover:text-blue-700 p-1 rounded-full hover:bg-blue-50 transition-colors"
+                          title="Detalhes"
+                        >
+                          <Info className="w-5 h-5" />
+                        </button>
+                        <button 
+                          onClick={() => openModal(categoria)}
+                          className="text-green-500 hover:text-green-700 p-1 rounded-full hover:bg-green-50 transition-colors"
+                          title="Editar"
+                        >
+                          <Edit2 className="w-5 h-5" />
+                        </button>
+                        <button 
+                          onClick={() => handleDelete(categoria.id)}
+                          className="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50 transition-colors"
+                          title="Excluir"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
 
-        {/* Modal for Create/Edit - Responsive */}
         {isModalOpen && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
             <div className="bg-white rounded-lg shadow-2xl p-6 w-full max-w-md">
@@ -272,7 +274,6 @@ export default function Categoria({ proprietarioId }: { proprietarioId?: string 
           </div>
         )}
 
-        {/* Details Modal - Responsive */}
         {selectedCategoriaDetails && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
             <div className="bg-white rounded-lg shadow-2xl p-6 w-full max-w-xl">

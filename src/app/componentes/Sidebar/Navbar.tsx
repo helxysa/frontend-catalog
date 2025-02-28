@@ -92,8 +92,8 @@ export default function Navbar() {
         </h1>
 
         {/* Unit Switcher and Mobile Menu */}
-        <div className="flex items-center gap-2">
-          <div className="relative z-20 w-[250px]">
+        <div className="flex items-center gap-4 mr-8">
+          <div className="relative z-20">
             <UnitSwitcher />
           </div>
           

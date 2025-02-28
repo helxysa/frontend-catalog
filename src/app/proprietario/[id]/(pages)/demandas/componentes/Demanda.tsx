@@ -440,7 +440,7 @@ export default function Demanda() {
             </select>
 
             <select
-              name="fator gerador"
+              name="fator_gerador"
               value={filters.fator_gerador}
               onChange={handleFilterChange}
               className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors"

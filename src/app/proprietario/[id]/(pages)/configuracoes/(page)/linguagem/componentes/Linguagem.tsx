@@ -9,7 +9,7 @@ import {
 } from '../actions/actions';
 import { 
   Plus, 
-  Filter, 
+  Filter,   
   Edit2, 
   Trash2, 
   X, 
