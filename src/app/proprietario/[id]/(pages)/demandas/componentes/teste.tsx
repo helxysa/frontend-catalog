@@ -16,10 +16,11 @@ import {
 import { Plus, Edit2, Trash2, X, Info, ChevronRight } from 'lucide-react';
 import { DemandaType, ResponsavelType, AlinhamentoType, PrioridadeType, StatusType, ProprietarioType, HistoricoType, DemandaFormData   } from '../types/types';
 import DeleteConfirmationModal from './ModalConfirmacao/DeleteConfirmationModal';
-import { useSidebar } from '../../../../../componentes/Sidebar/SidebarContext';
+import { useSidebar } from '@/app/componentes/Sidebar/SidebarContext';
 
 
 export default function Demanda() {
+  const { isCollapsed } = useSidebar();
   const [demandas, setDemandas] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedDemandDetails, setSelectedDemandDetails] = useState<DemandaType | null>(null);
@@ -61,7 +62,6 @@ export default function Demanda() {
   const [filteredDemandas, setFilteredDemandas] = useState<DemandaType[]>([]);
   const [shouldRefresh, setShouldRefresh] = useState(0);
   const [tempSearchTerm, setTempSearchTerm] = useState('');
-  const { isCollapsed } = useSidebar();
 
 
 
@@ -404,45 +404,34 @@ export default function Demanda() {
   };
 
   return (
-    
     <div className={`
       min-h-screen bg-gray-50
       transition-all duration-300 ease-in-out
-      ${isCollapsed ? 'ml-20 absolute right-0 top-16 bottom-0' : ''}
+      ${isCollapsed ? 'ml-20' : 'ml-64'}
       flex-grow
       w-auto
-      
+      absolute right-0 top-16 bottom-0
     `}>
       <div className={`
-        
+        h-full
         transition-all duration-300 ease-in-out
-        ${isCollapsed ? 'w-[98%] mx-auto' : ''}
-        py-6
+        ${isCollapsed ? 'w-[98%] mx-auto' : 'w-[95%] mx-auto'}
+        py-3
       `}>
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex justify-between items-center mb-3 px-2">
           <h1 className="text-2xl font-bold text-gray-800">Crie sua demanda</h1>
-          <div className="flex gap-2">
-            <button 
-              onClick={() => setIsModalOpen(true)}
-              className="bg-blue-600 text-white px-4 py-2 rounded-md flex items-center gap-2 hover:bg-blue-700 transition-colors"
-            >
-              <Plus className="w-4 h-4" />
-              Adicionar
-            </button>
-          </div>
+          <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2">
+            <Plus className="w-5 h-5" /> Adicionar
+          </button>
         </div>
 
-        {/* Filters Section */}
-        <div className={` bg-white rounded-lg shadow-md p-4 mb-6`}>
-          <div className="mb-3">
-            <h2 className="text-base font-semibold text-gray-800">Filtros</h2>
-          </div>
-
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-3">
+          <h2 className="text-lg font-semibold text-gray-700 mb-3">Filtros</h2>
           <div className={`
             grid gap-2
             transition-all duration-300
             ${isCollapsed 
-              ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6' 
+              ? 'grid-cols-3 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-9 2xl:grid-cols-10' 
               : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6'}
           `}>
             <select
@@ -531,155 +520,146 @@ export default function Demanda() {
                 ))}
             </select>
           </div>
-
-          <div className="mt-3 flex items-center justify-between">
-            <div className="mb-6">
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Buscar demandas..."
-                  value={tempSearchTerm}
-                  onChange={handleSearchChange}
-                  className="w-full px-4 py-2 pl-10 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white text-gray-700 placeholder-gray-400"
-                />
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <svg className="h-5 w-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                </div>
-              </div>
+          <div className="flex items-center justify-between mt-4 gap-3">
+            <div className="flex-1">
+              <input
+                type="text"
+                placeholder="Buscar demandas..."
+                value={tempSearchTerm}
+                onChange={handleSearchChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
             </div>
-            <div className="flex space-x-2">
-              <button
-                onClick={clearFilters}
-                className="px-3 py-1.5 text-sm text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
-              >
+            <div className="flex gap-2">
+              <button className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
                 Limpar
               </button>
-              <button
-                onClick={applyFilters}
-                className="px-3 py-1.5 text-sm text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors"
-              >
+              <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
                 Aplicar
               </button>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-md overflow-hidden">
-        <table className={`
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+          <div className="overflow-x-auto">
+            <table className={`
               w-full
               transition-all duration-300
-              ${isCollapsed ? 'table-auto' : ''}
+              ${isCollapsed ? 'table-fixed' : 'table-auto'}
             `}>
-            <thead className="bg-gray-200">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sigla</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nome</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fator Gerador</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Demandante</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Alinhamento</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Prioridade</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Responsável</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {Array.isArray(filteredDemandas) && filteredDemandas.map((demanda: DemandaType, index: number) => (
-                <tr key={demanda.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                    {index + 1}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                    {demanda.sigla || '-'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-800">
-                    {demanda.nome || '-'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                    {demanda.fatorGerador || '-'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                    {demanda.demandante || '-'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                    {demanda.alinhamento?.nome || '-'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                    {demanda.prioridade?.nome || '-'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                    {demanda.responsavel?.nome || '-'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                    {formatDate(demanda.dataStatus)}
-                  </td>
-                  <td className="px-6 py-4 rounded-md px-2 whitespace-nowrap text-sm text-gray-600">
-                    {demanda.status?.propriedade ? (
-                      <span 
-                        className={`rounded-md px-2 py-1 ${determinarCorTexto(demanda.status.propriedade)}`} 
-                        style={{ backgroundColor: demanda.status.propriedade }}
-                      >
-                        {demanda.status.nome || '-'}
-                      </span>
-                    ) : (
-                      <span className="text-gray-500">-</span>
-                    )}
-                  </td>
-
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
-                    <div className="flex justify-end space-x-2">
-                      <button 
-                        onClick={() => handleInfoClick(demanda)}
-                        className="text-blue-500 hover:text-blue-700 p-1 rounded-full hover:bg-blue-50 transition-colors"
-                      >
-                        <Info className="w-5 h-5" />
-                      </button>
-                      <button 
-                        onClick={() => {
-                          const formattedData: DemandaFormData = {
-                            proprietario_id: Number(demanda.proprietario?.id) || 0,
-                            nome: demanda.nome || '',
-                            sigla: demanda.sigla || '',
-                            descricao: demanda.propriedade || '',
-                            demandante: demanda.demandante || '',
-                            fator_gerador: demanda.fatorGerador || '',
-                            alinhamento_id: Number(demanda.alinhamento?.id) || 0,
-                            prioridade_id: Number(demanda.prioridade?.id) || 0,
-                            responsavel_id: Number(demanda.responsavel?.id) || 0,
-                            status_id: Number(demanda.status?.id) || 0,
-                            data_status: demanda.dataStatus || ''
-                          };
-                          setFormData(formattedData);
-                          setIsEditing(demanda.id);
-                          setIsModalOpen(true);
-                        }}
-                        className="text-blue-600 hover:text-green-700 p-1 rounded-full hover:bg-green-50 transition-colors"
-                      >
-                        <Edit2 className="w-5 h-5" />
-                      </button>
-                      <button 
-                        onClick={() => handleDeleteClick(demanda.id)}
-                        className="text-red-400 hover:text-red-700 p-1 rounded-full hover:bg-red-50 transition-colors"
-                      >
-                       
-                        <Trash2 className="w-5 h-5" />
-                      </button>
-                      <DeleteConfirmationModal 
-                            isOpen={isDeleteModalOpen}
-                            onClose={() => setIsDeleteModalOpen(false)}
-                            onConfirm={confirmDelete}
-                            itemName="esta demanda"
-                        />
-                    </div>
-                  </td>
+              <thead>
+                <tr className="bg-gray-50 border-b border-gray-200">
+                  {[
+                    '#', 'SIGLA', 'NOME', 'FATOR GERADOR', 'DEMANDANTE',
+                    'ALINHAMENTO', 'PRIORIDADE', 'RESPONSÁVEL', 'DATA STATUS',
+                    'STATUS', 'AÇÕES'
+                  ].map((header) => (
+                    <th key={header} className={`
+                      ${isCollapsed ? 'px-3 py-3' : 'px-3 py-3'}
+                      text-left font-medium text-gray-500
+                      uppercase tracking-wider
+                      ${isCollapsed ? 'text-sm' : 'text-xs'}
+                      whitespace-nowrap
+                    `}>
+                      {header}
+                    </th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {Array.isArray(filteredDemandas) && filteredDemandas.map((demanda: DemandaType, index: number) => (
+                  <tr key={demanda.id} className="hover:bg-gray-50">
+                    <td className={`${isCollapsed ? 'px-3 py-3' : 'px-3 py-3'} whitespace-nowrap`}>
+                      {index + 1}
+                    </td>
+                    <td className={`${isCollapsed ? 'px-3 py-3' : 'px-3 py-3'} whitespace-nowrap`}>
+                      {demanda.sigla || '-'}
+                    </td>
+                    <td className={`${isCollapsed ? 'px-3 py-3' : 'px-3 py-3'} whitespace-nowrap`}>
+                      {demanda.nome || '-'}
+                    </td>
+                    <td className={`${isCollapsed ? 'px-3 py-3' : 'px-3 py-3'} whitespace-nowrap`}>
+                      {demanda.fatorGerador || '-'}
+                    </td>
+                    <td className={`${isCollapsed ? 'px-3 py-3' : 'px-3 py-3'} whitespace-nowrap`}>
+                      {demanda.demandante || '-'}
+                    </td>
+                    <td className={`${isCollapsed ? 'px-3 py-3' : 'px-3 py-3'} whitespace-nowrap`}>
+                      {demanda.alinhamento?.nome || '-'}
+                    </td>
+                    <td className={`${isCollapsed ? 'px-3 py-3' : 'px-3 py-3'} whitespace-nowrap`}>
+                      {demanda.prioridade?.nome || '-'}
+                    </td>
+                    <td className={`${isCollapsed ? 'px-3 py-3' : 'px-3 py-3'} whitespace-nowrap`}>
+                      {demanda.responsavel?.nome || '-'}
+                    </td>
+                    <td className={`${isCollapsed ? 'px-3 py-3' : 'px-3 py-3'} whitespace-nowrap`}>
+                      {formatDate(demanda.dataStatus)}
+                    </td>
+                    <td className={`${isCollapsed ? 'px-3 py-3' : 'px-3 py-3'} whitespace-nowrap`}>
+                      {demanda.status?.propriedade ? (
+                        <span 
+                          className={`rounded-md px-2 py-1 ${determinarCorTexto(demanda.status.propriedade)}`} 
+                          style={{ backgroundColor: demanda.status.propriedade }}
+                        >
+                          {demanda.status.nome || '-'}
+                        </span>
+                      ) : (
+                        <span className="text-gray-500">-</span>
+                      )}
+                    </td>
+
+                    <td className={`${isCollapsed ? 'px-3 py-3' : 'px-3 py-3'} whitespace-nowrap`}>
+                      <div className="flex justify-end space-x-2">
+                        <button 
+                          onClick={() => handleInfoClick(demanda)}
+                          className="text-blue-500 hover:text-blue-700 p-1 rounded-full hover:bg-blue-50 transition-colors"
+                        >
+                          <Info className="w-5 h-5" />
+                        </button>
+                        <button 
+                          onClick={() => {
+                            const formattedData: DemandaFormData = {
+                              proprietario_id: Number(demanda.proprietario?.id) || 0,
+                              nome: demanda.nome || '',
+                              sigla: demanda.sigla || '',
+                              descricao: demanda.propriedade || '',
+                              demandante: demanda.demandante || '',
+                              fator_gerador: demanda.fatorGerador || '',
+                              alinhamento_id: Number(demanda.alinhamento?.id) || 0,
+                              prioridade_id: Number(demanda.prioridade?.id) || 0,
+                              responsavel_id: Number(demanda.responsavel?.id) || 0,
+                              status_id: Number(demanda.status?.id) || 0,
+                              data_status: demanda.dataStatus || ''
+                            };
+                            setFormData(formattedData);
+                            setIsEditing(demanda.id);
+                            setIsModalOpen(true);
+                          }}
+                          className="text-blue-600 hover:text-green-700 p-1 rounded-full hover:bg-green-50 transition-colors"
+                        >
+                          <Edit2 className="w-5 h-5" />
+                        </button>
+                        <button 
+                          onClick={() => handleDeleteClick(demanda.id)}
+                          className="text-red-400 hover:text-red-700 p-1 rounded-full hover:bg-red-50 transition-colors"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
+                        <DeleteConfirmationModal 
+                              isOpen={isDeleteModalOpen}
+                              onClose={() => setIsDeleteModalOpen(false)}
+                              onConfirm={confirmDelete}
+                              itemName="esta demanda"
+                          />
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
 
         {isModalOpen && (

@@ -33,6 +33,41 @@ const determinarCorTexto = (corHex: string) => {
   return luminancia > 0.5 ? 'text-gray-800' : 'text-white';
 };
 
+const statusPresets = [
+  { 
+    nome: 'Em andamento', 
+    cor: '#3498db'     // Azul confiável - transmite progresso e atividade
+  },
+  { 
+    nome: 'Cancelado', 
+    cor: '#e74c3c'     // Vermelho - indica parada, erro ou cancelamento
+  },
+  { 
+    nome: 'Concluído', 
+    cor: '#2ecc71'     // Verde - sucesso, conclusão positiva
+  },
+  { 
+    nome: 'Backlog', 
+    cor: '#95a5a6'     // Cinza neutro - indica estado de espera/neutro
+  },
+  { 
+    nome: 'Em análise', 
+    cor: '#f1c40f'     // Amarelo - atenção, em processo de avaliação
+  },
+  { 
+    nome: 'Bloqueado', 
+    cor: '#9b59b6'     // Roxo - indica impedimento, situação que requer atenção
+  },
+  { 
+    nome: 'Pendente', 
+    cor: '#e67e22'     // Laranja - estado de alerta, aguardando ação
+  },
+  { 
+    nome: 'Planejado',
+    cor: '#34495e'     // Azul escuro - indica organização, planejamento
+  }
+];
+
 export default function Status({ proprietarioId }: { proprietarioId?: string }) {
   const [status, setStatus] = useState<Status[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -259,6 +294,31 @@ export default function Status({ proprietarioId }: { proprietarioId?: string }) 
                   />
                 </div>
                 <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Status predefinidos</label>
+                  <div className="grid grid-cols-2 gap-2 mb-4">
+                    {statusPresets.map((preset) => (
+                      <button
+                        key={preset.nome}
+                        onClick={() => {
+                          setCurrentStatus({
+                            ...currentStatus,
+                            nome: preset.nome,
+                            propriedade: preset.cor
+                          });
+                          setColor(preset.cor);
+                        }}
+                        className="flex items-center gap-2 p-2 rounded-md border hover:bg-gray-50 transition-colors"
+                      >
+                        <div
+                          className="w-4 h-4 rounded-full border border-gray-300"
+                          style={{ backgroundColor: preset.cor }}
+                        />
+                        <span className="text-sm text-gray-700">{preset.nome}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Propriedade</label>
                   <div className="space-y-4">
                     <div className="flex items-center gap-4">
@@ -289,10 +349,6 @@ export default function Status({ proprietarioId }: { proprietarioId?: string }) 
                             <ChromePicker 
                               color={color} 
                               onChange={(color: any) => {
-                                setColor(color.hex);
-                                setCurrentStatus({ ...currentStatus, propriedade: color.hex });
-                              }}
-                              onChangeComplete={(color: any) => {
                                 setColor(color.hex);
                                 setCurrentStatus({ ...currentStatus, propriedade: color.hex });
                               }}

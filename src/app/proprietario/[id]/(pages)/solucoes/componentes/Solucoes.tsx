@@ -65,6 +65,7 @@ import {
 import { Plus, Edit2, Trash2, X, Info, ChevronRight } from 'lucide-react';
 import { SolucaoType } from '../types/types';
 import DeleteConfirmationModal from './ModalConfirmacao/DeleteConfirmationModal';
+import { useSidebar } from '../../../../../componentes/Sidebar/SidebarContext';
 
 type CustomChangeEvent = {
   target: {
@@ -109,6 +110,7 @@ export default function Solucao() {
     demanda_id: false
   });
   const [selectedLanguages, setSelectedLanguages] = useState<number[]>([]);
+  const { isCollapsed } = useSidebar();
 
   const determinarCorTexto = (corHex: string | undefined) => {
     if (!corHex) return 'text-gray-800'; 
@@ -136,10 +138,14 @@ export default function Solucao() {
       getStatus(),
       getDemandas(),
     ]).then(([solucoesData, tiposData, linguagensData, desenvolvedoresData, categoriasData, responsaveisData, statusData, demandasData]) => {
+      console.log('Dados recebidos:');
+      console.log('Soluções:', solucoesData);
+      console.log('Linguagens:', linguagensData);
+      
       const storedId = localStorage.getItem('selectedProprietarioId');
       
       const demandasFiltradas = demandasData.filter(
-        (demanda: any) => demanda.proprietario?.id === Number(storedId)
+        (demanda: any) => demanda?.proprietario?.id === Number(storedId)
       );
 
       const solucoesFiltradas = solucoesData.filter((solucao: SolucaoType) =>
@@ -149,7 +155,7 @@ export default function Solucao() {
       setSolucoes(solucoesFiltradas);
       setFilteredSolucoes(solucoesFiltradas);
       setTipos(tiposData);
-      setLinguagens(linguagensData);
+      setLinguagens(linguagensData || []);
       setDesenvolvedores(desenvolvedoresData);
       setCategorias(categoriasData);
       setResponsaveis(responsaveisData);
@@ -403,7 +409,7 @@ export default function Solucao() {
     const formDataToSet = {
       ...formData,
       tipo_id: Number(solucao.tipo?.id),
-      linguagem_id: solucao.linguagem_id,
+      linguagem_id: solucao.linguagemId,
       desenvolvedor_id: Number(solucao.desenvolvedor?.id),
       categoria_id: Number(solucao.categoria?.id),
       nome: solucao.nome,
@@ -415,6 +421,16 @@ export default function Solucao() {
       demanda_id: Number(solucao.demanda?.id),
       data_status: solucao.dataStatus
     };
+
+    // Pré-selecionar as linguagens
+    if (solucao.linguagemId) {
+      const selectedIds = typeof solucao.linguagemId === 'string' 
+        ? solucao.linguagemId.split(',').map(Number)
+        : [Number(solucao.linguagemId)];
+      setSelectedLanguages(selectedIds);
+    } else {
+      setSelectedLanguages([]);
+    }
 
     setFormData(formDataToSet);
     setIsEditing(solucao.id.toString());
@@ -440,7 +456,14 @@ export default function Solucao() {
         return (
           s.status?.nome.toLowerCase().includes(searchLower) ||
           s.nome?.toLowerCase().includes(searchLower) ||
-          s.sigla?.toLowerCase().includes(searchLower)
+          s.sigla?.toLowerCase().includes(searchLower) ||
+          (s.linguagemId && typeof s.linguagemId === 'string' 
+            ? s.linguagemId.split(',').some(id => linguagens.find(l => l.id === Number(id))?.nome.toLowerCase().includes(searchLower)) 
+          : false) ||
+          s.desenvolvedor?.nome.toLowerCase().includes(searchLower) ||
+          s.categoria?.nome.toLowerCase().includes(searchLower) ||
+          s.responsavel?.nome.toLowerCase().includes(searchLower) ||
+          s.status?.nome.toLowerCase().includes(searchLower)
         );
       }) || [];
       setFilteredSolucoes(filtered);
@@ -476,8 +499,9 @@ export default function Solucao() {
         s.descricao?.toLowerCase().includes(searchLower) ||
         s.versao?.toLowerCase().includes(searchLower) ||
         s.tipo?.nome.toLowerCase().includes(searchLower) ||
-        (s.linguagem_id ? s.linguagem_id.split(',')
-          .some(id => linguagens.find(l => l.id === Number(id))?.nome.toLowerCase().includes(searchLower)) : false) ||
+        (s.linguagemId && typeof s.linguagemId === 'string' 
+          ? s.linguagemId.split(',').some(id => linguagens.find(l => l.id === Number(id))?.nome.toLowerCase().includes(searchLower)) 
+          : false) ||
         s.desenvolvedor?.nome.toLowerCase().includes(searchLower) ||
         s.categoria?.nome.toLowerCase().includes(searchLower) ||
         s.responsavel?.nome.toLowerCase().includes(searchLower) ||
@@ -493,7 +517,7 @@ export default function Solucao() {
       filtered = filtered.filter(s => s.tipo?.id === Number(filters.tipo_id));
     }
     if (filters.linguagem_id) {
-      filtered = filtered.filter(s => s.linguagem_id?.split(',').includes(filters.linguagem_id));
+      filtered = filtered.filter(s => String(s.linguagemId).split(',').includes(filters.linguagem_id));
     }
     if (filters.desenvolvedor_id) {
       filtered = filtered.filter(s => s.desenvolvedor?.id === Number(filters.desenvolvedor_id));
@@ -549,10 +573,10 @@ export default function Solucao() {
           
           return (
             <span 
-              key={id}
+              key={(linguagem as {id: number; nome: string}).id}
               className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-700 rounded-full"
             >
-              {linguagem.nome}
+              {(linguagem as {id: number; nome: string}).nome}
             </span>
           );
         })}
@@ -567,7 +591,14 @@ export default function Solucao() {
         return (
           s.status?.nome.toLowerCase().includes(searchLower) ||
           s.nome?.toLowerCase().includes(searchLower) ||
-          s.sigla?.toLowerCase().includes(searchLower)
+          s.sigla?.toLowerCase().includes(searchLower) ||
+          (s.linguagemId && typeof s.linguagemId === 'string' 
+            ? s.linguagemId.split(',').some(id => linguagens.find(l => l.id === Number(id))?.nome.toLowerCase().includes(searchLower)) 
+            : false) ||
+          s.desenvolvedor?.nome.toLowerCase().includes(searchLower) ||
+          s.categoria?.nome.toLowerCase().includes(searchLower) ||
+          s.responsavel?.nome.toLowerCase().includes(searchLower) ||
+          s.status?.nome.toLowerCase().includes(searchLower)
         );
       }) || [];
 
@@ -577,9 +608,89 @@ export default function Solucao() {
     }
   }, [search, solucoes, linguagens]);
 
+  // Função auxiliar para renderizar as linguagens na tabela
+  const renderTableLinguagens = (solucao: any) => {
+    // Verifica se temos o array de linguagens da nova estrutura
+    if (solucao.linguagens && Array.isArray(solucao.linguagens)) {
+      return (
+        <div className="flex flex-wrap gap-1">
+          {solucao.linguagens.map((linguagem: any) => (
+            <span
+              key={linguagem.id}
+              className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-700 rounded-full"
+            >
+              {linguagem.nome}
+            </span>
+          ))}
+        </div>
+      );
+    }
+
+    // Fallback para o formato antigo (string de IDs)
+    if (solucao.linguagemId) {
+      const ids = String(solucao.linguagemId).split(',').map(id => Number(id.trim()));
+      
+      const linguagensEncontradas = ids
+        .map(id => linguagens.find(l => l.id === id))
+        .filter(Boolean);
+
+      if (linguagensEncontradas.length > 0) {
+        return (
+          <div className="flex flex-wrap gap-1">
+            {linguagensEncontradas.map(linguagem => (
+              <span
+                key={(linguagem as {id: number; nome: string}).id}
+                className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-700 rounded-full"
+              >
+                {(linguagem as {id: number; nome: string}).nome}
+              </span>
+            ))}
+          </div>
+        );
+      }
+    }
+
+    return '-';
+  };
+
+  const renderDetalhesLinguagens = (solucao: SolucaoType) => {
+    if (solucao.linguagemId) {
+      const ids = String(solucao.linguagemId).split(',').map(id => Number(id.trim()));
+      const linguagensEncontradas = ids
+        .map(id => linguagens.find(l => l.id === id))
+        .filter(Boolean);
+
+      return (
+        <div className="flex flex-wrap gap-1">
+          {linguagensEncontradas.map(linguagem => (
+            <span
+              key={(linguagem as {id: number; nome: string}).id}
+              className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-700 rounded-full"
+            >
+              {(linguagem as {id: number; nome: string}).nome}
+            </span>
+          ))}
+        </div>
+      );
+    }
+    return '-';
+  };
+
   return (
-    <div className="min-h-screen">
-      <div className="p-6">
+    <div className={`
+      min-h-screen bg-gray-50
+      transition-all duration-300 ease-in-out
+      ${isCollapsed ? 'ml-20 absolute right-0 top-16 bottom-0' : ''}
+      flex-grow
+      w-auto
+      
+    `}>
+      <div className={`
+        
+        transition-all duration-300 ease-in-out
+        ${isCollapsed ? 'w-[98%] mx-auto' : ''}
+        py-6
+      `}>
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold text-gray-800">Crie sua solução</h1>
           <div className="flex gap-2">
@@ -598,7 +709,14 @@ export default function Solucao() {
             <h2 className="text-base font-semibold text-gray-800">Filtros</h2>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-3">
+         
+          <div className={`
+            grid gap-2
+            transition-all duration-300
+            ${isCollapsed 
+              ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-7 xl:grid-cols-7' 
+              : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-7 xl:grid-cols-7'}
+          `}>
             <select
               name="demanda_id"
               value={filters.demanda_id}
@@ -755,9 +873,7 @@ export default function Solucao() {
                     {solucao.tipo?.nome || '-'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
-                    <div className="flex items-center">
-                      {renderLinguagensChips(solucao.linguagem_id)}
-                    </div>
+                    {renderTableLinguagens(solucao)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                     {solucao.desenvolvedor?.nome || '-'}
@@ -1133,15 +1249,15 @@ export default function Solucao() {
                       <div className="space-y-3 overflow-y-auto h-[200px]">
                         <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
                           <span className="text-sm font-medium text-gray-600">Nome:</span>
-                          <span className="text-sm text-gray-800 font-medium">{selectedDemandDetails.nome}</span>
+                          <span className="text-sm text-gray-800 font-medium group-hover:text-blue-600">{selectedDemandDetails.nome}</span>
                         </div>
                         <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
                           <span className="text-sm font-medium text-gray-600">Sigla:</span>
-                          <span className="text-sm text-gray-800 font-medium">{selectedDemandDetails.sigla}</span>
+                          <span className="text-sm text-gray-800 font-medium group-hover:text-blue-600">{selectedDemandDetails.sigla}</span>
                         </div>
                         <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
                           <span className="text-sm font-medium text-gray-600">Versão:</span>
-                          <span className="text-sm text-gray-800 font-medium">{selectedDemandDetails.versao}</span>
+                          <span className="text-sm text-gray-800 font-medium group-hover:text-blue-600">{selectedDemandDetails.versao}</span>
                         </div>
                       </div>
                     </div>
@@ -1184,7 +1300,7 @@ export default function Solucao() {
                         <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
                           <span className="text-sm font-medium text-gray-600">Linguagem:</span>
                           <span className="text-sm text-gray-800 font-medium">
-                            {renderLinguagensChips(String(selectedDemandDetails.linguagem_id))}
+                            {renderDetalhesLinguagens(selectedDemandDetails)}
                           </span>
                         </div>
                         <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
@@ -1316,7 +1432,7 @@ export default function Solucao() {
                                             <p className="flex items-center justify-between group hover:bg-white hover:shadow-sm p-2 rounded-md transition-all">
                                               <span className="font-medium text-gray-600">Linguagem:</span>
                                               <span className="text-gray-900 font-medium group-hover:text-blue-600">
-                                                {renderLinguagensChips(String(evento.solucao.linguagemId))}
+                                                {renderDetalhesLinguagens(evento.solucao)}
                                               </span>
                                             </p>
                                             <p className="flex items-center justify-between group hover:bg-white hover:shadow-sm p-2 rounded-md transition-all">

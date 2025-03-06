@@ -11,10 +11,13 @@ import {
   ChevronDown,
   Menu,
   X,
-  Building2
+  Building2,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { getProprietario, baseURL } from '../../proprietario/actions/actions'
 import Image from 'next/image';
+import { useSidebar } from './SidebarContext';
 
 interface Proprietario {
   id: number;
@@ -30,6 +33,7 @@ export function Sidebar() {
   const [proprietarioId, setProprietarioId] = useState<string>('');
   const [proprietario, setProprietario] = useState<Proprietario | null>(null);
   const pathname = usePathname();
+  const { isCollapsed, toggleSidebar } = useSidebar();
 
   useEffect(() => {
     const storedId = localStorage.getItem('selectedProprietarioId');
@@ -83,13 +87,9 @@ export function Sidebar() {
     };
 
     const getItemClasses = (path: string) => {
-      const baseClasses = `flex items-center ${isMobile ? 'px-3 py-3' : 'px-4 py-2.5'} text-gray-600 hover:bg-gray-50 hover:text-gray-800 rounded-lg transition-colors group relative`;
-      const activeClasses = isActive(path) ? 'bg-blue-50/50 text-blue-800 border-l-4 border-blue-500 pl-[calc(1rem-2px)]' : '';
+      const baseClasses = `flex items-center ${isCollapsed ? 'px-2 justify-center' : 'px-4'} py-2.5 text-gray-600 hover:bg-gray-50 hover:text-gray-800 rounded-lg transition-all duration-200 group relative`;
+      const activeClasses = isActive(path) ? 'bg-blue-50/50 text-blue-800 border-l-4 border-blue-500' : '';
       return `${baseClasses} ${activeClasses}`;
-    };
-
-    const getIconClasses = (path: string) => {
-      return `w-5 h-5 ${isActive(path) ? 'text-blue-600' : 'text-gray-400'} group-hover:text-gray-600`;
     };
 
     return (
@@ -118,46 +118,43 @@ export function Sidebar() {
                 <Building2 className={`h-6 w-6 ${isActive('/proprietario') ? 'text-blue-600' : 'text-gray-400'} group-hover:text-gray-600`} />
               </div>
             </div>
-            <div className="ml-4 flex-1 min-w-0">
-              <span className="text-sm font-medium block leading-tight break-words">Proprietários</span>
-              {proprietario && (
-                <span className="text-xs text-gray-500 block break-words mt-0.5">
-                  {proprietario.sigla}
-                </span>
+            {!isCollapsed && (
+              <div className="ml-4 flex-1 min-w-0">
+                <span className="text-sm font-medium block leading-tight">Proprietários</span>
+                {proprietario && (
+                  <span className="text-xs text-gray-500 block mt-0.5">
+                    {proprietario.sigla}
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+        </Link>
+
+        {[
+          { href: `/proprietario/${proprietarioId}/dashboard`, icon: LayoutDashboard, text: 'Dashboard' },
+          { href: demandaLink, icon: ListChecks, text: 'Demandas' },
+          { href: `/proprietario/${proprietarioId}/solucoes`, icon: AppWindow, text: 'Soluções' },
+        ].map((item) => (
+          <Link href={item.href} key={item.text} prefetch className="block">
+            <div className={getItemClasses(item.href)}>
+              <item.icon className={`w-5 h-5 ${isActive(item.href) ? 'text-blue-600' : 'text-gray-400'} group-hover:text-gray-600`} />
+              {!isCollapsed && (
+                <span className="ml-3 text-sm font-medium">{item.text}</span>
               )}
             </div>
-          </div>
-        </Link>
+          </Link>
+        ))}
 
-        <Link href={`/proprietario/${proprietarioId}/dashboard`} prefetch className="block">
-          <div className={getItemClasses(`/proprietario/${proprietarioId}/dashboard`)}>
-            <LayoutDashboard className={getIconClasses(`/proprietario/${proprietarioId}/dashboard`)} />
-            <span className="ml-3 text-sm font-medium">Dashboard</span>
-          </div>
-        </Link>
-
-        <Link href={demandaLink} prefetch className="block">
-          <div className={getItemClasses(`/proprietario/${proprietarioId}/demandas`)}>
-            <ListChecks className={getIconClasses(`/proprietario/${proprietarioId}/demandas`)} />
-            <span className="ml-3 text-sm font-medium">Demandas</span>
-          </div>
-        </Link>
-
-        <Link href={`/proprietario/${proprietarioId}/solucoes`} prefetch className="block">
-          <div className={getItemClasses(`/proprietario/${proprietarioId}/solucoes`)}>
-            <AppWindow className={getIconClasses(`/proprietario/${proprietarioId}/solucoes`)} />
-            <span className="ml-3 text-sm font-medium">Soluções</span>
-          </div>
-        </Link>
-
-       
-       <div className="relative">
+        <div className="relative">
           <button 
             className={`w-full ${getItemClasses('/relatorios')}`}
             onClick={toggleReportMenu}
           >
-            <FileText className={getIconClasses('/relatorios')} />
-            <span className="ml-3 text-sm font-medium">Relatórios</span>
+            <FileText className={`w-5 h-5 ${isActive('/relatorios') ? 'text-blue-600' : 'text-gray-400'} group-hover:text-gray-600`} />
+            {!isCollapsed && (
+              <span className="ml-3 text-sm font-medium">Relatórios</span>
+            )}
             <ChevronDown 
               className={`w-4 h-4 ml-auto text-gray-400 transition-transform 
                 ${isReportMenuOpen ? 'rotate-180' : ''}`} 
@@ -170,28 +167,29 @@ export function Sidebar() {
             <Link href={`/proprietario/${proprietarioId}/relatorios/demandas`} prefetch className="block">
               <div className={getItemClasses('/relatorios/demandas')}>
                 <ListChecks className={`w-4 h-4 ${isActive('/relatorios/demandas') ? 'text-blue-600' : 'text-gray-400'} group-hover:text-gray-600`} />
-                <span className="ml-3 text-sm">Demandas</span>
+                {!isCollapsed && (
+                  <span className="ml-3 text-sm">Demandas</span>
+                )}
               </div>
             </Link>
           </div>
         </div>  
 
-
-        {/* Configurações Dropdown */}
         <div className="relative">
           <button 
             className={`w-full ${getItemClasses(`/proprietario/${proprietarioId}/configuracoes`)}`}
             onClick={toggleConfigMenu}
           >
-            <Settings className={getIconClasses(`/proprietario/${proprietarioId}/configuracoes`)} />
-            <span className="ml-3 text-sm font-medium">Configurações</span>
+            <Settings className={`w-5 h-5 ${isActive(`/proprietario/${proprietarioId}/configuracoes`) ? 'text-blue-600' : 'text-gray-400'} group-hover:text-gray-600`} />
+            {!isCollapsed && (
+              <span className="ml-3 text-sm font-medium">Configurações</span>
+            )}
             <ChevronDown 
               className={`w-4 h-4 ml-auto text-gray-400 transition-transform 
                 ${isConfigMenuOpen ? 'rotate-180' : ''}`} 
             />
           </button>
           
-          {/* Config submenu items */}
           {['categorias', 'alinhamentos', 'desenvolvedores', 'linguagem', 'prioridades', 'responsaveis', 'status', 'tipos'].map((item) => (
             <div 
               key={item}
@@ -203,7 +201,9 @@ export function Sidebar() {
                 className="block"
               >
                 <div className={getItemClasses(`/proprietario/${proprietarioId}/configuracoes/${item}`)}>
-                  <span className="ml-3 text-sm capitalize">{item}</span>
+                  {!isCollapsed && (
+                    <span className="ml-3 text-sm capitalize">{item}</span>
+                  )}
                 </div>
               </Link>
             </div>
@@ -262,49 +262,70 @@ export function Sidebar() {
       </div>
 
       
-      <aside className="hidden md:flex flex-col w-64 h-screen bg-white shadow-md border-r border-gray-100 fixed left-0">
-        <div className="px-6 py-6 border-b border-gray-100">
-          <Link href={`/proprietario/${proprietarioId}/dashboard`} className="flex flex-col items-center text-center space-y-3">
-            <div className="relative h-16 w-16 flex-shrink-0">
-              {proprietario?.logo ? (
-                <img
-                  src={`${baseURL}${proprietario.logo}`}
-                  alt={`Logo ${proprietario.nome}`}
-                  className="rounded-full object-cover h-full w-full border-2 border-gray-100 shadow-sm hover:border-blue-200 transition-colors"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).style.display = 'none';
-                    const parent = (e.target as HTMLImageElement).parentElement;
-                    if (parent) {
-                      const fallback = parent.querySelector('.fallback-icon');
-                      if (fallback) {
-                        fallback.classList.remove('hidden');
-                      }
-                    }
-                  }}
-                />
-              ) : null}
-              <div className={`fallback-icon ${proprietario?.logo ? 'hidden' : ''} absolute inset-0 rounded-full bg-gray-100 flex items-center justify-center border-2 border-gray-200`}>
-                <Building2 className="h-8 w-8 text-gray-400" />
-              </div>
-            </div>
-            <div className="w-full">
-              <h2 className="text-lg font-semibold text-gray-900 leading-tight break-words">
-                {proprietario?.nome || 'Selecione um Proprietário'}
-              </h2>
-              {proprietario?.sigla && (
-                <p className="text-sm text-gray-500 mt-0.5 break-words">{proprietario.sigla}</p>
+      <aside className={`hidden md:flex flex-col ${isCollapsed ? 'w-20' : 'w-64'} h-screen bg-white shadow-md border-r border-gray-100 fixed left-0 transition-all duration-300`} style={{ zIndex: 40 }}>
+        <div className="px-4 py-6 border-b border-gray-100">
+          <div className="flex flex-col items-center gap-4">
+            <button
+              onClick={toggleSidebar}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors w-full flex justify-center"
+              aria-label={isCollapsed ? 'Expandir sidebar' : 'Recolher sidebar'}
+            >
+              {isCollapsed ? (
+                <ChevronRight className="w-6 h-6 text-gray-600" />
+              ) : (
+                <ChevronLeft className="w-6 h-6 text-gray-600" />
               )}
-            </div>
-          </Link>
+            </button>
+
+            <Link href={`/proprietario/${proprietarioId}/dashboard`} className="flex flex-col items-center text-center space-y-3">
+              <div className={`relative ${isCollapsed ? 'h-10 w-10' : 'h-16 w-16'}`}>
+                {proprietario?.logo ? (
+                  <img
+                    src={`${baseURL}${proprietario.logo}`}
+                    alt={`Logo ${proprietario.nome}`}
+                    className="rounded-full object-cover h-full w-full border-2 border-gray-100 shadow-sm hover:border-blue-200 transition-colors"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = 'none';
+                      const parent = (e.target as HTMLImageElement).parentElement;
+                      if (parent) {
+                        const fallback = parent.querySelector('.fallback-icon');
+                        if (fallback) {
+                          fallback.classList.remove('hidden');
+                        }
+                      }
+                    }}
+                  />
+                ) : null}
+                <div className={`fallback-icon ${proprietario?.logo ? 'hidden' : ''} absolute inset-0 rounded-full bg-gray-100 flex items-center justify-center border-2 border-gray-200`}>
+                  <Building2 className="h-8 w-8 text-gray-400" />
+                </div>
+              </div>
+              {!isCollapsed && (
+                <div className="w-full">
+                  <h2 className="text-lg font-semibold text-gray-900 leading-tight break-words">
+                    {proprietario?.nome || 'Selecione um Proprietário'}
+                  </h2>
+                  {proprietario?.sigla && (
+                    <p className="text-sm text-gray-500 mt-0.5 break-words">{proprietario.sigla}</p>
+                  )}
+                </div>
+              )}
+            </Link>
+          </div>
         </div>
   
-        <nav className="flex-1 mt-4 overflow-y-auto">
+        <nav className="flex-1 mt-2 overflow-y-auto">
           {renderMenuItems()}
         </nav>
 
-        {/* Footer with MP-AP info */}
         <div className="px-4 py-4 border-t border-gray-100 bg-gray-50/50">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 justify-center">
+            {!isCollapsed && (
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-gray-700">Ministério Público</p>
+                <p className="text-xs text-gray-600">do Estado do Amapá</p>
+              </div>
+            )}
             <div className="h-10 w-10 relative flex-shrink-0">
               <Image
                 src="/images.webp"
@@ -314,10 +335,6 @@ export function Sidebar() {
                 className="object-contain w-full h-full opacity-90"
                 sizes="40px"
               />
-            </div>
-            <div className="min-w-0">
-              <p className="text-sm font-medium text-gray-700 truncate">Ministério Público</p>
-              <p className="text-xs text-gray-600 truncate">do Estado do Amapá</p>
             </div>
           </div>
         </div>
@@ -345,7 +362,6 @@ export function Sidebar() {
             {renderMenuItems(true)}
           </nav>
 
-          {/* Mobile Footer with MP-AP info */}
           <div className="px-6 py-4 border-t border-gray-100 bg-gray-50/50 mt-auto">
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 relative flex-shrink-0">
@@ -368,7 +384,7 @@ export function Sidebar() {
       </div>
 
       
-      <div className="md:pl-64">
+      <div className={`md:pl-${isCollapsed ? '20' : '64'} transition-all duration-300`}>
         
       </div>
     </>

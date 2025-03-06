@@ -1,10 +1,8 @@
-
 import type { Metadata } from "next";
 import { Montserrat } from "next/font/google";
 import "./globals.css";
 import { AppWrapper } from './componentes/Sidebar/AppWrapper'
-
-
+import { SidebarProvider } from './componentes/Sidebar/SidebarContext';
 
 const montserrat = Montserrat({
   subsets: ["latin"],
@@ -23,9 +21,11 @@ export default function RootLayout({
   return (
     <html lang="pt-BR">
       <body className={montserrat.className}>
-        <AppWrapper>
-          {children}
-        </AppWrapper>
+        <SidebarProvider>
+          <AppWrapper>
+            {children}
+          </AppWrapper>
+        </SidebarProvider>
       </body>
     </html>
   )

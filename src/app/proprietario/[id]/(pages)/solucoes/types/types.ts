@@ -4,33 +4,22 @@ export interface SolucaoType {
     sigla: string;
     descricao: string;
     versao: string;
-    linguagem_id: string | null;
-    tipo: {
-      id: number;
-      nome: string;
-    } | null;
-    desenvolvedor: {
-      id: number;
-      nome: string;
-    } | null;
-    categoria: {
-      id: number;
-      nome: string;
-    } | null;
-    responsavel: {
-      id: number;
-      nome: string;
-    } | null;
-    status: {
-      id: number;
-      nome: string;
-      propriedade: string;
-    } | null;
-    demanda: {
-      id: number;
-      nome: string;
-    } | null;
+    tipoId: number;
+    linguagemId: string | number | null;
+    desenvolvedorId: number;
+    categoriaId: number;
+    responsavelId: number;
+    statusId: number;
+    demandaId: number;
     dataStatus: string;
+    createdAt: string;
+    updatedAt: string;
+    tipo?: { id: number; nome: string };
+    desenvolvedor?: { id: number; nome: string };
+    categoria?: { id: number; nome: string };
+    responsavel?: { id: number; nome: string };
+    status?: { id: number; nome: string; propriedade: string };
+    demanda?: { id: number; nome: string };
 }
 
 export interface BaseType {
@@ -45,7 +34,7 @@ export interface SolucaoFormData {
   descricao: string;
   versao: string;
   tipo_id: number | null;
-  linguagem_id: string | null;
+  linguagemId: string | null;
   desenvolvedor_id: number | null;
   categoria_id: number | null;
   responsavel_id: number | null;

@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { Menu, X, Building2 } from 'lucide-react';
 import UnitSwitcher from '../../proprietario/componentes/UnitSwitcher';
 import { getProprietario, baseURL } from '../../proprietario/actions/actions';
+import { useSidebar } from './SidebarContext'
 
 interface Proprietario {
   id: number;
@@ -18,6 +19,7 @@ export default function Navbar() {
   const [isMobileView, setIsMobileView] = useState(false);
   const [proprietario, setProprietario] = useState<Proprietario | null>(null);
   const pathname = usePathname();
+  const { isCollapsed } = useSidebar();
 
   const getPageTitle = () => {
     if (pathname === '/proprietario') {
@@ -82,7 +84,7 @@ export default function Navbar() {
   return (
     <nav className={`
       fixed top-0 right-0 bg-white border-b border-gray-200 transition-all duration-300
-      ${isMobileView ? 'left-0' : 'left-64'}
+      ${isMobileView ? 'left-0' : isCollapsed ? 'left-20' : 'left-64'}
       z-50
     `}>
       <div className="h-16 flex items-center justify-between px-6">
@@ -92,7 +94,7 @@ export default function Navbar() {
         </h1>
 
         {/* Unit Switcher and Mobile Menu */}
-        <div className="flex items-center gap-4 mr-8">
+        <div className="flex items-center gap-4 mr-2">
           <div className="relative z-20">
             <UnitSwitcher />
           </div>
