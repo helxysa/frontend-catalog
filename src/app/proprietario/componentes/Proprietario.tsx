@@ -16,12 +16,57 @@ interface Proprietario {
   updatedAt: string;
 }
 
+interface ConfirmModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  proprietarioName: string;
+}
+
+function ConfirmCloneModal({ isOpen, onClose, onConfirm, proprietarioName }: ConfirmModalProps) {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fadeIn">
+      <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-xl transform transition-all animate-slideIn">
+        <div className="text-center">
+          <div className="w-12 h-12 bg-blue-100 rounded-full mx-auto flex items-center justify-center mb-4">
+            <svg className="w-6 h-6 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">Confirmar Clonagem</h3>
+          <p className="text-gray-600 mb-6">
+            Você tem certeza que deseja clonar a unidade <span className="font-semibold">{proprietarioName}</span>?
+          </p>
+          <div className="flex justify-center space-x-3">
+            <button
+              onClick={onClose}
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-300"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={onConfirm}
+              className="px-6 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            >
+              Confirmar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Proprietario() {
   const [escritorios, setEscritorios] = useState<Proprietario[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [selectedProprietario, setSelectedProprietario] = useState<Proprietario | null>(null);
+  const [showCloneModal, setShowCloneModal] = useState(false);
+  const [cloneProprietarioData, setCloneProprietarioData] = useState<{ id: number; nome: string } | null>(null);
   const router = useRouter();
 
   const fetchEscritorios = async () => {
@@ -66,6 +111,20 @@ export default function Proprietario() {
     e.stopPropagation(); // Prevent card click event
     setSelectedProprietario(proprietario);
     setShowModal(true);
+  };
+
+  const handleClone = async () => {
+    if (!cloneProprietarioData) return;
+    
+    try {
+      await cloneProprietario(cloneProprietarioData.id.toString());
+      fetchEscritorios();
+    } catch (error) {
+      console.error('Error cloning:', error);
+    } finally {
+      setShowCloneModal(false);
+      setCloneProprietarioData(null);
+    }
   };
 
   if (loading) {
@@ -159,15 +218,10 @@ export default function Proprietario() {
                       </svg>
                     </button>
                     <button
-                      onClick={async (e) => {
+                      onClick={(e) => {
                         e.stopPropagation();
-                        try {
-                          await cloneProprietario(escritorio.id.toString());
-                          fetchEscritorios(); // Recarregar a lista após clonar
-                        } catch (error) {
-                          console.error('Error cloning:', error);
-                          // Você pode adicionar uma notificação de erro aqui
-                        }
+                        setCloneProprietarioData({ id: escritorio.id, nome: escritorio.nome });
+                        setShowCloneModal(true);
                       }}
                       className="p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors"
                       aria-label="Clonar"
@@ -234,6 +288,18 @@ export default function Proprietario() {
                 setSelectedProprietario(null);
               }}
               proprietario={selectedProprietario || undefined}
+            />
+          )}
+
+          {showCloneModal && cloneProprietarioData && (
+            <ConfirmCloneModal
+              isOpen={showCloneModal}
+              onClose={() => {
+                setShowCloneModal(false);
+                setCloneProprietarioData(null);
+              }}
+              onConfirm={handleClone}
+              proprietarioName={cloneProprietarioData.nome}
             />
           )}
         </div>

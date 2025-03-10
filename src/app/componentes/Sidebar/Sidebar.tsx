@@ -13,7 +13,15 @@ import {
   X,
   Building2,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Tags,
+  GitCompare,
+  Users,
+  Code2,
+  AlertCircle,
+  UserCog,
+  CircleDot,
+  FileType2
 } from 'lucide-react';
 import { getProprietario, baseURL } from '../../proprietario/actions/actions'
 import Image from 'next/image';
@@ -194,8 +202,24 @@ export function Sidebar() {
             )}
           </button>
           
-          {!isCollapsed && (
-            ['categorias', 'alinhamentos', 'desenvolvedores', 'linguagem', 'prioridades', 'responsaveis', 'status', 'tipos'].map((item) => (
+          {!isCollapsed && ['categorias', 'alinhamentos', 'desenvolvedores', 'linguagem', 'prioridades', 'responsaveis', 'status', 'tipos'].map((item) => {
+            const getItemIcon = (itemName: string) => {
+              const iconMap: { [key: string]: any } = {
+                categorias: Tags,
+                alinhamentos: GitCompare,
+                desenvolvedores: Users,
+                linguagem: Code2,
+                prioridades: AlertCircle,
+                responsaveis: UserCog,
+                status: CircleDot,
+                tipos: FileType2
+              };
+              return iconMap[itemName] || Settings;
+            };
+            
+            const ItemIcon = getItemIcon(item);
+            
+            return (
               <div 
                 key={item}
                 className={`${isConfigMenuOpen ? 'block' : 'hidden'} ${isMobile ? 'ml-2 mt-1 space-y-2' : 'ml-4 mt-1 space-y-1'} py-1`}
@@ -206,12 +230,13 @@ export function Sidebar() {
                   className="block"
                 >
                   <div className={getItemClasses(`/proprietario/${proprietarioId}/configuracoes/${item}`)}>
+                    <ItemIcon className={`w-4 h-4 ${isActive(`/proprietario/${proprietarioId}/configuracoes/${item}`) ? 'text-blue-600' : 'text-gray-400'} group-hover:text-gray-600`} />
                     <span className="ml-3 text-sm capitalize">{item}</span>
                   </div>
                 </Link>
               </div>
-            ))
-          )}
+            );
+          })}
         </div>
       </div>
     );

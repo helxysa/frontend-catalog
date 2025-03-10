@@ -286,7 +286,7 @@ export default function Dashboard() {
       w-full bg-gray-50
       transition-all duration-300 ease-in-out
       ${isCollapsed 
-        ? 'ml-20 w-[calc(97%-2rem)] fixed left-1 top-13 h-screen overflow-y-auto pb-20' 
+        ? 'ml-20 w-[calc(95%-2rem)] fixed left-1 top-13 h-screen overflow-y-auto pb-20' 
         : 'w-full'
       }
       py-6 px-6
