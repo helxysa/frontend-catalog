@@ -94,7 +94,7 @@ export default function Navbar() {
         </h1>
 
         {/* Unit Switcher and Mobile Menu */}
-        <div className="flex items-center gap-4 mr-2">
+        <div className={`flex items-center  ${isCollapsed ? '' : 'mr-7'}`}>
           <div className="relative z-20">
             <UnitSwitcher />
           </div>

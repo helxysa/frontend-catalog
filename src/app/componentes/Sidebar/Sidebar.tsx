@@ -153,26 +153,28 @@ export function Sidebar() {
           >
             <FileText className={`w-5 h-5 ${isActive('/relatorios') ? 'text-blue-600' : 'text-gray-400'} group-hover:text-gray-600`} />
             {!isCollapsed && (
-              <span className="ml-3 text-sm font-medium">Relatórios</span>
+              <>
+                <span className="ml-3 text-sm font-medium">Relatórios</span>
+                <ChevronDown 
+                  className={`w-4 h-4 ml-auto text-gray-400 transition-transform 
+                    ${isReportMenuOpen ? 'rotate-180' : ''}`} 
+                />
+              </>
             )}
-            <ChevronDown 
-              className={`w-4 h-4 ml-auto text-gray-400 transition-transform 
-                ${isReportMenuOpen ? 'rotate-180' : ''}`} 
-            />
           </button>
           
-          <div 
-            className={`${isReportMenuOpen ? 'block' : 'hidden'} ${isMobile ? 'ml-2 mt-1 space-y-2' : 'ml-4 mt-1 space-y-1'} py-1`}
-          >
-            <Link href={`/proprietario/${proprietarioId}/relatorios/demandas`} prefetch className="block">
-              <div className={getItemClasses('/relatorios/demandas')}>
-                <ListChecks className={`w-4 h-4 ${isActive('/relatorios/demandas') ? 'text-blue-600' : 'text-gray-400'} group-hover:text-gray-600`} />
-                {!isCollapsed && (
+          {!isCollapsed && (
+            <div 
+              className={`${isReportMenuOpen ? 'block' : 'hidden'} ${isMobile ? 'ml-2 mt-1 space-y-2' : 'ml-4 mt-1 space-y-1'} py-1`}
+            >
+              <Link href={`/proprietario/${proprietarioId}/relatorios/demandas`} prefetch className="block">
+                <div className={getItemClasses('/relatorios/demandas')}>
+                  <ListChecks className={`w-4 h-4 ${isActive('/relatorios/demandas') ? 'text-blue-600' : 'text-gray-400'} group-hover:text-gray-600`} />
                   <span className="ml-3 text-sm">Demandas</span>
-                )}
-              </div>
-            </Link>
-          </div>
+                </div>
+              </Link>
+            </div>
+          )}
         </div>  
 
         <div className="relative">
@@ -182,32 +184,34 @@ export function Sidebar() {
           >
             <Settings className={`w-5 h-5 ${isActive(`/proprietario/${proprietarioId}/configuracoes`) ? 'text-blue-600' : 'text-gray-400'} group-hover:text-gray-600`} />
             {!isCollapsed && (
-              <span className="ml-3 text-sm font-medium">Configurações</span>
+              <>
+                <span className="ml-3 text-sm font-medium">Configurações</span>
+                <ChevronDown 
+                  className={`w-4 h-4 ml-auto text-gray-400 transition-transform 
+                    ${isConfigMenuOpen ? 'rotate-180' : ''}`} 
+                />
+              </>
             )}
-            <ChevronDown 
-              className={`w-4 h-4 ml-auto text-gray-400 transition-transform 
-                ${isConfigMenuOpen ? 'rotate-180' : ''}`} 
-            />
           </button>
           
-          {['categorias', 'alinhamentos', 'desenvolvedores', 'linguagem', 'prioridades', 'responsaveis', 'status', 'tipos'].map((item) => (
-            <div 
-              key={item}
-              className={`${isConfigMenuOpen ? 'block' : 'hidden'} ${isMobile ? 'ml-2 mt-1 space-y-2' : 'ml-4 mt-1 space-y-1'} py-1`}
-            >
-              <Link 
-                href={`/proprietario/${proprietarioId}/configuracoes/${item}`} 
-                prefetch
-                className="block"
+          {!isCollapsed && (
+            ['categorias', 'alinhamentos', 'desenvolvedores', 'linguagem', 'prioridades', 'responsaveis', 'status', 'tipos'].map((item) => (
+              <div 
+                key={item}
+                className={`${isConfigMenuOpen ? 'block' : 'hidden'} ${isMobile ? 'ml-2 mt-1 space-y-2' : 'ml-4 mt-1 space-y-1'} py-1`}
               >
-                <div className={getItemClasses(`/proprietario/${proprietarioId}/configuracoes/${item}`)}>
-                  {!isCollapsed && (
+                <Link 
+                  href={`/proprietario/${proprietarioId}/configuracoes/${item}`} 
+                  prefetch
+                  className="block"
+                >
+                  <div className={getItemClasses(`/proprietario/${proprietarioId}/configuracoes/${item}`)}>
                     <span className="ml-3 text-sm capitalize">{item}</span>
-                  )}
-                </div>
-              </Link>
-            </div>
-          ))}
+                  </div>
+                </Link>
+              </div>
+            ))
+          )}
         </div>
       </div>
     );

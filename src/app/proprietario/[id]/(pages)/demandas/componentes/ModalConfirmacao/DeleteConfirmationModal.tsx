@@ -17,12 +17,12 @@ const DeleteConfirmationModal: React.FC<DeleteModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/5 p-4">
       <div 
         className="
           bg-white 
           rounded-lg 
-          shadow-2xl 
+          shadow-1xl 
           w-full 
           max-w-md 
           overflow-hidden 

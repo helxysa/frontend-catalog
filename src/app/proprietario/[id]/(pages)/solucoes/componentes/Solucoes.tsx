@@ -678,18 +678,17 @@ export default function Solucao() {
 
   return (
     <div className={`
-      min-h-screen bg-gray-50
+      w-full bg-gray-50
       transition-all duration-300 ease-in-out
-      ${isCollapsed ? 'ml-20 absolute right-0 top-16 bottom-0' : ''}
-      flex-grow
-      w-auto
-      
+      ${isCollapsed 
+        ? 'ml-10 w-[calc(100%-2rem)] fixed left-1 top-13 h-screen overflow-y-auto' 
+        : 'w-full'
+      }
+      py-6 px-6
     `}>
       <div className={`
-        
         transition-all duration-300 ease-in-out
-        ${isCollapsed ? 'w-[98%] mx-auto' : ''}
-        py-6
+        ${isCollapsed ? 'w-[96%] mx-auto pb-20' : 'w-[100%] mx-auto'}
       `}>
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold text-gray-800">Crie sua solução</h1>

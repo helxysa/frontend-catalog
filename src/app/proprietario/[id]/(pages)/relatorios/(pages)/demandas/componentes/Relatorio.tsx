@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, Suspense } from 'react';
 import dynamic from 'next/dynamic';
 import { getDemandas } from '../actions/action';
 import { DemandaType } from '../types/type';
-import { FileSpreadsheet } from 'lucide-react';
+import { FileSpreadsheet, FileText } from 'lucide-react';
 import MetricsDisplay from './MetricsDisplay';
 import Header from './Header';
 import Loading from '@/app/componentes/Loading/Loading';
@@ -102,20 +102,24 @@ export default function DemandasComponent() {
   if (isLoading) return <Loading />;
 
   return (
-    <div className="min-h-screen flex flex-col items-center bg-gray-50 pt-10 pb-20">
-      <div className="w-full max-w-[97%] p-8 bg-white rounded-lg shadow-md">
-        <Header />
+    <div className="min-h-screen bg-gray-50 pt-10 pb-20">
+      <div className="w-full max-w-[97%] p-8 bg-white rounded-lg shadow-md mx-auto">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-bold text-gray-800">Relatório de Demandas</h1>
+          <div className="flex gap-4">
+            <ExcelExporter demandas={normalizedDemandas} />
+            <PDFComponent 
+              demandas={normalizedDemandas} 
+              metrics={metrics}
+            />
+          </div>
+        </div>
         
         <MetricsDisplay metrics={metrics} />
 
         <Suspense fallback={<Loading />}>
           <DemandaTable demandas={normalizedDemandas} />
         </Suspense>
-
-        <div className="flex gap-4 mt-4">
-          <ExcelExporter demandas={normalizedDemandas} />
-          <PDFComponent demandas={normalizedDemandas} metrics={metrics} />
-        </div>
       </div>
     </div>
   );

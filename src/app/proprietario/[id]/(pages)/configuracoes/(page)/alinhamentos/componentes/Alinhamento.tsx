@@ -18,6 +18,7 @@ import {
   Menu 
 } from 'lucide-react';
 import type { Alinhamento } from '../types/types';
+import { useSidebar } from '../../../../../../../componentes/Sidebar/SidebarContext';
 
 interface Proprietario {
   id: number;
@@ -35,6 +36,7 @@ export default function Alinhamento({ proprietarioId }: { proprietarioId?: strin
   const [selectedAlinhamentoDetails, setSelectedAlinhamentoDetails] = useState<Alinhamento | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [proprietarios, setProprietarios] = useState<Proprietario[]>([]);
+  const { isCollapsed } = useSidebar();
 
   useEffect(() => {
     const loadAlinhamentos = async () => {
@@ -137,8 +139,19 @@ export default function Alinhamento({ proprietarioId }: { proprietarioId?: strin
   };
 
   return (
-    <div className="min-h-screen">
-      <div className="p-4 sm:p-6">
+    <div className={`
+      w-full bg-gray-50
+      transition-all duration-300 ease-in-out
+      ${isCollapsed 
+        ? 'ml-10 w-[calc(100%-2rem)] fixed left-1 top-13 h-screen overflow-y-auto' 
+        : 'w-full'
+      }
+      py-6 px-6
+    `}>
+      <div className={`
+        transition-all duration-300 ease-in-out
+        ${isCollapsed ? 'w-[96%] mx-auto pb-20' : 'w-[100%] mx-auto'}
+      `}>
         {/* Header */}
         <div className="flex justify-between items-center mb-6 mt-[70px] lg:mt-0">
           <h1 className="text-md sm:text-2xl font-bold text-gray-800">

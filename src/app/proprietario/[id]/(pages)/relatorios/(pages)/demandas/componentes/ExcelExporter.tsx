@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { FileSpreadsheet } from 'lucide-react';
+import * as XLSX from 'xlsx';
 
 interface ExcelExporterProps {
   demandas: Array<{
@@ -19,7 +20,6 @@ export default function ExcelExporter({ demandas }: ExcelExporterProps) {
   const exportToExcel = async () => {
     setIsExporting(true);
     try {
-      const XLSX = (await import('xlsx')).default;
       const ws = XLSX.utils.json_to_sheet(demandas);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Demandas");

@@ -18,6 +18,7 @@ import type { SolucaoType } from '../../solucoes/types/types';
 import type { Desenvolvedor } from '../../configuracoes/(page)/desenvolvedores/types/types';
 import type { Status } from '../../configuracoes/(page)/status/types/types';
 import { ClipboardList, Lightbulb, CheckCircle2, XCircle } from 'lucide-react';
+import { useSidebar } from '../../../../../componentes/Sidebar/SidebarContext';
 
 ChartJS.register(
   ArcElement,
@@ -65,6 +66,7 @@ export default function Dashboard() {
     categorias: [],
     desenvolvedores: []
   });
+  const { isCollapsed } = useSidebar();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -280,46 +282,59 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 p-3 sm:p-6">
-      {/* Stats Cards - Single column on mobile */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-3 sm:mb-6">
-        <div className="bg-white p-4 sm:p-6 rounded-lg shadow-lg">
+    <div className={`
+      w-full bg-gray-50
+      transition-all duration-300 ease-in-out
+      ${isCollapsed 
+        ? 'ml-20 w-[calc(97%-2rem)] fixed left-1 top-13 h-screen overflow-y-auto pb-20' 
+        : 'w-full'
+      }
+      py-6 px-6
+    `}>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        {/* Card Demanda */}
+        <div className="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow">
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-gray-500 text-sm font-medium">Demanda</h3>
-              <p className="text-2xl sm:text-3xl font-bold text-gray-800">{dashboardData.demandas.length}</p>
+              <p className="text-2xl font-bold text-gray-800">{dashboardData.demandas.length}</p>
             </div>
             <ClipboardList className="w-8 h-8 text-blue-500" />
           </div>
         </div>
-        <div className="bg-white p-4 sm:p-6 rounded-lg shadow-lg">
+
+        {/* Card Soluções */}
+        <div className="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow">
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-gray-500 text-sm font-medium">Soluções</h3>
-              <p className="text-2xl sm:text-3xl font-bold text-gray-800">{dashboardData.solucoes.length}</p>
+              <p className="text-2xl font-bold text-gray-800">{dashboardData.solucoes.length}</p>
             </div>
             <Lightbulb className="w-8 h-8 text-green-500" />
           </div>
         </div>
-        <div className="bg-white p-4 sm:p-6 rounded-lg shadow-lg">
+
+        {/* Card Ativos */}
+        <div className="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow">
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-gray-500 text-sm font-medium">Ativos</h3>
-              <p className="text-2xl sm:text-3xl font-bold text-gray-800">{ativos}</p>
+              <p className="text-2xl font-bold text-gray-800">{ativos}</p>
             </div>
             <CheckCircle2 className="w-8 h-8 text-teal-500" />
           </div>
         </div>
-        <div className="bg-white p-4 sm:p-6 rounded-lg shadow-lg">
+
+        {/* Card Inativos */}
+        <div className="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow">
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-gray-500 text-sm font-medium">Inativos</h3>
-              <p className="text-2xl sm:text-3xl font-bold text-gray-800">{inativos}</p>
+              <p className="text-2xl font-bold text-gray-800">{inativos}</p>
             </div>
             <XCircle className="w-8 h-8 text-red-500" />
           </div>
         </div>
-        
       </div>
 
       {/* Charts Grid - Single column on mobile */}
@@ -534,7 +549,7 @@ export default function Dashboard() {
       </div>
 
       {/* Tabela de Soluções por Desenvolvedor */}
-      <div className="mt-6 bg-white rounded-lg shadow-lg p-4 sm:p-6">
+      <div className="mt-6 bg-white rounded-lg shadow-lg p-4 sm:p-6 mb-20">
         <h3 className="text-gray-800 text-lg font-semibold mb-4">Distribuição de Soluções por Desenvolvedor</h3>
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
