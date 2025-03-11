@@ -286,7 +286,7 @@ export default function Dashboard() {
       w-full bg-gray-50
       transition-all duration-300 ease-in-out
       ${isCollapsed 
-        ? 'ml-20 w-[calc(95%-2rem)] fixed left-1 top-13 h-screen overflow-y-auto pb-20' 
+        ? 'ml-20 w-[calc(100%-5rem)] fixed left-1 top-13 h-screen overflow-y-auto pb-20' 
         : 'w-full'
       }
       py-6 px-6
@@ -590,16 +590,11 @@ export default function Dashboard() {
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-500">
                     <div className="flex flex-wrap gap-2">
-                      {item.solucoes.slice(0, 3).map((solucao, idx) => (
+                      {item.solucoes.map((solucao, idx) => (
                         <span key={idx} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                           {solucao.nome}
                         </span>
                       ))}
-                      {item.solucoes.length > 3 && (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                          +{item.solucoes.length - 3} mais
-                        </span>
-                      )}
                     </div>
                   </td>
                 </tr>

@@ -6,21 +6,12 @@ if (!baseUrl) {
 }
 const url = `${baseUrl}/demandas`;
 
-export async function getDemandas(page?: number, limit?: number, showAll?: boolean) {
+export async function getDemandas(page: number = 1, limit: number = 8) {
   try {
-    const params = new URLSearchParams();
-    
-    if (page) params.append('page', page.toString());
-    if (limit) params.append('limit', limit.toString());
-    if (showAll !== undefined) params.append('showAll', showAll.toString());
-    
-    const queryString = params.toString();
-    const finalUrl = queryString ? `${url}?${queryString}` : url;
-    
-    const response = await axios.get(finalUrl);
+    const response = await axios.get(`${url}?page=${page}&limit=${limit}`);
     return response.data;
   } catch (error) {
-    console.error("Error fetching demandas:", error);
+    console.error("Error fetching demands:", error);
     return null;
   }
 }

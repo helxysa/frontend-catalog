@@ -63,6 +63,9 @@ export default function Demanda() {
   const [shouldRefresh, setShouldRefresh] = useState(0);
   const [tempSearchTerm, setTempSearchTerm] = useState('');
   const { isCollapsed } = useSidebar();
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const itemsPerPage = 8;
 
 
 
@@ -121,7 +124,7 @@ export default function Demanda() {
 
   useEffect(() => {
     Promise.all([
-      getDemandas(),
+      getDemandas(currentPage, itemsPerPage),
       getProprietarios(),
       getAlinhamentos(),
       getPrioridades(),
@@ -129,19 +132,20 @@ export default function Demanda() {
       getStatus(),
     ]).then(([demandasData, proprietariosData, alinhamentosData, prioridadesData, responsaveisData, statusData]) => {
       const storedId = localStorage.getItem('selectedProprietarioId');
-      const demandasFiltradas = demandasData.filter(
+      const demandasFiltradas = demandasData.data.filter(
         (demanda: DemandaType) => demanda.proprietario?.id === Number(storedId)
       );
       
       setDemandas(demandasFiltradas);
       setFilteredDemandas(demandasFiltradas);
+      setTotalPages(Math.ceil(demandasData.meta.total / itemsPerPage));
       setProprietarios(proprietariosData);
       setAlinhamentos(alinhamentosData);
       setPrioridades(prioridadesData);
       setResponsaveis(responsaveisData);
       setStatusList(statusData);
     });
-  }, [shouldRefresh]);
+  }, [currentPage, shouldRefresh]);
 
   // Quando o modal for aberto, atualiza o proprietario_id
   useEffect(() => {
@@ -403,6 +407,24 @@ export default function Demanda() {
     
     setFilteredDemandas(filtered);
   };
+
+  const Pagination = () => (
+    <div className="mt-6 flex justify-center gap-2">
+      {Array.from({ length: totalPages }, (_, i) => (
+        <button
+          key={i + 1}
+          onClick={() => setCurrentPage(i + 1)}
+          className={`px-3 py-1 rounded ${
+            currentPage === i + 1
+              ? 'bg-blue-600 text-white'
+              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+          }`}
+        >
+          {i + 1}
+        </button>
+      ))}
+    </div>
+  );
 
   return (
     <div className={`
@@ -680,6 +702,8 @@ export default function Demanda() {
             </tbody>
           </table>
         </div>
+
+        <Pagination />
 
         {isModalOpen && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] overflow-y-auto">

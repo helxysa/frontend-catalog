@@ -60,7 +60,8 @@ import {
   createSolucao,
   updateSolucao,
   getDemandas,
-  getHistoricoSolucoes
+  getHistoricoSolucoes,
+  getAllDemandas
 } from "../actions/actions";
 import { Plus, Edit2, Trash2, X, Info, ChevronRight } from 'lucide-react';
 import { SolucaoType } from '../types/types';
@@ -92,6 +93,9 @@ export default function Solucao() {
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('details');
   const [historicoSolucao, setHistoricoSolucao] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const itemsPerPage = 6;
   const [filters, setFilters] = useState({
     demanda_id: '',
     tipo_id: '',
@@ -126,43 +130,63 @@ export default function Solucao() {
     return luminancia > 0.5 ? 'text-gray-800' : 'text-white';
   };
 
+  // Função para carregar todas as demandas do select
+  const carregarDemandasParaSelect = async () => {
+    try {
+      const storedId = localStorage.getItem('selectedProprietarioId');
+      const demandasData = await getAllDemandas();
+      
+      if (demandasData) {
+        const demandasFiltradas = demandasData.filter(
+          (demanda: any) => demanda?.proprietario?.id === Number(storedId)
+        );
+        setDemanda(demandasFiltradas); // Estas são as demandas que aparecerão no select
+      }
+    } catch (error) {
+      console.error('Erro ao carregar demandas para select:', error);
+    }
+  };
 
+  // Efeito para carregar as soluções paginadas e outros dados
   useEffect(() => {
     Promise.all([
-      getSolucoes(),
+      getSolucoes(currentPage, itemsPerPage),
       getTipos(),
       getLinguagens(),
       getDesenvolvedores(),
       getCategorias(),
       getResponsaveis(),
       getStatus(),
-      getDemandas(),
-    ]).then(([solucoesData, tiposData, linguagensData, desenvolvedoresData, categoriasData, responsaveisData, statusData, demandasData]) => {
-      console.log('Dados recebidos:');
-      console.log('Soluções:', solucoesData);
-      console.log('Linguagens:', linguagensData);
+    ]).then(([solucoesData, tiposData, linguagensData, desenvolvedoresData, categoriasData, responsaveisData, statusData]) => {
+      // Atualiza as soluções paginadas
+      const solucoesArray = solucoesData?.data || [];
+      setSolucoes(solucoesArray);
+      setFilteredSolucoes(solucoesArray);
       
-      const storedId = localStorage.getItem('selectedProprietarioId');
-      
-      const demandasFiltradas = demandasData.filter(
-        (demanda: any) => demanda?.proprietario?.id === Number(storedId)
-      );
-
-      const solucoesFiltradas = solucoesData.filter((solucao: SolucaoType) =>
-        demandasFiltradas.some((demanda: any) => demanda.id === solucao.demanda?.id)
-      );
-      
-      setSolucoes(solucoesFiltradas);
-      setFilteredSolucoes(solucoesFiltradas);
-      setTipos(tiposData);
+      // Atualiza os outros dados
+      setTipos(tiposData || []);
       setLinguagens(linguagensData || []);
-      setDesenvolvedores(desenvolvedoresData);
-      setCategorias(categoriasData);
-      setResponsaveis(responsaveisData);
-      setStatusList(statusData);
-      setDemanda(demandasFiltradas);
+      setDesenvolvedores(desenvolvedoresData || []);
+      setCategorias(categoriasData || []);
+      setResponsaveis(responsaveisData || []);
+      setStatusList(statusData || []);
+      
+      if (solucoesData?.meta) {
+        setTotalPages(Math.ceil(solucoesData.meta.total / itemsPerPage));
+      }
     });
-  }, [shouldRefresh]);
+  }, [currentPage, shouldRefresh]);
+
+  // Efeito separado para carregar as demandas do select
+  useEffect(() => {
+    carregarDemandasParaSelect();
+  }, []);
+
+  // Quando abrir o modal de criar/editar solução
+  const handleOpenModal = () => {
+    carregarDemandasParaSelect(); // Recarrega as demandas para o select
+    setIsModalOpen(true);
+  };
 
   useEffect(() => {
     if (isEditing && formData.linguagem_id) {
@@ -501,7 +525,7 @@ export default function Solucao() {
         s.tipo?.nome.toLowerCase().includes(searchLower) ||
         (s.linguagemId && typeof s.linguagemId === 'string' 
           ? s.linguagemId.split(',').some(id => linguagens.find(l => l.id === Number(id))?.nome.toLowerCase().includes(searchLower)) 
-          : false) ||
+        : false) ||
         s.desenvolvedor?.nome.toLowerCase().includes(searchLower) ||
         s.categoria?.nome.toLowerCase().includes(searchLower) ||
         s.responsavel?.nome.toLowerCase().includes(searchLower) ||
@@ -676,6 +700,25 @@ export default function Solucao() {
     return '-';
   };
 
+  const Pagination = () => (
+    <div className="mt-6 flex justify-center gap-2">
+      {Array.from({ length: totalPages }, (_, i) => (
+        <button
+          key={i + 1}
+          onClick={() => setCurrentPage(i + 1)}
+          className={`px-3 py-1 rounded ${
+            currentPage === i + 1
+              ? 'bg-blue-600 text-white'
+              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+          }`}
+        >
+          {i + 1}
+        </button>
+      ))}
+    </div>
+  );
+
+
   return (
     <div className={`
       w-full bg-gray-50
@@ -694,7 +737,7 @@ export default function Solucao() {
           <h1 className="text-2xl font-bold text-gray-800">Crie sua solução</h1>
           <div className="flex gap-2">
             <button 
-              onClick={() => setIsModalOpen(true)}
+              onClick={handleOpenModal}
               className="bg-blue-600 text-white px-4 py-2 rounded-md flex items-center gap-2 hover:bg-blue-700 transition-colors"
             >
               <Plus className="w-4 h-4" />
@@ -928,8 +971,9 @@ export default function Solucao() {
               ))}
             </tbody>
           </table>
+          
         </div>
-
+        <Pagination />      
         {isModalOpen && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] overflow-y-auto">
             <div className="relative bg-white rounded-lg shadow-2xl p-8 w-full max-w-2xl m-4">
@@ -1241,7 +1285,7 @@ export default function Solucao() {
                     <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100 w-full h-[300px]">
                       <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
                         <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-14 0 9 9 0 0118 0z" />
                         </svg>
                         Informações Básicas
                       </h3>

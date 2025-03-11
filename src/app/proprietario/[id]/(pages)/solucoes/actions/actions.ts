@@ -6,9 +6,9 @@ if (!baseUrl) {
 }
 const url = `${baseUrl}/solucoes`;
 
-export async function getSolucoes() {
+export async function getSolucoes(page: number = 1, limit: number = 8) {
     try {
-        const response = await axios.get(url);
+        const response = await axios.get(`${url}?page=${page}&limit=${limit}`);
         return response.data;
     } catch (error) {
         console.error("Error fetching solutions:", error);
@@ -60,9 +60,19 @@ export async function deleteSolucao(id: string) {
 //select aqui
 const urlSelect = `${baseUrl}`;
 
-export async function getDemandas() {
+export async function getAllDemandas() {
     try {
-        const response = await axios.get(`${urlSelect}/demandas`);
+        const response = await axios.get(`${urlSelect}/demandas/all`);
+        return response.data;
+    } catch (error) {
+        console.error("Error fetching all demands:", error);
+        return null;
+    }
+}
+
+export async function getDemandas(page: number = 1, limit: number = 8) {
+    try {
+        const response = await axios.get(`${urlSelect}/demandas?page=${page}&limit=${limit}`);
         return response.data;
     } catch (error) {
         console.error("Error fetching demands:", error);

@@ -18,11 +18,11 @@ export async function getTipos() {
 export async function getDemandas() {
   const storedId = localStorage.getItem('selectedProprietarioId');
   if (!storedId) {
-      throw new Error("ProprietarioId not found in localStorage");
+    throw new Error("ProprietarioId not found in localStorage");
   }
   try {
-    // Get demandas
-    const response = await axios.get(`${url}/proprietarios/${storedId}/demandas/`);
+    // Usa a nova rota específica para o dashboard
+    const response = await axios.get(`${url}/proprietarios/${storedId}/dashboard/demandas`);
     const demandas = response.data;
     
     // Get alinhamentos
@@ -35,7 +35,6 @@ export async function getDemandas() {
       alinhamento: alinhamentos.find((a: any) => a.id === demanda.alinhamentoId)
     }));
     
-    console.log('Demandas with alinhamentos:', demandasWithAlinhamentos);
     return demandasWithAlinhamentos;
   } catch (error) {
     console.error('Error fetching demandas:', error);
@@ -43,36 +42,16 @@ export async function getDemandas() {
   }
 }
 
-
-
-
 export async function getSolucoes() {
   const storedId = localStorage.getItem('selectedProprietarioId');
   if (!storedId) {
-      throw new Error("ProprietarioId not found in localStorage");
+    throw new Error("ProprietarioId not found in localStorage");
   }
 
   try {
-    // Primeiro, busca todas as demandas do proprietário
-    const demandasResponse = await axios.get(`${url}/proprietarios/${storedId}/demandas`);
-    const demandas = demandasResponse.data;
-    
-    // Depois, busca todas as soluções
-    const solucoesResponse = await axios.get(`${url}/solucoes`);
-    const solucoes = solucoesResponse.data;
-    
-    // Adiciona logs para debug
-    console.log('Demandas:', demandas);
-    console.log('Soluções:', solucoes);
-    
-    // Filtra as soluções, garantindo que os IDs sejam comparados como números
-    const solucoesFiltradas = solucoes.filter((solucao: any) => {
-      const solucaoDemandaId = Number(solucao.demanda?.id || solucao.demanda_id);
-      return demandas.some((demanda: any) => Number(demanda.id) === solucaoDemandaId);
-    });
-
-    console.log('Soluções Filtradas:', solucoesFiltradas);
-    return solucoesFiltradas;
+    // Usa a nova rota específica para o dashboard
+    const response = await axios.get(`${url}/proprietarios/${storedId}/dashboard/solucoes`);
+    return response.data;
   } catch (error) {
     console.error('Erro ao buscar soluções:', error);
     throw error;
@@ -112,7 +91,6 @@ export async function getCategorias() {
   return response.data;
 }
 
-
 export async function getDesenvolvedores(){
   const storedId = localStorage.getItem('selectedProprietarioId');
   if (!storedId) {
@@ -120,5 +98,4 @@ export async function getDesenvolvedores(){
   }
   const response = await axios.get(`${url}/proprietarios/${storedId}/desenvolvedores`);
   return response.data;
-
 }
