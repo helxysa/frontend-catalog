@@ -115,6 +115,25 @@ export async function getLinguagens() {
     }
 }
 
+
+export async function getTimes() {
+    try {
+        if (typeof window === 'undefined') {
+            return null;
+        }
+        const storedId = localStorage.getItem('selectedProprietarioId');
+        if (!storedId) {
+            throw new Error("ProprietarioId not found in localStorage");
+        }
+        const response = await axios.get(`${urlSelect}/proprietarios/${storedId}/times`);
+        return response.data;
+    } catch (error) {
+        console.error("Error fetching languages:", error);
+        return null;
+    }
+}
+
+
 export async function getDesenvolvedores() {
     try {
         if (typeof window === 'undefined') {

@@ -6,6 +6,7 @@ export interface SolucaoType {
     versao: string;
     tipoId: number;
     linguagemId: string | number | null;
+    timeId: string | number | null;
     desenvolvedorId: number;
     categoriaId: number;
     responsavelId: number;
@@ -26,6 +27,13 @@ export interface BaseType {
   id: number;
   nome: string;
   propriedade: string;
+}
+
+export interface Times  {
+  id: number;
+  nome: string;
+  funcao: string;
+  descricao: string;
 }
 
 export interface SolucaoFormData {
