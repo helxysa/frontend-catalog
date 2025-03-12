@@ -80,16 +80,10 @@ export default function Dashboard() {
           getDesenvolvedores()
         ]);
 
-        // Merge alinhamentos into demandas
-        const demandasWithAlinhamentos = demandas.map((demanda: any) => ({
-          ...demanda,
-          alinhamento: alinhamentos.find((a: any) => a.id === demanda.alinhamentoId)
-        }));
-
-        console.log('Demandas with alinhamentos:', demandasWithAlinhamentos);
+        console.log('Soluções recebidas:', solucoes);
 
         setDashboardData({
-          demandas: demandasWithAlinhamentos,
+          demandas,
           solucoes,
           alinhamentos,
           status,
@@ -187,15 +181,26 @@ export default function Dashboard() {
     const monthlyData: { [month: string]: { [categoria: string]: number } } = {};
 
     dashboardData.solucoes.forEach(solucao => {
-      const date = new Date(solucao.createdAt);
-      const monthYear = `${date.getMonth() + 1}/${date.getFullYear()}`;
-      const categoriaNome = solucao.categoria?.nome || 'Outros';
-
-      if (!monthlyData[monthYear]) {
-        monthlyData[monthYear] = {};
+      const statusDate = solucao.data_status || solucao.dataStatus;
+      
+      if (!statusDate) {
+        console.log('Solução sem data de status:', solucao);
+        return;
       }
 
-      monthlyData[monthYear][categoriaNome] = (monthlyData[monthYear][categoriaNome] || 0) + 1;
+      try {
+        const date = new Date(statusDate);
+        const monthYear = `${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()}`;
+        const categoriaNome = solucao.categoria?.nome || 'Outros';
+
+        if (!monthlyData[monthYear]) {
+          monthlyData[monthYear] = {};
+        }
+
+        monthlyData[monthYear][categoriaNome] = (monthlyData[monthYear][categoriaNome] || 0) + 1;
+      } catch (error) {
+        console.error('Erro ao processar data:', statusDate, error);
+      }
     });
 
     const labels = Object.keys(monthlyData).sort((a, b) => {
@@ -213,12 +218,49 @@ export default function Dashboard() {
       data: labels.map(month => monthlyData[month][categoria] || 0),
       backgroundColor: ['#4285F4', '#34A853', '#FBBC05', '#EA4335', '#673AB7', '#FF4081'][index % 6],
       borderWidth: 1,
+      barPercentage: categorias.length <= 3 ? 0.5 : 0.9,
+      categoryPercentage: categorias.length <= 3 ? 0.7 : 0.8
     }));
 
-    return {
-      labels,
-      datasets
-    };
+    return { labels, datasets };
+  };
+
+  const processYearlyCategoriaData = () => {
+    const currentYear = new Date().getFullYear();
+    const monthlyData: { [month: string]: { [categoria: string]: number } } = {};
+
+    // Processa apenas os meses que têm dados
+    dashboardData.solucoes.forEach(solucao => {
+      const statusDate = solucao.data_status || solucao.dataStatus;
+      if (!statusDate) return;
+      
+      const date = new Date(statusDate);
+      if (date.getFullYear() !== currentYear) return;
+      
+      const monthName = date.toLocaleString('pt-BR', { month: 'short' });
+      const categoriaNome = solucao.categoria?.nome || 'Outros';
+
+      if (!monthlyData[monthName]) {
+        monthlyData[monthName] = {};
+      }
+      monthlyData[monthName][categoriaNome] = (monthlyData[monthName][categoriaNome] || 0) + 1;
+    });
+
+    const labels = Object.keys(monthlyData);
+    const categorias = Array.from(new Set(
+      Object.values(monthlyData).flatMap(month => Object.keys(month))
+    ));
+
+    const datasets = categorias.map((categoria, index) => ({
+      label: categoria,
+      data: labels.map(month => monthlyData[month][categoria] || 0),
+      backgroundColor: ['#4285F4', '#34A853', '#FBBC05', '#EA4335', '#673AB7', '#FF4081'][index % 6],
+      borderWidth: 1,
+      barPercentage: categorias.length <= 3 ? 0.5 : 0.9,
+      categoryPercentage: categorias.length <= 3 ? 0.7 : 0.8
+    }));
+
+    return { labels, datasets };
   };
 
   const processMonthlyDemandasData = (): MonthlyDemandasData => {
@@ -286,7 +328,7 @@ export default function Dashboard() {
       w-full bg-gray-50
       transition-all duration-300 ease-in-out
       ${isCollapsed 
-        ? 'ml-20 w-[calc(100%-5rem)] fixed left-1 top-13 h-screen overflow-y-auto pb-20' 
+        ? 'ml-20 pr-[90px] w-[calc(100%-5rem)] fixed left-1 top-13 h-screen overflow-y-auto pb-20' 
         : 'w-full'
       }
       py-6 px-6
@@ -463,9 +505,9 @@ export default function Dashboard() {
 
       {/* Monthly Evolution Charts - Side by Side */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-        {/* Monthly Evolution Chart for Categories */}
+        {/* Evolução Mensal */}
         <div className="bg-white p-4 sm:p-6 rounded-lg shadow-lg">
-          <h3 className="text-gray-800 text-base font-semibold mb-4">Evolução Mensal das Categorias</h3>
+          <h3 className="text-gray-800 text-base font-semibold mb-4">Evolução Anual das Categorias</h3>
           <div className="h-[400px] w-full">
             <Bar 
               data={processMonthlyCategoriaData()} 
@@ -477,14 +519,16 @@ export default function Dashboard() {
                     beginAtZero: true,
                     ticks: {
                       stepSize: 1,
-                      font: {
-                        size: 12
-                      }
-                    }
+                      font: { size: 14 }
+                    },
+                    suggestedMax: Math.max(...processMonthlyCategoriaData().datasets.flatMap(d => d.data)) + 1
                   },
                   x: {
-                    grid: {
-                      display: false
+                    grid: { display: false },
+                    ticks: {
+                      font: { size: 13 },
+                      maxRotation: 0,
+                      minRotation: 0
                     }
                   }
                 },
@@ -492,25 +536,25 @@ export default function Dashboard() {
                   legend: {
                     position: 'bottom' as const,
                     labels: {
-                      boxWidth: 12,
-                      padding: 8,
-                      font: {
-                        size: 12
-                      }
+                      boxWidth: 15,
+                      padding: 10,
+                      font: { size: 13 }
                     }
                   }
-                }
+                },
               }} 
             />
           </div>
         </div>
 
-        {/* Monthly Evolution Chart for Demandas */}
+        {/* Evolução Anual */}
         <div className="bg-white p-4 sm:p-6 rounded-lg shadow-lg">
-          <h3 className="text-gray-800 text-base font-semibold mb-4">Evolução Mensal de Demandas Criadas</h3>
+          <h3 className="text-gray-800 text-base font-semibold mb-4">
+            Evolução Mensal das Categorias ({new Date().getFullYear()})
+          </h3>
           <div className="h-[400px] w-full">
             <Bar 
-              data={processMonthlyDemandasData()} 
+              data={processYearlyCategoriaData()} 
               options={{
                 responsive: true,
                 maintainAspectRatio: false,
@@ -519,14 +563,16 @@ export default function Dashboard() {
                     beginAtZero: true,
                     ticks: {
                       stepSize: 1,
-                      font: {
-                        size: 12
-                      }
-                    }
+                      font: { size: 14 }
+                    },
+                    suggestedMax: Math.max(...processYearlyCategoriaData().datasets.flatMap(d => d.data)) + 1
                   },
                   x: {
-                    grid: {
-                      display: false
+                    grid: { display: false },
+                    ticks: {
+                      font: { size: 13 },
+                      maxRotation: 0,
+                      minRotation: 0
                     }
                   }
                 },
@@ -534,19 +580,19 @@ export default function Dashboard() {
                   legend: {
                     position: 'bottom' as const,
                     labels: {
-                      boxWidth: 12,
-                      padding: 8,
-                      font: {
-                        size: 12
-                      }
+                      boxWidth: 15,
+                      padding: 10,
+                      font: { size: 13 }
                     }
                   }
-                }
+                },
               }} 
             />
           </div>
         </div>
       </div>
+
+    
 
       {/* Tabela de Soluções por Desenvolvedor */}
       <div className="mt-6 bg-white rounded-lg shadow-lg p-4 sm:p-6 mb-20">

@@ -97,17 +97,16 @@ export default function Times({ proprietarioId }: { proprietarioId?: string }) {
   };
 
   const handleCreate = async () => {
-    if (currentTimes.nome && currentTimes.funcao && currentTimes.descricao && currentTimes.proprietario_id) {
-      const linguagemToSave = {
+    if (currentTimes.nome && currentTimes.descricao && currentTimes.proprietario_id) {
+      const timeToSave = {
         nome: currentTimes.nome,
-        funcao: currentTimes.funcao,
         descricao: currentTimes.descricao,
         proprietario_id: Number(currentTimes.proprietario_id)
       };
 
       try {
-        console.log('Dados sendo enviados:', linguagemToSave); // Debug
-        const created = await createTimes(linguagemToSave);
+        console.log('Dados sendo enviados:', timeToSave); // Debug
+        const created = await createTimes(timeToSave);
         setTimes([...times, created]);
         setIsModalOpen(false);
         setCurrentTimes({});
@@ -119,16 +118,22 @@ export default function Times({ proprietarioId }: { proprietarioId?: string }) {
   };
 
   const handleUpdate = async () => {
-    if (currentTimes.id && currentTimes.nome && currentTimes.funcao && currentTimes.descricao) {
-      const linguagemToUpdate = {
+    if (currentTimes.id && currentTimes.nome && currentTimes.descricao) {
+      const timeToUpdate = {
         nome: currentTimes.nome,
-        descricao: currentTimes.descricao
+        descricao: currentTimes.descricao,
+        proprietario_id: Number(currentTimes.proprietario_id)
       };
 
-      const updated = await updateTimes(currentTimes.id, linguagemToUpdate);
-      setTimes(times.map(l => (l.id === currentTimes.id ? updated : l)));
-      setIsModalOpen(false);
-      setCurrentTimes({});
+      try {
+        const updated = await updateTimes(currentTimes.id, timeToUpdate);
+        setTimes(times.map(l => (l.id === currentTimes.id ? updated : l)));
+        setIsModalOpen(false);
+        setCurrentTimes({});
+      } catch (error: any) {
+        console.error('Erro ao atualizar time:', error);
+        console.error('Dados do erro:', error.response?.data);
+      }
     }
   };
 
@@ -158,7 +163,7 @@ export default function Times({ proprietarioId }: { proprietarioId?: string }) {
         {/* Header */}
         <div className="flex justify-between items-center mb-6 mt-[70px] lg:mt-0">
         <h1 className="text-2xl sm:text-2xl font-bold text-gray-800">
-            Adicione o time
+            Adicione uma função
           </h1>
           <div className="flex gap-2">
             <button 
@@ -178,7 +183,7 @@ export default function Times({ proprietarioId }: { proprietarioId?: string }) {
               <tr>
                 <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
                 <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nome</th>
-                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Função</th>
+                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descrição</th>
                 <th className="px-4 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
               </tr>
             </thead>
@@ -192,7 +197,7 @@ export default function Times({ proprietarioId }: { proprietarioId?: string }) {
                     {time.nome}
                   </td>
                   <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-800">
-                    {time.funcao}
+                    {time.descricao}
                   </td>
                   <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
                     <div className="flex justify-end space-x-2">
@@ -231,7 +236,7 @@ export default function Times({ proprietarioId }: { proprietarioId?: string }) {
             <div className="bg-white rounded-lg shadow-2xl p-6 w-full max-w-md">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-xl sm:text-2xl font-bold text-gray-800">
-                  {isEditMode ? 'Editar time' : 'Nova time'}
+                  {isEditMode ? 'Editar Função' : 'Nova Função'}
                 </h2>
                 <button 
                   onClick={() => setIsModalOpen(false)}
@@ -261,16 +266,6 @@ export default function Times({ proprietarioId }: { proprietarioId?: string }) {
                     value={currentTimes.nome || ''} 
                     onChange={(e) => setCurrentTimes({ ...currentTimes, nome: e.target.value })}
                     className="w-full px-3 py-2 sm:px-4 sm:py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800 placeholder-gray-500 text-sm sm:text-base"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Função</label>
-                  <input 
-                    placeholder="Escreva a função" 
-                    value={currentTimes.funcao || ''} 
-                    onChange={(e) => setCurrentTimes({ ...currentTimes, funcao: e.target.value })}
-                    className="w-full px-3 py-2 sm:px-4 sm:py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800 placeholder-gray-500 text-sm sm:text-base"
-                    
                   />
                 </div>
                 <div>
@@ -330,10 +325,7 @@ export default function Times({ proprietarioId }: { proprietarioId?: string }) {
                   </div>
                 </div>
                 <div>
-                  <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-2">Função</h3>
-                  <p className="text-gray-700 bg-gray-50 p-4 rounded-md text-sm sm:text-base">
-                    {selectedTimesDetails.funcao}
-                  </p>
+                  
                 </div>
                 <div>
                   <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-2">Descrição</h3>

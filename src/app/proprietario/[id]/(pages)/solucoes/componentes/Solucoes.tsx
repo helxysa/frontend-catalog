@@ -6,9 +6,9 @@ interface SolucaoFormData {
   sigla: string;
   descricao: string;
   versao: string;
+  repositorio: string;
   tipo_id: number;
   linguagem_id: number | string | null;
-  times_id: number | string | null;
   desenvolvedor_id: number;
   categoria_id: number;
   responsavel_id: number;
@@ -28,6 +28,7 @@ interface HistoricoType {
     nome: string;
     sigla: string;
     versao: string;
+    repositorio: string;
     descricao: string;
     tipoId: number;
     timesId: number;
@@ -63,8 +64,7 @@ import {
   updateSolucao,
   getDemandas,
   getHistoricoSolucoes,
-  getAllDemandas,
-  getTimes
+  getAllDemandas
 } from "../actions/actions";
 import { Plus, Edit2, Trash2, X, Info, ChevronRight } from 'lucide-react';
 import { SolucaoType } from '../types/types';
@@ -88,7 +88,6 @@ export default function Solucao() {
   const [linguagens, setLinguagens] = useState<BaseType[]>([]);
   const [desenvolvedores, setDesenvolvedores] = useState<BaseType[]>([]);
   const [categorias, setCategorias] = useState<BaseType[]>([]);
-  const [times, setTimes] = useState<Times[]>([])
   const [responsaveis, setResponsaveis] = useState<BaseType[]>([]);
   const [statusList, setStatusList] = useState<(BaseType & { propriedade: string })[]>([]);
   const [isEditing, setIsEditing] = useState<string | null>(null);
@@ -109,7 +108,6 @@ export default function Solucao() {
     categoria_id: '',
     responsavel_id: '',
     status_id: '',
-    times_id: '',
   });
   const [filteredSolucoes, setFilteredSolucoes] = useState<SolucaoType[]>([]);
   const [search, setSearch] = useState('');
@@ -120,7 +118,6 @@ export default function Solucao() {
     demanda_id: false
   });
   const [selectedLanguages, setSelectedLanguages] = useState<number[]>([]);
-  const [selectedTimes, setSelectedTimes] = useState<number[]>([]);
 
   const { isCollapsed } = useSidebar();
 
@@ -165,11 +162,11 @@ export default function Solucao() {
       getCategorias(),
       getResponsaveis(),
       getStatus(),
-      getTimes(),
-    ]).then(([solucoesData, tiposData, linguagensData, desenvolvedoresData, categoriasData, responsaveisData, statusData, timesData]) => {
+    ]).then(([solucoesData, tiposData, linguagensData, desenvolvedoresData, categoriasData, responsaveisData, statusData]) => {
       // Atualiza as soluções paginadas
       const solucoesArray = solucoesData?.data || [];
       setSolucoes(solucoesArray);
+      console.log(solucoesArray)
       setFilteredSolucoes(solucoesArray);
       
       // Atualiza os outros dados
@@ -179,7 +176,6 @@ export default function Solucao() {
       setCategorias(categoriasData || []);
       setResponsaveis(responsaveisData || []);
       setStatusList(statusData || []);
-      setTimes(timesData || []);
       
       if (solucoesData?.meta) {
         setTotalPages(Math.ceil(solucoesData.meta.total / itemsPerPage));
@@ -197,14 +193,6 @@ export default function Solucao() {
     carregarDemandasParaSelect(); // Recarrega as demandas para o select
     setIsModalOpen(true);
   };
-
-  useEffect(() => {
-    if (isEditing && formData.times_id) {
-      const ids = String(formData.times_id).split(',').map(Number);
-      setSelectedTimes(ids);
-    }
-  }, [isEditing, formData.times_id]);
-
 
   useEffect(() => {
     if (isEditing && formData.linguagem_id) {
@@ -234,10 +222,12 @@ export default function Solucao() {
     }
 
     try {
-      // Converte o array de linguagens para string
       const linguagemValue = selectedLanguages.length > 0 ? selectedLanguages.join(',') : null;
-      const timesValue = selectedTimes.length > 0 ? selectedTimes.join(',') : null;
-
+      
+      // Formata a data corretamente para envio
+      const dataStatus = formData.data_status 
+        ? new Date(formData.data_status).toISOString().split('T')[0]
+        : new Date().toISOString().split('T')[0];
 
       const formDataToSubmit = {
         ...formData,
@@ -245,30 +235,30 @@ export default function Solucao() {
         sigla: formData.sigla || '-',
         descricao: formData.descricao || '-',
         versao: formData.versao || '-',
+        repositorio: formData.repositorio || '-',
         tipo_id: formData.tipo_id ? Number(formData.tipo_id) : null,
-        linguagem_id: linguagemValue,  // String com IDs separados por vírgula
-        times_id: timesValue,
+        linguagem_id: linguagemValue,
         desenvolvedor_id: formData.desenvolvedor_id ? Number(formData.desenvolvedor_id) : null,
         categoria_id: formData.categoria_id ? Number(formData.categoria_id) : null,
         responsavel_id: formData.responsavel_id ? Number(formData.responsavel_id) : null,
         status_id: formData.status_id ? Number(formData.status_id) : null,
         demanda_id: Number(formData.demanda_id),
-        data_status: formData.data_status || new Date().toISOString().split('T')[0]
+        data_status: dataStatus // Usa a data formatada
       };
-
-      console.log('Dados sendo enviados:', formDataToSubmit); // Para debug
-
+      console.log(dataStatus)
       if (isEditing) {
         await updateSolucao(isEditing, formDataToSubmit);
       } else {
         await createSolucao(formDataToSubmit);
       }
       
+      // Força a atualização imediata dos dados
       setShouldRefresh(prev => prev + 1);
       setIsModalOpen(false);
       setFormData({} as SolucaoFormData);
       setSelectedLanguages([]);
       setIsEditing(null);
+
     } catch (error: any) {
       console.error('Error details:', error);
       if (error.response) {
@@ -292,9 +282,35 @@ export default function Solucao() {
   };
 
   
-  const formatDate = (dateString: string) => {
-    if (!dateString) return '-';
-    return new Date(dateString).toLocaleDateString('pt-BR');
+  const formatDate = (dateString?: string | null) => {
+    console.log('Input dateString:', dateString); // Log 1: valor de entrada
+    
+    if (!dateString) {
+      console.log('Date is null or undefined'); // Log 2: verificar se é nulo
+      return '-';
+    }
+    
+    try {
+      const date = new Date(dateString);
+      console.log('Parsed date:', date); // Log 3: data parseada
+      
+      if (isNaN(date.getTime())) {
+        console.log('Invalid date'); // Log 4: data inválida
+        return '-';
+      }
+      
+      const formattedDate = new Intl.DateTimeFormat('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      }).format(date);
+      
+      console.log('Formatted date:', formattedDate); // Log 5: data formatada
+      return formattedDate;
+    } catch (error) {
+      console.error('Error formatting date:', error); // Log 6: erros
+      return '-';
+    }
   };
 
   const handleDeleteClick = (id: string) => {
@@ -356,17 +372,6 @@ export default function Solucao() {
                     .join(', ') || 'Desconhecido';
             }
         },
-        'times_id': {
-          nome: 'Times',
-          getValue: (e) => {
-              const value = e.solucao.timesId;
-              if (!value) return 'Nulo (não informado)';
-              return String(value).split(',')
-                  .map(id => times.find((l: BaseType) => l.id === Number(id))?.nome)
-                  .filter(Boolean)
-                  .join(', ') || 'Desconhecido';
-          }
-      },
         'desenvolvedor_id': {
             nome: 'Desenvolvedor',
             getValue: (e) => {
@@ -463,41 +468,16 @@ export default function Solucao() {
 
   const handleEditClick = (solucao: SolucaoType) => {
     const formDataToSet = {
-      ...formData,
-      tipo_id: Number(solucao.tipo?.id),
+      ...solucao,
+      tipo_id: solucao.tipo?.id || null,
       linguagem_id: solucao.linguagemId,
-      times_id: solucao.timeId,
-      desenvolvedor_id: Number(solucao.desenvolvedor?.id),
-      categoria_id: Number(solucao.categoria?.id),
-      nome: solucao.nome,
-      sigla: solucao.sigla,
-      descricao: solucao.descricao,
-      versao: solucao.versao,
-      responsavel_id: Number(solucao.responsavel?.id),
-      status_id: Number(solucao.status?.id),
-      demanda_id: Number(solucao.demanda?.id),
-      data_status: solucao.dataStatus
-    };
-
-    // Pré-selecionar as linguagens
-    if (solucao.linguagemId) {
-      const selectedIds = typeof solucao.linguagemId === 'string' 
-        ? solucao.linguagemId.split(',').map(Number)
-        : [Number(solucao.linguagemId)];
-      setSelectedLanguages(selectedIds);
-    } else {
-      setSelectedLanguages([]);
-    }
-
-    // Pré-selecionar as linguagens
-    if (solucao.timeId) {
-      const selectedIds = typeof solucao.timeId === 'string' 
-        ? solucao.timeId.split(',').map(Number)
-        : [Number(solucao.timeId)];
-      setSelectedTimes(selectedIds);
-    } else {
-      setSelectedLanguages([]);
-    }
+      desenvolvedor_id: solucao.desenvolvedor?.id || null,
+      categoria_id: solucao.categoria?.id || null,
+      responsavel_id: solucao.responsavel?.id || null,
+      status_id: solucao.status?.id || null,
+      demanda_id: solucao.demandaId || null,
+      data_status: solucao.data_status || null
+    } as SolucaoFormData;
 
     setFormData(formDataToSet);
     setIsEditing(solucao.id.toString());
@@ -527,9 +507,6 @@ export default function Solucao() {
           (s.linguagemId && typeof s.linguagemId === 'string' 
             ? s.linguagemId.split(',').some(id => linguagens.find(l => l.id === Number(id))?.nome.toLowerCase().includes(searchLower)) 
           : false) ||
-          (s.timeId && typeof s.timeId === 'string' 
-            ? s.timeId.split(',').some(id => times.find(l => l.id === Number(id))?.nome.toLowerCase().includes(searchLower)) 
-          : false) ||
           s.desenvolvedor?.nome.toLowerCase().includes(searchLower) ||
           s.categoria?.nome.toLowerCase().includes(searchLower) ||
           s.responsavel?.nome.toLowerCase().includes(searchLower) ||
@@ -547,7 +524,6 @@ export default function Solucao() {
       demanda_id: '',
       tipo_id: '',
       linguagem_id: '',
-      times_id: '',
       desenvolvedor_id: '',
       categoria_id: '',
       responsavel_id: '',
@@ -573,9 +549,6 @@ export default function Solucao() {
         (s.linguagemId && typeof s.linguagemId === 'string' 
           ? s.linguagemId.split(',').some(id => linguagens.find(l => l.id === Number(id))?.nome.toLowerCase().includes(searchLower)) 
         : false) ||
-        (s.timeId && typeof s.timeId === 'string' 
-          ? s.timeId.split(',').some(id => times.find(l => l.id === Number(id))?.nome.toLowerCase().includes(searchLower)) 
-        : false) ||
         s.desenvolvedor?.nome.toLowerCase().includes(searchLower) ||
         s.categoria?.nome.toLowerCase().includes(searchLower) ||
         s.responsavel?.nome.toLowerCase().includes(searchLower) ||
@@ -592,9 +565,6 @@ export default function Solucao() {
     }
     if (filters.linguagem_id) {
       filtered = filtered.filter(s => String(s.linguagemId).split(',').includes(filters.linguagem_id));
-    }
-    if (filters.times_id) {
-      filtered = filtered.filter(s => String(s.timeId).split(',').includes(filters.times_id));
     }
     if (filters.desenvolvedor_id) {
       filtered = filtered.filter(s => s.desenvolvedor?.id === Number(filters.desenvolvedor_id));
@@ -627,21 +597,6 @@ export default function Solucao() {
     }
   };
 
-
-  const handleTimesChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const value = Number(e.target.value);
-    if (!selectedTimes.includes(value)) {
-      const newSelected = [...selectedTimes, value];
-      setSelectedTimes(newSelected);
-      handleInputChange({
-        target: {
-          name: 'times_id',
-          value: newSelected.join(',')
-        }
-      });
-    }
-  };
-
   const removeLanguage = (langId: number) => {
     const newSelected = selectedLanguages.filter(id => id !== langId);
     setSelectedLanguages(newSelected);
@@ -652,19 +607,6 @@ export default function Solucao() {
       }
     });
   };
-
-
-  const removeTimes = (langId: number) => {
-    const newSelected = selectedTimes.filter(id => id !== langId);
-    setSelectedTimes(newSelected);
-    handleInputChange({
-      target: {
-        name: 'times_id',
-        value: newSelected.join(',')
-      }
-    });
-  };
-
 
   // Função auxiliar para renderizar as linguagens
   const renderLinguagensChips = (linguagemIds: string | null) => {
@@ -700,9 +642,6 @@ export default function Solucao() {
           (s.linguagemId && typeof s.linguagemId === 'string' 
             ? s.linguagemId.split(',').some(id => linguagens.find(l => l.id === Number(id))?.nome.toLowerCase().includes(searchLower)) 
             : false) ||
-            (s.timeId && typeof s.timeId === 'string' 
-              ? s.timeId.split(',').some(id => times.find(l => l.id === Number(id))?.nome.toLowerCase().includes(searchLower)) 
-              : false) ||
           s.desenvolvedor?.nome.toLowerCase().includes(searchLower) ||
           s.categoria?.nome.toLowerCase().includes(searchLower) ||
           s.responsavel?.nome.toLowerCase().includes(searchLower) ||
@@ -761,75 +700,6 @@ export default function Solucao() {
     return '-';
   };
 
-
-  const renderTableTimes = (solucao: any) => {
-    // Verifica se temos o array de linguagens da nova estrutura
-    if (solucao.times && Array.isArray(solucao.times)) {
-      return (
-        <div className="flex flex-wrap gap-1">
-          {solucao.times.map((times: any) => (
-            <span
-              key={times.id}
-              className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-700 rounded-full"
-            >
-              {times.nome}
-            </span>
-          ))}
-        </div>
-      );
-    }
-
-    // Fallback para o formato antigo (string de IDs)
-    if (solucao.timeId) {
-      const ids = String(solucao.timeId).split(',').map(id => Number(id.trim()));
-      
-      const timesEncontradas = ids
-        .map(id => times.find(l => l.id === id))
-        .filter(Boolean);
-
-      if (timesEncontradas.length > 0) {
-        return (
-          <div className="flex flex-wrap gap-1">
-            {timesEncontradas.map(times => (
-              <span
-                key={(times as {id: number; nome: string}).id}
-                className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-700 rounded-full"
-              >
-                {(times as {id: number; nome: string}).nome}
-              </span>
-            ))}
-          </div>
-        );
-      }
-    }
-
-    return '-';
-  };
-
-  const renderDetalhesTimes = (solucao: SolucaoType) => {
-    if (solucao.timeId) {
-      const ids = String(solucao.timeId).split(',').map(id => Number(id.trim()));
-      const timesEncontradas = ids
-        .map(id => times.find(l => l.id === id))
-        .filter(Boolean);
-
-      return (
-        <div className="flex flex-wrap gap-1">
-          {timesEncontradas.map(times => (
-            <span
-              key={(times as {id: number; nome: string}).id}
-              className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-700 rounded-full"
-            >
-              {(times as {id: number; nome: string}).nome}
-            </span>
-          ))}
-        </div>
-      );
-    }
-    return '-';
-  };
-
-
   const renderDetalhesLinguagens = (solucao: SolucaoType) => {
     if (solucao.linguagemId) {
       const ids = String(solucao.linguagemId).split(',').map(id => Number(id.trim()));
@@ -871,6 +741,35 @@ export default function Solucao() {
     </div>
   );
 
+  // Add this helper function to format repository links
+  const formatRepositoryLink = (repo: string) => {
+    if (!repo || repo === '-') return '-';
+    if (repo.includes('github.com')) {
+      return (
+        <a 
+          href={repo}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1"
+        >
+          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+            <path fillRule="evenodd" d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.17 6.839 9.49.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.604-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.464-1.11-1.464-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.836c.85.004 1.705.114 2.504.336 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.137 20.167 22 16.418 22 12c0-5.523-4.477-10-10-10z" clipRule="evenodd" />
+          </svg>
+          GitHub
+        </a>
+      );
+    }
+    return (
+      <a 
+        href={repo}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-blue-600 hover:text-blue-800 hover:underline"
+      >
+        Link
+      </a>
+    );
+  };
 
   return (
     <div className={`
@@ -944,18 +843,6 @@ export default function Solucao() {
             >
               <option value="">Linguagem</option>
               {linguagens.map((l) => (
-                <option key={l.id} value={l.id}>{l.nome}</option>
-              ))}
-            </select>
-
-            <select
-              name="times_id"
-              value={filters.times_id}
-              onChange={handleFilterChange}
-              className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors"
-            >
-              <option value="">Times</option>
-              {times.map((l) => (
                 <option key={l.id} value={l.id}>{l.nome}</option>
               ))}
             </select>
@@ -1044,99 +931,88 @@ export default function Solucao() {
         </div>
 
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
-          <table className="min-w-full">
-            <thead className="bg-gray-200">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nome</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sigla</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">VERSÃO</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">TIPO</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">LINGUAGEM</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">DESENVOLVEDOR</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">DEMANDA</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">CATEGORIA</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">RESPONSAVEL</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">STATUS</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">AÇÕES</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {Array.isArray(filteredSolucoes) && filteredSolucoes.map((solucao: SolucaoType, index: number) => (
-                <tr key={solucao.id} className="hover:bg-gray-50 transition-colors">
-                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                    {index + 1}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-800">
-                    {solucao.nome || '-'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                    {solucao.sigla || '-'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                    {solucao.versao || '-'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                    {solucao.tipo?.nome || '-'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
-                    {renderTableLinguagens(solucao)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                    {solucao.desenvolvedor?.nome || '-'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                    {solucao.demanda?.nome || '-'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                    {solucao.categoria?.nome || '-'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                    {solucao.responsavel?.nome || '-'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                    <span 
-                      className={`rounded-md px-2 py-1 ${determinarCorTexto(solucao.status?.propriedade)}`} 
-                      style={{ backgroundColor: solucao.status?.propriedade }}
-                    >
-                      {solucao.status?.nome || '-'}
-                    </span>
-                  </td>
-
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
-                    <div className="flex justify-end space-x-2">
-                      <button 
-                        onClick={() => handleInfoClick(solucao)}
-                        className="text-blue-500 hover:text-blue-700 p-1 rounded-full hover:bg-blue-50 transition-colors"
-                      >
-                        <Info className="w-5 h-5" />
-                      </button>
-                      <button 
-                        onClick={() => handleEditClick(solucao)}
-                        className="text-blue-500 hover:text-blue-700 p-1 rounded-full hover:bg-blue-50 transition-colors"
-                      >
-                        <Edit2 className="w-5 h-5" />
-                      </button>
-                      <button 
-                        onClick={() => handleDeleteClick(String(solucao.id))}
-                        className="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50 transition-colors"
-                      >
-                       
-                        <Trash2 className="w-5 h-5" />
-                      </button>
-                      <DeleteConfirmationModal 
-                            isOpen={isDeleteModalOpen}
-                            onClose={() => setIsDeleteModalOpen(false)}
-                            onConfirm={confirmDelete}
-                            itemName="esta solução"
-                        />
-                    </div>
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="min-w-full bg-white">
+              <thead>
+                <tr className="bg-gray-50 text-gray-600 text-sm leading-normal">
+                  <th className="py-3 px-4 text-left font-semibold">#</th>
+                  <th className="py-3 px-4 text-left font-semibold">Nome</th>
+                  <th className="py-3 px-4 text-left font-semibold">Sigla</th>
+                  <th className="py-3 px-4 text-left font-semibold">Versão</th>
+                  <th className="py-3 px-4 text-left font-semibold">Tipo</th>
+                  <th className="py-3 px-4 text-left font-semibold">Linguagem</th>
+                  <th className="py-3 px-4 text-left font-semibold">Desenvolvedor</th>
+                  <th className="py-3 px-4 text-left font-semibold">Demanda</th>
+                  <th className="py-3 px-4 text-left font-semibold">Fator Gerador</th>
+                  <th className="py-3 px-4 text-left font-semibold">Categoria</th>
+                  <th className="py-3 px-4 text-left font-semibold">Responsável</th>
+                  <th className="py-3 px-4 text-left font-semibold">Status</th>
+                  <th className="py-3 px-4 text-left font-semibold">Data Status</th>
+                  <th className="py-3 px-4 text-left font-semibold">Repositório</th>
+                  <th className="py-3 px-4 text-center font-semibold">Ações</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-          
+              </thead>
+              <tbody className="text-gray-600 text-sm">
+                {(filteredSolucoes || []).map((solucao, index) => (
+                  <tr key={solucao.id} className="border-b border-gray-200 hover:bg-gray-50">
+                    <td className="py-3 px-4">{index + 1}</td>
+                    <td className="py-3 px-4">{solucao.nome || '-'}</td>
+                    <td className="py-3 px-4">{solucao.sigla || '-'}</td>
+                    <td className="py-3 px-4">{solucao.versao || '-'}</td>
+                    <td className="py-3 px-4">{solucao.tipo?.nome || '-'}</td>
+                    <td className="py-3 px-4">{renderTableLinguagens(solucao)}</td>
+                    <td className="py-3 px-4">{solucao.desenvolvedor?.nome || '-'}</td>
+                    <td className="py-3 px-4">{solucao.demanda?.nome || '-'}</td>
+                    <td className="py-3 px-4">{solucao.demanda?.fatorGerador || '-'}</td>
+                    <td className="py-3 px-4">{solucao.categoria?.nome || '-'}</td>
+                    <td className="py-3 px-4">{solucao.responsavel?.nome || '-'}</td>
+                    <td className="py-3 px-4">
+                      <span
+                        className={`rounded-md px-3 py-1 text-xs font-medium ${determinarCorTexto(solucao.status?.propriedade)}`}
+                        style={{ backgroundColor: solucao.status?.propriedade }}
+                      >
+                        {solucao.status?.nome || '-'}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4">
+                      {(() => {
+                        console.log('Solucao object:', solucao); // Log 7: objeto completo
+                        console.log('Data status:', solucao.data_status); // Log 8: campo data_status
+                        console.log('DataStatus:', solucao.dataStatus); // Log 9: campo dataStatus
+                        return formatDate(solucao.data_status || solucao.dataStatus);
+                      })()}
+                    </td>
+                    <td className="py-3 px-4">{formatRepositoryLink(solucao.repositorio)}</td>
+                    <td className="py-3 px-4">
+                      <div className="flex items-center justify-center gap-2">
+                        <button
+                          onClick={() => handleInfoClick(solucao)}
+                          className="text-blue-600 hover:text-blue-800"
+                          title="Informações"
+                        >
+                          <Info className="w-5 h-5" />
+                        </button>
+                        <button
+                          onClick={() => handleEditClick(solucao)}
+                          className="text-green-600 hover:text-green-800"
+                          title="Editar"
+                        >
+                          <Edit2 className="w-5 h-5" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteClick(solucao.id.toString())}
+                          className="text-red-600 hover:text-red-800"
+                          title="Excluir"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
         <Pagination />      
         {isModalOpen && (
@@ -1212,6 +1088,18 @@ export default function Solucao() {
                       value={formData.versao || ''} 
                       onChange={handleInputChange}
                       className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Repositório</label>
+                    <input 
+                      type="text" 
+                      name="repositorio" 
+                      value={formData.repositorio || ''} 
+                      onChange={handleInputChange}
+                      className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors"
+                      placeholder="URL do repositório"
                     />
                   </div>
 
@@ -1295,58 +1183,6 @@ export default function Solucao() {
                         <option key={desenvolvedor.id} value={desenvolvedor.id}>{desenvolvedor.nome}</option>
                       ))}
                     </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Times
-                    </label>
-                    <div className="space-y-2">
-                      <div className="flex flex-wrap gap-2 min-h-[2.5rem] p-2 bg-gray-50 border border-gray-200 rounded-md">
-                        {selectedTimes.map((timesId) => {
-                          const time = times.find(l => l.id === timesId);
-                          return (
-                            <div
-                              key={timesId}
-                              className="flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-sm"
-                            >
-                              <span>{time?.nome}</span>
-                              <button
-                                type="button"
-                                onClick={() => removeTimes(timesId)}
-                                className="w-4 h-4 flex items-center justify-center rounded-full hover:bg-blue-200 transition-colors"
-                              >
-                                <X className="w-3 h-3" />
-                              </button>
-                            </div>
-                          );
-                        })}
-                      </div>
-                      
-                      <div className="relative">
-                        <select
-                          onChange={handleTimesChange}
-                          value=""
-                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md text-gray-700 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors appearance-none"
-                        >
-                          <option value="">Adicionar time...</option>
-                          {times
-                            .filter(times => !selectedTimes.includes(times.id))
-                            .map((times) => (
-                              <option key={times.id} value={times.id}>
-                                {times.nome}
-                              </option>
-                            ))}
-                        </select>
-                        <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
-                          <ChevronRight className="w-4 h-4 text-gray-400" />
-                        </div>
-                      </div>
-                      
-                      <p className="text-xs text-gray-500 mt-1">
-                        Selecione uma ou mais pessoas para esta solução
-                      </p>
-                    </div>
                   </div>
 
                   
@@ -1730,6 +1566,13 @@ export default function Solucao() {
               </div>
             </div>
           </div>
+        )}
+        {isDeleteModalOpen && (
+          <DeleteConfirmationModal
+            isOpen={isDeleteModalOpen}
+            onClose={() => setIsDeleteModalOpen(false)}
+            onConfirm={confirmDelete}
+          />
         )}
       </div>
     </div>

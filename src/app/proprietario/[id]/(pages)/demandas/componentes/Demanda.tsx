@@ -65,7 +65,7 @@ export default function Demanda() {
   const { isCollapsed } = useSidebar();
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const itemsPerPage = 8;
+  const itemsPerPage = 6;
 
 
 

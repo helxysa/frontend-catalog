@@ -1,33 +1,43 @@
 import axios from 'axios';
+import { DemandaType } from '../types/type';
 
-const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
-if (!baseUrl) {
-  throw new Error("NEXT_PUBLIC_BASE_URL is not defined in the environment variables.");
-}
-const url = `${baseUrl}/demandas`;
+const baseURL = process.env.NEXT_PUBLIC_BASE_URL;
 
-export async function getDemandas() {
-  const response = await axios.get(url);
-  return response.data;
+export async function getDemandas(): Promise<DemandaType[]> {
+  try {
+    const proprietarioId = localStorage.getItem('selectedProprietarioId');
+    if (!proprietarioId) {
+      throw new Error('Proprietário não selecionado');
+    }
+
+    const response = await axios.get(
+      `${baseURL}/proprietarios/${proprietarioId}/relatorios/demandas`
+    );
+
+    return response.data;
+  } catch (error) {
+    console.error('Erro ao buscar demandas:', error);
+    return [];
+  }
 }
 
 export async function getDemandasById(id: string) {
-  const response = await axios.get(`${url}/${id}`);
+  const response = await axios.get(`${baseURL}/demandas/${id}`);
   return response.data;
 }
 
 export async function createDemanda(demanda: any) {
-  const response = await axios.post(`${url}`, demanda);
+  const response = await axios.post(`${baseURL}/demandas`, demanda);
   return response.data;
 }
 
 export async function updateDemanda(id: string, demanda: any) {
-  const response = await axios.put(`${url}/${id}`, demanda);
+  const response = await axios.put(`${baseURL}/demandas/${id}`, demanda);
   return response.data;
 }
 
 export async function deleteDemanda(id: string) {
-  const response = await axios.delete(`${url}/${id}`);
+  const response = await axios.delete(`${baseURL}/demandas/${id}`);
   return response.data;
 }
 
@@ -35,7 +45,7 @@ export async function deleteDemanda(id: string) {
 
 
 //select aqui
-const urlSelect = `${baseUrl}`;
+const urlSelect = `${baseURL}`;
 
 export async function getProprietarios() {
     const response = await axios.get(`${urlSelect}/proprietarios`);
