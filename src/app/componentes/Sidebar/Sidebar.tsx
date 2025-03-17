@@ -202,7 +202,7 @@ export function Sidebar() {
             )}
           </button>
           
-          {!isCollapsed && ['categorias', 'alinhamentos', 'desenvolvedores', 'linguagem', 'prioridades', 'responsaveis', 'status', 'tipos', 'funcoes'].map((item) => {
+          {!isCollapsed && ['categorias', 'alinhamentos', 'desenvolvedores', 'linguagem', 'prioridades', 'times', 'status', 'tipos',].map((item) => {
             const getItemIcon = (itemName: string) => {
               const iconMap: { [key: string]: any } = {
                 categorias: Tags,
@@ -213,7 +213,6 @@ export function Sidebar() {
                 responsaveis: UserCog,
                 status: CircleDot,
                 tipos: FileType2,
-                funcoes: Users,
               };
               return iconMap[itemName] || Settings;
             };

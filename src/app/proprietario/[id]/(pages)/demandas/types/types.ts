@@ -3,6 +3,7 @@ export interface DemandaType {
     sigla: string;
     nome: string;
     createdAt: string | Date;
+    link: string
     status: {
       id: number;
       nome: string;
@@ -36,7 +37,8 @@ export interface DemandaType {
     nome: string;
     sigla: string;
     descricao: string;
-    demandante: string;
+    demandante: string
+    link: string;
     fator_gerador: string;
     alinhamento_id: number;
     prioridade_id: number;
@@ -58,6 +60,7 @@ export interface DemandaType {
       proprietarioId: number;
       sigla: string;
       descricao: string;
+      link: string
       demandante: string;
       fatorGerador: string;
       alinhamentoId: number;

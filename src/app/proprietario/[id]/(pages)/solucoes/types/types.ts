@@ -6,6 +6,8 @@ export interface SolucaoType {
     versao: string;
     repositorio: string;
     tipoId: number;
+    link: string;
+    andamento:string;
     linguagemId: string | number | null;
     timeId: string | number | null;
     desenvolvedorId: number;
@@ -31,11 +33,12 @@ export interface BaseType {
   propriedade: string;
 }
 
-export interface Times  {
+export interface Times {
   id: number;
   nome: string;
   funcao: string;
-  descricao: string;
+  dataInicio: string;
+  dataFim: string;
 }
 
 export interface SolucaoFormData {
@@ -44,6 +47,8 @@ export interface SolucaoFormData {
   descricao: string;
   versao: string;
   repositorio: string;
+  link: string;
+  andamento: string;
   tipo_id: number | null;
   linguagem_id: string | number | null;
   desenvolvedor_id: number | null;
@@ -54,3 +59,47 @@ export interface SolucaoFormData {
   data_status: string | null;
 }
 
+export interface HistoricoType {
+  id: number;
+  solucaoId: number;
+  usuario: string;
+  descricao: string;
+  createdAt: string;
+  updatedAt: string;
+  solucao: {
+    id: number;
+    nome: string;
+    sigla: string;
+    versao: string;
+    repositorio: string;
+    descricao: string;
+    link: string;
+    andamento:string;
+    tipoId: number;
+    timesId: number;
+    linguagemId: number;
+    desenvolvedorId: number;
+    categoriaId: number;
+    responsavelId: number;
+    statusId: number;
+    demandaId: number;
+    dataStatus: string;
+    createdAt: string;
+    updatedAt: string;
+  };
+}
+
+export interface BaseType {
+  id: number;
+  nome: string;
+  sigla?: string;
+}
+
+
+export interface TimeFormData {
+  nome: string;
+  funcao: string;
+  data_inicio: string;
+  data_fim?: string;
+  proprietario_id: number;
+}

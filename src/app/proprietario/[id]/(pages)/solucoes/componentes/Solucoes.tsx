@@ -1,12 +1,16 @@
 'use client'
 
-interface SolucaoFormData {
+
+
+export interface SolucaoFormData {
   nome: string;
-  demanda_id: number;
+  demanda_id: number | null;  
   sigla: string;
   descricao: string;
   versao: string;
   repositorio: string;
+  link: string;
+  andamento: string;
   tipo_id: number;
   linguagem_id: number | string | null;
   desenvolvedor_id: number;
@@ -16,39 +20,6 @@ interface SolucaoFormData {
   data_status: string;
 }
 
-interface HistoricoType {
-  id: number;
-  solucaoId: number;
-  usuario: string;
-  descricao: string;
-  createdAt: string;
-  updatedAt: string;
-  solucao: {
-    id: number;
-    nome: string;
-    sigla: string;
-    versao: string;
-    repositorio: string;
-    descricao: string;
-    tipoId: number;
-    timesId: number;
-    linguagemId: number;
-    desenvolvedorId: number;
-    categoriaId: number;
-    responsavelId: number;
-    statusId: number;
-    demandaId: number;
-    dataStatus: string;
-    createdAt: string;
-    updatedAt: string;
-  };
-}
-
-interface BaseType {
-  id: number;
-  nome: string;
-  sigla?: string;
-}
 
 import { useEffect, useState } from 'react';
 import { 
@@ -64,13 +35,19 @@ import {
   updateSolucao,
   getDemandas,
   getHistoricoSolucoes,
-  getAllDemandas
+  getAllDemandas,
+  getTimes,
+  createTime,
+  updateTime,
+  deleteTime
 } from "../actions/actions";
-import { Plus, Edit2, Trash2, X, Info, ChevronRight } from 'lucide-react';
-import { SolucaoType } from '../types/types';
+import { Plus, Edit2, Trash2, X, Info, ChevronRight, ExternalLink } from 'lucide-react';
+import Link from 'next/link';
+import { SolucaoType, BaseType, HistoricoType, TimeFormData } from '../types/types';
 import DeleteConfirmationModal from './ModalConfirmacao/DeleteConfirmationModal';
 import { useSidebar } from '../../../../../componentes/Sidebar/SidebarContext';
 import { Times } from '../types/types';
+
 
 type CustomChangeEvent = {
   target: {
@@ -80,11 +57,12 @@ type CustomChangeEvent = {
 };
 
 export default function Solucao() {
-  const [solucoes, setSolucoes] = useState([]);
+  const [solucoes, setSolucoes] = useState<SolucaoType[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedDemandDetails, setSelectedDemandDetails] = useState<SolucaoType | null>(null);
   const [formData, setFormData] = useState<SolucaoFormData>({} as SolucaoFormData);
   const [tipos, setTipos] = useState<BaseType[]>([]);
+  const [repositorio, setRepositorio] = useState<BaseType[]>([]);
   const [linguagens, setLinguagens] = useState<BaseType[]>([]);
   const [desenvolvedores, setDesenvolvedores] = useState<BaseType[]>([]);
   const [categorias, setCategorias] = useState<BaseType[]>([]);
@@ -118,8 +96,18 @@ export default function Solucao() {
     demanda_id: false
   });
   const [selectedLanguages, setSelectedLanguages] = useState<number[]>([]);
-
+  const [activeFormTab, setActiveFormTab] = useState('ficha-tecnica');
+  const [times, setTimes] = useState<any[]>([]);
   const { isCollapsed } = useSidebar();
+  const [timeFormData, setTimeFormData] = useState<TimeFormData>({
+    nome: '',
+    funcao: '',
+    data_inicio: '',
+    data_fim: '',
+    proprietario_id: 0
+  });
+  const [selectedTimeId, setSelectedTimeId] = useState<string | null>(null);
+
 
   const determinarCorTexto = (corHex: string | undefined) => {
     if (!corHex) return 'text-gray-800'; 
@@ -152,10 +140,90 @@ export default function Solucao() {
     }
   };
 
+
+  useEffect(() => {
+    const loadTimes = async () => {
+      const timesData = await getTimes();
+      console.log(timesData)
+      if (timesData) {
+        setTimes(timesData);
+      }
+    };
+    
+    loadTimes();
+  }, []);
+
+
+  const handleTimeSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const storedId = localStorage.getItem('selectedProprietarioId');
+      const timeData = {
+        ...timeFormData,
+        proprietario_id: Number(storedId)
+      };
+
+      if (selectedTimeId) {
+        await updateTime(selectedTimeId, timeData);
+      } else {
+        await createTime(timeData);
+      }
+
+      // Refresh times list
+      const updatedTimes = await getTimes();
+      setTimes(updatedTimes);
+
+      // Reset form
+      setTimeFormData({
+        nome: '',
+        funcao: '',
+        data_inicio: '',
+        data_fim: '',
+        proprietario_id: 0
+      });
+      setSelectedTimeId(null);
+    } catch (error) {
+      console.error('Error saving time:', error);
+    }
+  };
+
+  const handleTimeDelete = async (id: string) => {
+    try {
+      await deleteTime(id);
+      const updatedTimes = await getTimes();
+      setTimes(updatedTimes);
+    } catch (error) {
+      console.error('Error deleting time:', error);
+    }
+  };
+
+  // Modifique a função que busca as soluções para atualizar o totalPages
+  const fetchSolucoes = async (page = currentPage) => {
+    try {
+      const solucoesData = await getSolucoes(page, itemsPerPage);
+      const solucoesArray = solucoesData?.data || [];
+      setSolucoes(solucoesArray);
+      setFilteredSolucoes(solucoesArray);
+      
+      // Atualizar o total de páginas
+      if (solucoesData?.meta) {
+        const total = solucoesData.meta.total || 0;
+        const calculatedPages = Math.ceil(total / itemsPerPage);
+        setTotalPages(calculatedPages);
+        console.log('Total items:', total, 'Total pages:', calculatedPages);
+      }
+      
+      return solucoesData;
+    } catch (error) {
+      console.error('Erro ao buscar soluções:', error);
+      return null;
+    }
+  };
+
   // Efeito para carregar as soluções paginadas e outros dados
   useEffect(() => {
     Promise.all([
-      getSolucoes(currentPage, itemsPerPage),
+      fetchSolucoes(),
       getTipos(),
       getLinguagens(),
       getDesenvolvedores(),
@@ -163,12 +231,6 @@ export default function Solucao() {
       getResponsaveis(),
       getStatus(),
     ]).then(([solucoesData, tiposData, linguagensData, desenvolvedoresData, categoriasData, responsaveisData, statusData]) => {
-      // Atualiza as soluções paginadas
-      const solucoesArray = solucoesData?.data || [];
-      setSolucoes(solucoesArray);
-      console.log(solucoesArray)
-      setFilteredSolucoes(solucoesArray);
-      
       // Atualiza os outros dados
       setTipos(tiposData || []);
       setLinguagens(linguagensData || []);
@@ -177,9 +239,14 @@ export default function Solucao() {
       setResponsaveis(responsaveisData || []);
       setStatusList(statusData || []);
       
+      // Certifique-se de que o total de páginas seja calculado corretamente
       if (solucoesData?.meta) {
-        setTotalPages(Math.ceil(solucoesData.meta.total / itemsPerPage));
+        const total = solucoesData.meta.total || 0;
+        setTotalPages(Math.ceil(total / itemsPerPage));
+        console.log('Total items:', total, 'Total pages:', Math.ceil(total / itemsPerPage));
       }
+    }).catch(error => {
+      console.error('Error loading data:', error);
     });
   }, [currentPage, shouldRefresh]);
 
@@ -204,31 +271,9 @@ export default function Solucao() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    // Reset dos erros
-    setFormErrors({
-      nome: false,
-      demanda_id: false
-    });
-
-    // Validação dos campos obrigatórios
-    const errors = {
-      nome: !formData.nome,
-      demanda_id: !formData.demanda_id
-    };
-
-    if (errors.nome || errors.demanda_id) {
-      setFormErrors(errors);
-      return;
-    }
-
     try {
       const linguagemValue = selectedLanguages.length > 0 ? selectedLanguages.join(',') : null;
       
-      // Formata a data corretamente para envio
-      const dataStatus = formData.data_status 
-        ? new Date(formData.data_status).toISOString().split('T')[0]
-        : new Date().toISOString().split('T')[0];
-
       const formDataToSubmit = {
         ...formData,
         nome: formData.nome || '-',
@@ -236,6 +281,8 @@ export default function Solucao() {
         descricao: formData.descricao || '-',
         versao: formData.versao || '-',
         repositorio: formData.repositorio || '-',
+        link: formData.link || '', // Garanta que o link está sendo enviado
+        andamento: formData.andamento || '', // Garanta que o andamento está sendo enviado
         tipo_id: formData.tipo_id ? Number(formData.tipo_id) : null,
         linguagem_id: linguagemValue,
         desenvolvedor_id: formData.desenvolvedor_id ? Number(formData.desenvolvedor_id) : null,
@@ -243,59 +290,113 @@ export default function Solucao() {
         responsavel_id: formData.responsavel_id ? Number(formData.responsavel_id) : null,
         status_id: formData.status_id ? Number(formData.status_id) : null,
         demanda_id: Number(formData.demanda_id),
-        data_status: dataStatus // Usa a data formatada
-      };
-      console.log(dataStatus)
+        data_status: formData.data_status || new Date().toISOString().split('T')[0]
+    };
+
+      console.log('Submitting data:', formDataToSubmit);
+
       if (isEditing) {
-        await updateSolucao(isEditing, formDataToSubmit);
+        try {
+          // Atualizar solução existente
+          await updateSolucao(isEditing, formDataToSubmit);
+          console.log('Solução atualizada com sucesso');
+          
+          // Buscar soluções atualizadas e recalcular páginas
+          const updatedData = await fetchSolucoes();
+          
+          // Criar um mapa dos IDs originais para manter a ordem
+          const idToIndexMap = new Map();
+          solucoes.forEach((solucao, index) => {
+            idToIndexMap.set(String(solucao.id), index);
+          });
+          
+          // Criar uma nova lista ordenada baseada na ordem original
+          const orderedSolucoes = [...updatedData.data].sort((a, b) => {
+            const indexA = idToIndexMap.get(String(a.id)) ?? 999;
+            const indexB = idToIndexMap.get(String(b.id)) ?? 999;
+            return indexA - indexB;
+          });
+          
+          // Atualizar os estados com a lista ordenada
+          setSolucoes(orderedSolucoes);
+          setFilteredSolucoes(orderedSolucoes);
+          
+          // Limpar formulário e fechar modal
+          setIsModalOpen(false);
+          setFormData({} as SolucaoFormData);
+          setSelectedLanguages([]);
+          setIsEditing(null);
+        } catch (error) {
+          console.error('Erro ao atualizar solução:', error);
+        }
       } else {
-        await createSolucao(formDataToSubmit);
+        // Criar nova solução
+        const newSolucao = await createSolucao(formDataToSubmit);
+        
+        // Buscar soluções atualizadas e recalcular páginas
+        await fetchSolucoes();
+        
+        // Limpar formulário e fechar modal
+        setIsModalOpen(false);
+        setFormData({} as SolucaoFormData);
+        setSelectedLanguages([]);
       }
       
-      // Força a atualização imediata dos dados
-      setShouldRefresh(prev => prev + 1);
       setIsModalOpen(false);
       setFormData({} as SolucaoFormData);
       setSelectedLanguages([]);
       setIsEditing(null);
-
-    } catch (error: any) {
-      console.error('Error details:', error);
-      if (error.response) {
-        console.error('Response data:', error.response.data);
-        alert(`Erro ao salvar a solução: ${error.response.data.message || 'Erro desconhecido'}`);
-      } else if (error.request) {
-        alert('Erro de conexão com o servidor. Verifique sua internet.');
-      } else {
-        alert('Erro ao processar a solicitação. Por favor, tente novamente.');
-      }
+      
+    } catch (error) {
+      console.error('Submit error:', error);
     }
   };
 
   
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement> | CustomChangeEvent) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    console.log(`Changing ${name} to:`, value); // Debug log
+
+    const newValue = name === 'demanda_id' ? (value ? Number(value) : null) : value;
+    console.log('New value after processing:', newValue); // Debug log
+    
+    
+    if (name === 'andamento') {
+      // Garante que o valor está entre 0 e 100
+      const numValue = Math.min(Math.max(Number(value) || 0, 0), 100);
+      setFormData(prev => ({
+        ...prev,
+        [name]: numValue.toString()
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
+
+    setFormData(prev => {
+      const updated = {
+        ...prev,
+        [name]: newValue
+      };
+      console.log('Updated form data:', updated); // Debug log
+      return updated;
+    });
   };
 
   
   const formatDate = (dateString?: string | null) => {
-    console.log('Input dateString:', dateString); // Log 1: valor de entrada
+   
     
     if (!dateString) {
-      console.log('Date is null or undefined'); // Log 2: verificar se é nulo
       return '-';
     }
     
     try {
       const date = new Date(dateString);
-      console.log('Parsed date:', date); // Log 3: data parseada
       
       if (isNaN(date.getTime())) {
-        console.log('Invalid date'); // Log 4: data inválida
         return '-';
       }
       
@@ -305,10 +406,8 @@ export default function Solucao() {
         year: 'numeric'
       }).format(date);
       
-      console.log('Formatted date:', formattedDate); // Log 5: data formatada
       return formattedDate;
     } catch (error) {
-      console.error('Error formatting date:', error); // Log 6: erros
       return '-';
     }
   };
@@ -468,15 +567,21 @@ export default function Solucao() {
 
   const handleEditClick = (solucao: SolucaoType) => {
     const formDataToSet = {
-      ...solucao,
-      tipo_id: solucao.tipo?.id || null,
+      nome: solucao.nome,
+      sigla: solucao.sigla,
+      descricao: solucao.descricao,
+      versao: solucao.versao,
+      repositorio: solucao.repositorio,
+      link: solucao.link,
+      andamento: solucao.andamento,
+      tipo_id: solucao.tipo?.id,
       linguagem_id: solucao.linguagemId,
-      desenvolvedor_id: solucao.desenvolvedor?.id || null,
-      categoria_id: solucao.categoria?.id || null,
-      responsavel_id: solucao.responsavel?.id || null,
-      status_id: solucao.status?.id || null,
-      demanda_id: solucao.demandaId || null,
-      data_status: solucao.data_status || null
+      desenvolvedor_id: solucao.desenvolvedor?.id,
+      categoria_id: solucao.categoria?.id,
+      responsavel_id: solucao.responsavel?.id,
+      status_id: solucao.status?.id,
+      demanda_id: solucao.demandaId, // Corrigido: usar demandaId diretamente
+      data_status: solucao.data_status || solucao.dataStatus
     } as SolucaoFormData;
 
     setFormData(formDataToSet);
@@ -723,23 +828,27 @@ export default function Solucao() {
     return '-';
   };
 
-  const Pagination = () => (
-    <div className="mt-6 flex justify-center gap-2">
-      {Array.from({ length: totalPages }, (_, i) => (
-        <button
-          key={i + 1}
-          onClick={() => setCurrentPage(i + 1)}
-          className={`px-3 py-1 rounded ${
-            currentPage === i + 1
-              ? 'bg-blue-600 text-white'
-              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-          }`}
-        >
-          {i + 1}
-        </button>
-      ))}
-    </div>
-  );
+  const Pagination = () => {
+    if (totalPages <= 1) return null;
+    
+    return (
+      <div className="mt-6 flex gap-2">
+        {Array.from({ length: totalPages }, (_, i) => (
+          <button
+            key={i + 1}
+            onClick={() => setCurrentPage(i + 1)}
+            className={`px-3 py-1 rounded ${
+              currentPage === i + 1
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-300 text-gray-600 hover:bg-gray-200'
+            }`}
+          >
+            {i + 1}
+          </button>
+        ))}
+      </div>
+    );
+  };
 
   // Add this helper function to format repository links
   const formatRepositoryLink = (repo: string) => {
@@ -760,16 +869,42 @@ export default function Solucao() {
       );
     }
     return (
-      <a 
-        href={repo}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="text-blue-600 hover:text-blue-800 hover:underline"
-      >
-        Link
-      </a>
+        <div>
+          <Link
+                          href={repo}
+                          target="_blank"
+                          className="text-purple-500 hover:text-purple-700 rounded-full hover:bg-purple-50 transition-colors"
+                        >
+                          
+                          <ExternalLink className="w-5 h-5" />
+                        </Link>
+        </div>
+      
     );
   };
+
+
+  const getProgressColor = (progress: number) => {
+    if (progress < 25) return 'bg-red-500';
+    if (progress < 50) return 'bg-orange-500';
+    if (progress < 75) return 'bg-yellow-500';
+    return 'bg-green-500';
+  };
+  
+  // Componente da barra de progresso
+  const ProgressBar = ({ progress }: { progress: number }) => {
+    const progressColor = getProgressColor(progress);
+    
+    return (
+      <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+        <div 
+          className={`h-full ${progressColor} transition-all duration-300 ease-in-out`}
+          style={{ width: `${progress}%` }}
+        />
+      </div>
+    );
+  };
+  
 
   return (
     <div className={`
@@ -932,77 +1067,122 @@ export default function Solucao() {
 
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="min-w-full bg-white">
+            <table className={`
+              w-full
+              transition-all duration-300
+              ${isCollapsed ? 'table-auto' : ''}
+            `}>
               <thead>
-                <tr className="bg-gray-50 text-gray-600 text-sm leading-normal">
-                  <th className="py-3 px-4 text-left font-semibold">#</th>
-                  <th className="py-3 px-4 text-left font-semibold">Nome</th>
-                  <th className="py-3 px-4 text-left font-semibold">Sigla</th>
-                  <th className="py-3 px-4 text-left font-semibold">Versão</th>
-                  <th className="py-3 px-4 text-left font-semibold">Tipo</th>
-                  <th className="py-3 px-4 text-left font-semibold">Linguagem</th>
-                  <th className="py-3 px-4 text-left font-semibold">Desenvolvedor</th>
-                  <th className="py-3 px-4 text-left font-semibold">Demanda</th>
-                  <th className="py-3 px-4 text-left font-semibold">Fator Gerador</th>
-                  <th className="py-3 px-4 text-left font-semibold">Categoria</th>
-                  <th className="py-3 px-4 text-left font-semibold">Responsável</th>
-                  <th className="py-3 px-4 text-left font-semibold">Status</th>
-                  <th className="py-3 px-4 text-left font-semibold">Data Status</th>
-                  <th className="py-3 px-4 text-left font-semibold">Repositório</th>
-                  <th className="py-3 px-4 text-center font-semibold">Ações</th>
+                <tr className="bg-gray-200 text-gray-600 leading-normal">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">#</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nome</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Sigla</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Versão</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tipo</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Linguagem</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Desenvolvedor</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Demanda</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Categoria</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Responsável</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Data Status</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Repositório</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Andamento</th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Ações</th>
                 </tr>
               </thead>
-              <tbody className="text-gray-600 text-sm">
+              <tbody className="divide-y divide-gray-200">
                 {(filteredSolucoes || []).map((solucao, index) => (
-                  <tr key={solucao.id} className="border-b border-gray-200 hover:bg-gray-50">
-                    <td className="py-3 px-4">{index + 1}</td>
-                    <td className="py-3 px-4">{solucao.nome || '-'}</td>
-                    <td className="py-3 px-4">{solucao.sigla || '-'}</td>
-                    <td className="py-3 px-4">{solucao.versao || '-'}</td>
-                    <td className="py-3 px-4">{solucao.tipo?.nome || '-'}</td>
-                    <td className="py-3 px-4">{renderTableLinguagens(solucao)}</td>
-                    <td className="py-3 px-4">{solucao.desenvolvedor?.nome || '-'}</td>
-                    <td className="py-3 px-4">{solucao.demanda?.nome || '-'}</td>
-                    <td className="py-3 px-4">{solucao.demanda?.fatorGerador || '-'}</td>
-                    <td className="py-3 px-4">{solucao.categoria?.nome || '-'}</td>
-                    <td className="py-3 px-4">{solucao.responsavel?.nome || '-'}</td>
-                    <td className="py-3 px-4">
-                      <span
-                        className={`rounded-md px-3 py-1 text-xs font-medium ${determinarCorTexto(solucao.status?.propriedade)}`}
-                        style={{ backgroundColor: solucao.status?.propriedade }}
-                      >
-                        {solucao.status?.nome || '-'}
-                      </span>
+                  <tr key={solucao.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4 text-sm text-gray-600">
+                      {index + 1}
                     </td>
-                    <td className="py-3 px-4">
-                      {(() => {
-                        console.log('Solucao object:', solucao); // Log 7: objeto completo
-                        console.log('Data status:', solucao.data_status); // Log 8: campo data_status
-                        console.log('DataStatus:', solucao.dataStatus); // Log 9: campo dataStatus
-                        return formatDate(solucao.data_status || solucao.dataStatus);
-                      })()}
+                    <td className="px-6 py-4 text-sm font-medium text-gray-800 break-words max-w-[200px]">
+                      {solucao.nome || '-'}
                     </td>
-                    <td className="py-3 px-4">{formatRepositoryLink(solucao.repositorio)}</td>
-                    <td className="py-3 px-4">
-                      <div className="flex items-center justify-center gap-2">
+                    <td className="px-6 py-4 text-sm text-gray-600 break-words max-w-[150px]">
+                      {solucao.sigla || '-'}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-600">
+                      {solucao.versao || '-'}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-600 break-words max-w-[150px]">
+                      {solucao.tipo?.nome || '-'}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-600">
+                      {renderTableLinguagens(solucao)}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-600 break-words max-w-[150px]">
+                      {solucao.desenvolvedor?.nome || '-'}
+                    </td>
+                    
+                    <td className="px-6 py-4 text-sm text-gray-600 break-words max-w-[150px]">
+                      {solucao.demanda?.nome || '-'}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-600 break-words max-w-[150px]">
+                      {solucao.categoria?.nome || '-'}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-600 break-words max-w-[150px]">
+                      {solucao.responsavel?.nome || '-'}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-600">
+                      {solucao.status?.propriedade ? (
+                        <span
+                          className={`rounded-md px-2 py-1 break-words max-w-[150px] inline-block ${determinarCorTexto(solucao.status.propriedade)}`}
+                          style={{ backgroundColor: solucao.status.propriedade }}
+                        >
+                          {solucao.status.nome || '-'}
+                        </span>
+                      ) : (
+                        <span className="text-gray-500">-</span>
+                      )}
+                    </td>
+                   
+                    <td className="px-6 py-4 text-sm text-gray-600 whitespace-normal">
+                      {formatDate(solucao.data_status || solucao.dataStatus)}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-600">
+                      {formatRepositoryLink(solucao.repositorio)}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-600">
+                        <div className="flex flex-col space-y-1">
+                          <div className="flex justify-between items-center">
+                            <span className="font-medium">{solucao.andamento || '0'}%</span>
+                            <span className={`text-xs ${
+                              Number(solucao.andamento) === 100 
+                                ? 'text-green-600' 
+                                : Number(solucao.andamento) > 0 
+                                  ? 'text-blue-600' 
+                                  : 'text-gray-500'
+                            }`}>
+                              {Number(solucao.andamento) === 100 
+                                ? 'Concluído' 
+                                : Number(solucao.andamento) > 0 
+                                  ? 'Em andamento' 
+                                  : 'Não iniciado'}
+                            </span>
+                          </div>
+                          <ProgressBar progress={Number(solucao.andamento) || 0} />
+                        </div>
+                      </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
+                      <div className="flex justify-end space-x-2">
+                      {formatRepositoryLink(solucao.link)} {/* <td> separado */}
                         <button
                           onClick={() => handleInfoClick(solucao)}
-                          className="text-blue-600 hover:text-blue-800"
-                          title="Informações"
+                          className="text-blue-500 hover:text-blue-700 rounded-full hover:bg-blue-50 transition-colors"
                         >
                           <Info className="w-5 h-5" />
                         </button>
                         <button
                           onClick={() => handleEditClick(solucao)}
-                          className="text-green-600 hover:text-green-800"
-                          title="Editar"
+                          className="text-green-600 hover:text-green-800 rounded-full hover:bg-green-50 transition-colors"
                         >
                           <Edit2 className="w-5 h-5" />
                         </button>
                         <button
                           onClick={() => handleDeleteClick(solucao.id.toString())}
-                          className="text-red-600 hover:text-red-800"
-                          title="Excluir"
+                          className="text-red-400 hover:text-red-700 rounded-full hover:bg-red-50 transition-colors"
                         >
                           <Trash2 className="w-5 h-5" />
                         </button>
@@ -1034,256 +1214,465 @@ export default function Solucao() {
                 </button>
               </div>
 
-
-              
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Nome <span className="text-red-500">*</span>
-                    </label>
-                    <input 
-                      type="text" 
-                      name="nome" 
-                      value={formData.nome || ''} 
-                      onChange={handleInputChange}
-                      className={`w-full px-2 py-1.5 text-sm border ${
-                        formErrors.nome ? 'border-red-500' : 'border-gray-300'
-                      } rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors`}
-                    />
-                    {formErrors.nome && (
-                      <p className="mt-1 text-sm text-red-500">
-                        Este campo é obrigatório
-                      </p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Sigla</label>
-                    <input 
-                      type="text" 
-                      name="sigla" 
-                      value={formData.sigla || ''} 
-                      onChange={handleInputChange}
-                      className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors" 
-                    />
-                  </div>
-
-                  <div className="col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Descrição</label>
-                    <textarea 
-                      name="descricao" 
-                      value={formData.descricao || ''} 
-                      onChange={handleInputChange}
-                      className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors" 
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Versão</label>
-                    <input 
-                      type="text" 
-                      name="versao" 
-                      value={formData.versao || ''} 
-                      onChange={handleInputChange}
-                      className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Repositório</label>
-                    <input 
-                      type="text" 
-                      name="repositorio" 
-                      value={formData.repositorio || ''} 
-                      onChange={handleInputChange}
-                      className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors"
-                      placeholder="URL do repositório"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Tipo</label>
-                    <select 
-                      name="tipo_id" 
-                      value={formData.tipo_id || ''}
-                      onChange={handleInputChange}
-                      className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors"
-                    >
-                      <option value="">Selecione um tipo</option>
-                      {tipos.map((tipo) => (
-                        <option key={tipo.id} value={tipo.id}>{tipo.nome}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Linguagens
-                    </label>
-                    <div className="space-y-2">
-                      <div className="flex flex-wrap gap-2 min-h-[2.5rem] p-2 bg-gray-50 border border-gray-200 rounded-md">
-                        {selectedLanguages.map((langId) => {
-                          const language = linguagens.find(l => l.id === langId);
-                          return (
-                            <div
-                              key={langId}
-                              className="flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-sm"
-                            >
-                              <span>{language?.nome}</span>
-                              <button
-                                type="button"
-                                onClick={() => removeLanguage(langId)}
-                                className="w-4 h-4 flex items-center justify-center rounded-full hover:bg-blue-200 transition-colors"
-                              >
-                                <X className="w-3 h-3" />
-                              </button>
-                            </div>
-                          );
-                        })}
-                      </div>
-                      
-                      <div className="relative">
-                        <select
-                          onChange={handleLanguageChange}
-                          value=""
-                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md text-gray-700 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors appearance-none"
-                        >
-                          <option value="">Adicionar linguagem...</option>
-                          {linguagens
-                            .filter(lang => !selectedLanguages.includes(lang.id))
-                            .map((lang) => (
-                              <option key={lang.id} value={lang.id}>
-                                {lang.nome}
-                              </option>
-                            ))}
-                        </select>
-                        <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
-                          <ChevronRight className="w-4 h-4 text-gray-400" />
-                        </div>
-                      </div>
-                      
-                      <p className="text-xs text-gray-500 mt-1">
-                        Selecione uma ou mais linguagens para esta solução
-                      </p>
+              <div className="mb-6 border-b border-gray-200">
+                    <div className="flex space-x-4">
+                      <button
+                        className={`py-2 px-4 ${
+                          activeFormTab === 'ficha-tecnica'
+                            ? 'border-b-2 border-blue-500 text-blue-600'
+                            : 'text-gray-500 hover:text-gray-700'
+                        }`}
+                        onClick={() => setActiveFormTab('ficha-tecnica')}
+                      >
+                        Ficha Técnica
+                      </button>
+                      <button
+                        className={`py-2 px-4 ${
+                          activeFormTab === 'times'
+                            ? 'border-b-2 border-blue-500 text-blue-600'
+                            : 'text-gray-500 hover:text-gray-700'
+                        }`}
+                        onClick={() => setActiveFormTab('times')}
+                      >
+                        Histórico
+                      </button>
                     </div>
                   </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Desenvolvedor</label>
-                    <select 
-                      name="desenvolvedor_id" 
-                      value={formData.desenvolvedor_id || ''}
-                      onChange={handleInputChange}
-                      className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors"
-                    >
-                      <option value="">Selecione um desenvolvedor</option>
-                      {desenvolvedores.map((desenvolvedor) => (
-                        <option key={desenvolvedor.id} value={desenvolvedor.id}>{desenvolvedor.nome}</option>
-                      ))}
-                    </select>
-                  </div>
+              {activeFormTab == 'ficha-tecnica' ? (
+                 <form onSubmit={handleSubmit} className="space-y-4">
+                 <div className="grid grid-cols-2 gap-4">
+                   
+                   <div>
+                     <label className="block text-sm font-medium text-gray-700 mb-2">
+                       Nome <span className="text-red-500">*</span>
+                     </label>
+                     <input 
+                       type="text" 
+                       name="nome" 
+                       value={formData.nome || ''} 
+                       onChange={handleInputChange}
+                       className={`w-full px-2 py-1.5 text-sm border ${
+                         formErrors.nome ? 'border-red-500' : 'border-gray-300'
+                       } rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors`}
+                     />
+                     {formErrors.nome && (
+                       <p className="mt-1 text-sm text-red-500">
+                         Este campo é obrigatório
+                       </p>
+                     )}
+                   </div>
+ 
+                   <div>
+                     <label className="block text-sm font-medium text-gray-700 mb-2">Sigla</label>
+                     <input 
+                       type="text" 
+                       name="sigla" 
+                       value={formData.sigla || ''} 
+                       onChange={handleInputChange}
+                       className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors" 
+                     />
+                   </div>
+ 
+                   <div className="col-span-2">
+                     <label className="block text-sm font-medium text-gray-700 mb-2">Descrição</label>
+                     <textarea 
+                       name="descricao" 
+                       value={formData.descricao || ''} 
+                       onChange={handleInputChange}
+                       className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors" 
+                     />
+                   </div>
+ 
+                   <div>
+                     <label className="block text-sm font-medium text-gray-700 mb-2">Versão</label>
+                     <input 
+                       type="text" 
+                       name="versao" 
+                       value={formData.versao || ''} 
+                       onChange={handleInputChange}
+                       className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors"
+                     />
+                   </div>
+ 
+                   <div>
+                     <label className="block text-sm font-medium text-gray-700 mb-2">Repositório</label>
+                     <input 
+                       type="text" 
+                       name="repositorio" 
+                       value={formData.repositorio || ''} 
+                       onChange={handleInputChange}
+                       className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors"
+                       placeholder="URL do repositório"
+                     />
+                   </div>
 
-                  
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Categoria</label>
-                    <select 
-                      name="categoria_id" 
-                      value={formData.categoria_id || ''}
-                      onChange={handleInputChange}
-                      className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors"
-                    >
-                      <option value="">Selecione uma categoria</option>
-                      {categorias.map((categoria) => (
-                        <option key={categoria.id} value={categoria.id}>{categoria.nome}</option>
-                      ))}
-                    </select>
-                  </div>
+                   <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Link do Sistema</label>
+                      <input 
+                        type="text" 
+                        name="link" 
+                        value={formData.link || ''} 
+                        onChange={handleInputChange}
+                        className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors"
+                        placeholder="URL do link"
+                      />
+                    </div>
 
-                  <div>
+              
+ 
+                   <div>
+                     <label className="block text-sm font-medium text-gray-700 mb-2">Tipo</label>
+                     <select 
+                       name="tipo_id" 
+                       value={formData.tipo_id || ''}
+                       onChange={handleInputChange}
+                       className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors"
+                     >
+                       <option value="">Selecione um tipo</option>
+                       {tipos.map((tipo) => (
+                         <option key={tipo.id} value={tipo.id}>{tipo.nome}</option>
+                       ))}
+                     </select>
+                   </div>
+ 
+                   <div>
+                     <label className="block text-sm font-medium text-gray-700 mb-2">
+                       Linguagens
+                     </label>
+                     <div className="space-y-2">
+                       <div className="flex flex-wrap gap-2 min-h-[2.5rem] p-2 bg-gray-50 border border-gray-200 rounded-md">
+                         {selectedLanguages.map((langId) => {
+                           const language = linguagens.find(l => l.id === langId);
+                           return (
+                             <div
+                               key={langId}
+                               className="flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-sm"
+                             >
+                               <span>{language?.nome}</span>
+                               <button
+                                 type="button"
+                                 onClick={() => removeLanguage(langId)}
+                                 className="w-4 h-4 flex items-center justify-center rounded-full hover:bg-blue-200 transition-colors"
+                               >
+                                 <X className="w-3 h-3" />
+                               </button>
+                             </div>
+                           );
+                         })}
+                       </div>
+                       
+                       <div className="relative">
+                         <select
+                           onChange={handleLanguageChange}
+                           value=""
+                           className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md text-gray-700 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors appearance-none"
+                         >
+                           <option value="">Adicionar linguagem...</option>
+                           {linguagens
+                             .filter(lang => !selectedLanguages.includes(lang.id))
+                             .map((lang) => (
+                               <option key={lang.id} value={lang.id}>
+                                 {lang.nome}
+                               </option>
+                             ))}
+                         </select>
+                         <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+                           <ChevronRight className="w-4 h-4 text-gray-400" />
+                         </div>
+                       </div>
+                       
+                       <p className="text-xs text-gray-500 mt-1">
+                         Selecione uma ou mais linguagens para esta solução
+                       </p>
+                     </div>
+                   </div>
+                   
+                   <div>
+                     <label className="block text-sm font-medium text-gray-700 mb-2">Desenvolvedor</label>
+                     <select 
+                       name="desenvolvedor_id" 
+                       value={formData.desenvolvedor_id || ''}
+                       onChange={handleInputChange}
+                       className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors"
+                     >
+                       <option value="">Selecione um desenvolvedor</option>
+                       {desenvolvedores.map((desenvolvedor) => (
+                         <option key={desenvolvedor.id} value={desenvolvedor.id}>{desenvolvedor.nome}</option>
+                       ))}
+                     </select>
+                   </div>
+
+                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Demanda <span className="text-red-500">*</span>
+                      Andamento (%)
                     </label>
-                    <select 
-                      name="demanda_id" 
-                      value={formData.demanda_id || ''}
-                      onChange={handleInputChange}
-                      className={`w-full px-2 py-1.5 text-sm border ${
-                        formErrors.demanda_id ? 'border-red-500' : 'border-gray-300'
-                      } rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors`}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-2xl font-semibold text-blue-600">
+                          {formData.andamento || '0'}%
+                        </span>
+                        <span className="text-sm text-gray-500">
+                          {Number(formData.andamento) === 100 
+                            ? 'Concluído' 
+                            : Number(formData.andamento) > 0 
+                              ? 'Em andamento' 
+                              : 'Não iniciado'}
+                        </span>
+                      </div>
+                      
+                      <div className="relative h-1.5">
+                        <input 
+                          type="range" 
+                          name="andamento" 
+                          min="0"
+                          max="100"
+                          step="5"
+                          value={formData.andamento || '0'} 
+                          onChange={handleInputChange}
+                          className={`
+                            absolute w-full h-1.5 bg-gray-200 rounded-full appearance-none cursor-pointer
+                            [&::-webkit-slider-thumb]:appearance-none
+                            [&::-webkit-slider-thumb]:w-6
+                            [&::-webkit-slider-thumb]:h-6
+                            [&::-webkit-slider-thumb]:rounded-full
+                            [&::-webkit-slider-thumb]:bg-blue-600
+                            [&::-webkit-slider-thumb]:cursor-pointer
+                            [&::-webkit-slider-thumb]:transition-all
+                            [&::-webkit-slider-thumb]:duration-150
+                            [&::-webkit-slider-thumb]:hover:bg-blue-700 
+                            [&::-webkit-slider-thumb]:hover:scale-110
+                            
+                            [&::-moz-range-thumb]:w-4
+                            [&::-moz-range-thumb]:h-4
+                            [&::-moz-range-thumb]:rounded-full
+                            [&::-moz-range-thumb]:border-0
+                            [&::-moz-range-thumb]:bg-blue-600
+                            [&::-moz-range-thumb]:cursor-pointer
+                            [&::-moz-range-thumb]:transition-all
+                            [&::-moz-range-thumb]:duration-150
+                            [&::-moz-range-thumb]:hover:bg-blue-700 
+                            [&::-moz-range-thumb]:hover:scale-110
+                          `}
+                        />
+                        <div 
+                          className="absolute left-0 top-0 h-1.5 bg-blue-600 rounded-l-full transition-all duration-300"
+                          style={{ width: `${formData.andamento || 0}%` }}
+                        />
+                      </div>
+
+                      <div className="flex justify-between text-[10px] text-gray-400 px-1 py-2">
+                        <span>0%</span>
+                        <span>25%</span>
+                        <span>50%</span>
+                        <span>75%</span>
+                        <span>100%</span>
+                      </div>
+                    </div>
+                  </div>
+
+ 
+                   
+                   
+                   <div>
+                     <label className="block text-sm font-medium text-gray-700 mb-2">Categoria</label>
+                     <select 
+                       name="categoria_id" 
+                       value={formData.categoria_id || ''}
+                       onChange={handleInputChange}
+                       className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors"
+                     >
+                       <option value="">Selecione uma categoria</option>
+                       {categorias.map((categoria) => (
+                         <option key={categoria.id} value={categoria.id}>{categoria.nome}</option>
+                       ))}
+                     </select>
+                   </div>
+ 
+                   <div>
+                     <label className="block text-sm font-medium text-gray-700 mb-2">
+                       Demanda <span className="text-red-500">*</span>
+                     </label>
+                     <select 
+                       name="demanda_id" 
+                       value={formData.demanda_id || ''}
+                       onChange={handleInputChange}
+                       className={`w-full px-2 py-1.5 text-sm border ${
+                         formErrors.demanda_id ? 'border-red-500' : 'border-gray-300'
+                       } rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors`}
+                     >
+                       <option value="">Selecione uma demanda</option>
+                       {demanda.map((d) => (
+                         <option key={d.id} value={d.id}>{d.sigla || d.nome}</option>
+                       ))}
+                     </select>
+                     {formErrors.demanda_id && (
+                       <p className="mt-1 text-sm text-red-500">
+                         Este campo é obrigatório
+                       </p>
+                     )}
+                   </div>
+ 
+                   <div>
+                     <label className="block text-sm font-medium text-gray-700 mb-2">Responsável</label>
+                     <select 
+                       name="responsavel_id" 
+                       value={formData.responsavel_id || ''}
+                       onChange={handleInputChange}
+                       className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors"
+                     >
+                       <option value="">Selecione um responsável</option>
+                       {responsaveis.map((resp) => (
+                         <option key={resp.id} value={resp.id}>{resp.nome}</option>
+                       ))}
+                     </select>
+                   </div>
+ 
+                   <div>
+                     <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                     <select 
+                       name="status_id" 
+                       value={formData.status_id || ''}
+                       onChange={handleInputChange}
+                       className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors"
+                     >
+                       <option value="">Selecione um status</option>
+                       {statusList.map((status) => (
+                         <option key={status.id} value={status.id}>{status.nome}</option>
+                       ))}
+                     </select>
+                   </div>
+ 
+                   <div>
+                     <label className="block text-sm font-medium text-gray-700 mb-2">Data Status</label>
+                     <input 
+                       type="date" 
+                       name="data_status" 
+                       value={formData.data_status || ''} 
+                       onChange={handleInputChange}
+                       className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors" 
+                     />
+                   </div>
+                 </div>
+ 
+                 <div className="flex justify-end space-x-2 mt-6">
+                   <button 
+                     type="button"
+                     onClick={() => setIsModalOpen(false)}
+                     className="px-3 py-1.5 text-sm text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
+                   >
+                     Cancelar
+                   </button>
+                   <button 
+                     type="submit"
+                     className="px-3 py-1.5 text-sm text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors"
+                   >
+                     Salvar
+                   </button>
+                 </div>
+               </form>
+              ) : (
+                <div>
+                <form onSubmit={handleTimeSubmit} className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2 ">
+                        Nome do Time
+                      </label>
+                      <select 
+                       name="responsavel_id" 
+                       value={timeFormData.nome}
+                       onChange={(e) => setTimeFormData({ ...timeFormData, nome: e.target.value })}
+                       className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors"
+                     >
+                       <option value="">Selecione um responsável</option>
+                       {responsaveis.map((resp) => (
+                         <option key={resp.id} value={resp.id}>{resp.nome}</option>
+                       ))}
+                     </select>
+                     
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Função
+                      </label>
+                      <input
+                        type="text"
+                        value={timeFormData.funcao}
+                        onChange={(e) => setTimeFormData({ ...timeFormData, funcao: e.target.value })}
+                        className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-600"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2 text-gray-600">
+                        Data Início
+                      </label>
+                      <input
+                        type="date"
+                        value={timeFormData.data_inicio}
+                        onChange={(e) => setTimeFormData({ ...timeFormData, data_inicio: e.target.value })}
+                        className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-600"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Data Fim
+                      </label>
+                      <input
+                        type="date"
+                        value={timeFormData.data_fim}
+                        onChange={(e) => setTimeFormData({ ...timeFormData, data_fim: e.target.value })}
+                        className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-600 "
+                      />
+                    </div>
+                  </div>
+                  <div className="flex justify-end space-x-2">
+                    <button
+                      type="submit"
+                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
                     >
-                      <option value="">Selecione uma demanda</option>
-                      {demanda.map((demanda) => (
-                        <option key={demanda.id} value={demanda.id}>{demanda.sigla || demanda.nome}</option>
-                      ))}
-                    </select>
-                    {formErrors.demanda_id && (
-                      <p className="mt-1 text-sm text-red-500">
-                        Este campo é obrigatório
-                      </p>
-                    )}
+                      {selectedTimeId ? 'Atualizar Time' : 'Adicionar Time'}
+                    </button>
                   </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Responsável</label>
-                    <select 
-                      name="responsavel_id" 
-                      value={formData.responsavel_id || ''}
-                      onChange={handleInputChange}
-                      className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors"
-                    >
-                      <option value="">Selecione um responsável</option>
-                      {responsaveis.map((resp) => (
-                        <option key={resp.id} value={resp.id}>{resp.nome}</option>
-                      ))}
-                    </select>
+                </form>
+      
+                {/* Times List */}
+                <div className="mt-6">
+                    <h3 className="text-lg font-medium text-gray-900 mb-4">Histórico de Times</h3>
+                    <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2">
+                      {times
+                        .sort((a, b) => {
+                          const dateA = a.dataInicio ? new Date(a.dataInicio).getTime() : 0;
+                          const dateB = b.dataInicio ? new Date(b.dataInicio).getTime() : 0;
+                          return dateA - dateB;
+                        })
+                        .map((time) => (
+                          <div
+                            key={time.id}
+                            className="p-4 bg-white rounded-lg hover:bg-gray-50 transition-colors border border-gray-200 shadow-sm"
+                          >
+                            <div className="flex justify-between items-center">
+                              <div>
+                                <h4 className="font-medium text-gray-900 text-base">{time.nome}</h4>
+                                <p className="text-sm text-gray-600 mt-1 font-medium">{time.funcao}</p>
+                              </div>
+                              <div className="flex items-center bg-blue-50 px-3 py-1.5 rounded-full border border-blue-100 shadow-sm">
+                                <span className="inline-block w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
+                                <p className="text-sm font-medium text-gray-700">
+                                  {time?.dataInicio ? formatDate(time.dataInicio) : '-'} 
+                                  <span className="mx-2 text-gray-400">→</span> 
+                                  <span className={time?.dataFim ? 'text-gray-700' : 'text-green-600 font-semibold'}>
+                                    {time?.dataFim ? formatDate(time.dataFim) : 'Atual'}
+                                  </span>
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
                   </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
-                    <select 
-                      name="status_id" 
-                      value={formData.status_id || ''}
-                      onChange={handleInputChange}
-                      className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors"
-                    >
-                      <option value="">Selecione um status</option>
-                      {statusList.map((status) => (
-                        <option key={status.id} value={status.id}>{status.nome}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Data Status</label>
-                    <input 
-                      type="date" 
-                      name="data_status" 
-                      value={formData.data_status || ''} 
-                      onChange={handleInputChange}
-                      className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors" 
-                    />
-                  </div>
-                </div>
-
-                <div className="flex justify-end space-x-2 mt-6">
-                  <button 
-                    type="button"
-                    onClick={() => setIsModalOpen(false)}
-                    className="px-3 py-1.5 text-sm text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
-                  >
-                    Cancelar
-                  </button>
-                  <button 
-                    type="submit"
-                    className="px-3 py-1.5 text-sm text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors"
-                  >
-                    Salvar
-                  </button>
-                </div>
-              </form>
+              </div>
+              )}
+             
             </div>
           </div>
         )}
@@ -1396,6 +1785,29 @@ export default function Solucao() {
                           </span>
                         </div>
                         <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
+                            <span className="text-sm font-medium text-gray-600">Repositório:</span>
+                            {selectedDemandDetails.repositorio ? (
+                              <Link
+                                href={selectedDemandDetails.repositorio}
+                                target="_blank"
+                                className="text-sm text-gray-800 font-medium group-hover:text-blue-600 flex items-center gap-1"
+                              >
+                                <span>Acessar Repositório</span>
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                </svg>
+                              </Link>
+                            ) : (
+                              <span className="text-sm text-gray-800 font-medium">-</span>
+                            )}
+                          </div>
+                         <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
+                          <span className="text-sm font-medium text-gray-600">Tipo:</span>
+                          <span className="text-sm text-gray-800 font-medium">
+                            {tipos.find(tipo => tipo.id === selectedDemandDetails.tipo?.id)?.nome || '-'}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
                           <span className="text-sm font-medium text-gray-600">Linguagem:</span>
                           <span className="text-sm text-gray-800 font-medium">
                             {renderDetalhesLinguagens(selectedDemandDetails)}
@@ -1414,7 +1826,7 @@ export default function Solucao() {
                     </div>
 
                     {/* Responsabilidades */}
-                    <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100 w-full h-[300px]">
+                    <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100 w-full h-[300px] ">
                       <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
                         <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
@@ -1528,14 +1940,14 @@ export default function Solucao() {
                                               </span>
                                             </p>
                                             <p className="flex items-center justify-between group hover:bg-white hover:shadow-sm p-2 rounded-md transition-all">
-                                              <span className="font-medium text-gray-600">Linguagem:</span>
-                                              <span className="text-gray-900 font-medium group-hover:text-blue-600">
-                                                {renderDetalhesLinguagens({
-                                                  ...evento.solucao,
-                                                  timeId: evento.solucao.timesId
-                                                })}
-                                              </span>
-                                            </p>
+                                                <span className="font-medium text-gray-600">Linguagem:</span>
+                                                <span className="text-gray-900 font-medium group-hover:text-blue-600">
+                                                  {renderDetalhesLinguagens({
+                                                    ...evento.solucao,
+                                                    timeId: evento.solucao.timesId
+                                                  })}
+                                                </span>
+                                              </p>
                                             <p className="flex items-center justify-between group hover:bg-white hover:shadow-sm p-2 rounded-md transition-all">
                                               <span className="font-medium text-gray-600">Status:</span>
                                               <span className="text-gray-900 font-medium group-hover:text-blue-600">{evento.solucao.statusId || '-'}</span>

@@ -116,22 +116,7 @@ export async function getLinguagens() {
 }
 
 
-export async function getTimes() {
-    try {
-        if (typeof window === 'undefined') {
-            return null;
-        }
-        const storedId = localStorage.getItem('selectedProprietarioId');
-        if (!storedId) {
-            throw new Error("ProprietarioId not found in localStorage");
-        }
-        const response = await axios.get(`${urlSelect}/proprietarios/${storedId}/times`);
-        return response.data;
-    } catch (error) {
-        console.error("Error fetching languages:", error);
-        return null;
-    }
-}
+
 
 
 export async function getDesenvolvedores() {
@@ -208,6 +193,55 @@ export async function getHistoricoSolucoes() {
         return response.data;
     } catch (error) {
         console.error("Error fetching solution history:", error);
+        return null;
+    }
+}
+
+
+//times
+export async function getTimes() {
+    try {
+        if (typeof window === 'undefined') {
+            return null;
+        }
+        const storedId = localStorage.getItem('selectedProprietarioId');
+        if (!storedId) {
+            throw new Error("ProprietarioId not found in localStorage");
+        }
+        const response = await axios.get(`${urlSelect}/proprietarios/${storedId}/times`);
+        return response.data;
+    } catch (error) {
+        console.error("Error fetching times:", error);
+        return null;
+    }
+}
+
+export async function createTime(time: any) {
+    try {
+        const response = await axios.post(`${urlSelect}/times`, time);
+        return response.data;
+    } catch (error) {
+        console.error("Error creating time:", error);
+        return null;
+    }
+}
+
+export async function updateTime(id: string, time: any) {
+    try {
+        const response = await axios.put(`${urlSelect}/times/${id}`, time);
+        return response.data;
+    } catch (error) {
+        console.error("Error updating time:", error);
+        return null;
+    }
+}
+
+export async function deleteTime(id: string) {
+    try {
+        const response = await axios.delete(`${urlSelect}/times/${id}`);
+        return response.data;
+    } catch (error) {
+        console.error("Error deleting time:", error);
         return null;
     }
 }
