@@ -203,26 +203,45 @@ export default function Solucao() {
 
   // Modifique a função que busca as soluções para atualizar o totalPages
   const fetchSolucoes = async (page = currentPage) => {
-    try {
-      const solucoesData = await getSolucoes(page, itemsPerPage);
-      const solucoesArray = solucoesData?.data || [];
-      setSolucoes(solucoesArray);
-      setFilteredSolucoes(solucoesArray);
-      
-      // Atualizar o total de páginas
-      if (solucoesData?.meta) {
-        const total = solucoesData.meta.total || 0;
-        const calculatedPages = Math.ceil(total / itemsPerPage);
-        setTotalPages(calculatedPages);
-        console.log('Total items:', total, 'Total pages:', calculatedPages);
+  try {
+    const solucoesData = await getSolucoes(page, itemsPerPage);
+    const solucoesArray = solucoesData?.data || [];
+
+    // Preservar a ordem atual das soluções existentes
+    const currentOrder = new Map(solucoes.map((s, index) => [String(s.id), index]));
+    
+    const solucoesOrdenadas = solucoesArray.sort((a: SolucaoType, b: SolucaoType) => {
+      const indexA = currentOrder.get(String(a.id));
+      const indexB = currentOrder.get(String(b.id));
+
+      // Se ambos existem na ordem atual, manter a ordem relativa
+      if (indexA !== undefined && indexB !== undefined) {
+        return indexA - indexB;
       }
-      
-      return solucoesData;
-    } catch (error) {
-      console.error('Erro ao buscar soluções:', error);
-      return null;
+      // Se apenas um existe, colocar o novo no final
+      if (indexA !== undefined) return -1;
+      if (indexB !== undefined) return 1;
+      // Se nenhum existe, manter a ordem como veio da API
+      return 0;
+    });
+
+    setSolucoes(solucoesOrdenadas);
+    setFilteredSolucoes(solucoesOrdenadas);
+    
+    // Atualizar o total de páginas
+    if (solucoesData?.meta) {
+      const total = solucoesData.meta.total || 0;
+      const calculatedPages = Math.ceil(total / itemsPerPage);
+      setTotalPages(calculatedPages);
+      console.log('Total items:', total, 'Total pages:', calculatedPages);
     }
-  };
+    
+    return solucoesData;
+  } catch (error) {
+    console.error('Erro ao buscar soluções:', error);
+    return null;
+  }
+};
 
   // Efeito para carregar as soluções paginadas e outros dados
   useEffect(() => {
@@ -1093,11 +1112,13 @@ export default function Solucao() {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Demanda</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Categoria</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Responsável</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Data Status</th>
+                 
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Repositório</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Andamento</th>
+                  
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Criticidade</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Andamento</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Data Status</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Ações</th>
                 </tr>
               </thead>
@@ -1136,23 +1157,11 @@ export default function Solucao() {
                       {solucao.responsavel?.nome || '-'}
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-600">
-                      {solucao.status?.propriedade ? (
-                        <span
-                          className={`rounded-md px-2 py-1 break-words max-w-[150px] inline-block ${determinarCorTexto(solucao.status.propriedade)}`}
-                          style={{ backgroundColor: solucao.status.propriedade }}
-                        >
-                          {solucao.status.nome || '-'}
-                        </span>
-                      ) : (
-                        <span className="text-gray-500">-</span>
-                      )}
-                    </td>
-                   
-                    <td className="px-6 py-4 text-sm text-gray-600 whitespace-normal">
-                      {formatDate(solucao.data_status || solucao.dataStatus)}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-600">
                       {formatRepositoryLink(solucao.repositorio)}
+                    </td>
+                  
+                      <td className="px-6 py-4 text-sm text-gray-600">
+                      {solucao.criticidade || '-'}
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-600">
                         <div className="flex flex-col space-y-1">
@@ -1175,18 +1184,25 @@ export default function Solucao() {
                           <ProgressBar progress={Number(solucao.andamento) || 0} />
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-600">
-                      {solucao.criticidade || '-'}
+                    <td className="px-6 py-4 text-sm text-gray-600 whitespace-normal">
+                      {formatDate(solucao.data_status || solucao.dataStatus)}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-600">
+                      {solucao.status?.propriedade ? (
+                        <span
+                          className={`rounded-md px-2 py-1 break-words max-w-[150px] inline-block ${determinarCorTexto(solucao.status.propriedade)}`}
+                          style={{ backgroundColor: solucao.status.propriedade }}
+                        >
+                          {solucao.status.nome || '-'}
+                        </span>
+                      ) : (
+                        <span className="text-gray-500">-</span>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
                       <div className="flex justify-end space-x-2">
                       {formatRepositoryLink(solucao.link)} {/* <td> separado */}
-                        <button
-                          onClick={() => handleInfoClick(solucao)}
-                          className="text-blue-500 hover:text-blue-700 rounded-full hover:bg-blue-50 transition-colors"
-                        >
-                          <Info className="w-5 h-5" />
-                        </button>
+                        
                         <button
                           onClick={() => handleEditClick(solucao)}
                           className="text-green-600 hover:text-green-800 rounded-full hover:bg-green-50 transition-colors"
@@ -1198,6 +1214,12 @@ export default function Solucao() {
                           className="text-red-400 hover:text-red-700 rounded-full hover:bg-red-50 transition-colors"
                         >
                           <Trash2 className="w-5 h-5" />
+                        </button>
+                        <button
+                          onClick={() => handleInfoClick(solucao)}
+                          className="text-blue-500 hover:text-blue-700 rounded-full hover:bg-blue-50 transition-colors"
+                        >
+                          <Info className="w-5 h-5" />
                         </button>
                       </div>
                     </td>

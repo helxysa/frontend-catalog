@@ -11,14 +11,14 @@ import {
   deleteDemanda,
   createDemanda,
   updateDemanda,
-  getHistoricoDemandas
+  getHistoricoDemandas,
+  getSolucoesByDemandaId,
 } from "../actions/actions";
 import { Plus, Edit2, Trash2, X, Info, ExternalLink } from 'lucide-react';
 import { DemandaType, ResponsavelType, AlinhamentoType, PrioridadeType, StatusType, ProprietarioType, HistoricoType, DemandaFormData } from '../types/types';
 import DeleteConfirmationModal from './ModalConfirmacao/DeleteConfirmationModal';
 import { useSidebar } from '../../../../../componentes/Sidebar/SidebarContext';
 import Link from 'next/link';
-
 
 export default function Demanda() {
   const [demandas, setDemandas] = useState<DemandaType[]>([]);
@@ -41,6 +41,8 @@ export default function Demanda() {
       data_status: ''
     };
   });
+  const [solucoes, setSolucoes] = useState<{ [key: string]: any[] }>({});
+
   const [proprietarios, setProprietarios] = useState<ProprietarioType[]>([]);
   const [alinhamentos, setAlinhamentos] = useState<AlinhamentoType[]>([]);
   const [prioridades, setPrioridades] = useState<PrioridadeType[]>([]);
@@ -100,6 +102,23 @@ export default function Demanda() {
     }
     return formattedDate;
   };
+
+
+  const fetchSolucoes = async (demandaId: string) => {
+    const solucoesData = await getSolucoesByDemandaId(demandaId);
+    setSolucoes(prev => ({ ...prev, [demandaId]: solucoesData }));
+  };
+
+
+  useEffect(() => {
+    if (filteredDemandas) {
+      filteredDemandas.forEach(demanda => {
+        fetchSolucoes(demanda.id);
+      });
+    }
+  }, [filteredDemandas]);
+  
+
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -674,6 +693,7 @@ export default function Demanda() {
                 <th className="px-3 py-3 text-left text-sm font-medium text-gray-500 text-xs uppercase ">Demandante</th>
                 <th className="px-3 py-3 text-left text-sm font-medium text-gray-500 text-xs uppercase ">Alinhamento</th>
                 <th className="px-3 py-3 text-left text-sm font-medium text-gray-500 text-xs uppercase ">Prioridade</th>
+                <th className="px-3 py-3 text-left text-sm font-medium text-gray-500 text-xs uppercase ">Soluções</th>
                 <th className="px-3 py-3 text-left text-sm font-medium text-gray-500 text-xs uppercase ">Responsável</th>
                 <th className="px-3 py-3 text-left text-sm font-medium text-gray-500 text-xs uppercase ">Data Status</th>
                 <th className="px-3 py-3 text-left text-sm font-medium text-gray-500 text-xs uppercase ">Status</th>
@@ -704,6 +724,19 @@ export default function Demanda() {
                   <td className="px-6 py-4 text-sm text-gray-600 break-words max-w-[150px]">
                     {demanda.prioridade?.nome || '-'}
                   </td>
+                  <td className="px-6 py-4 text-sm text-gray-600 break-words max-w-[150px] relative group">
+                        <span className="cursor-pointer hover:text-blue-500">
+                          {solucoes[demanda.id]?.length || 0}
+                        </span>
+                        <div className="absolute hidden group-hover:block bg-white shadow-lg p-4 rounded-lg z-10">
+                          {solucoes[demanda.id]?.map(solucao => (
+                            <div key={solucao.id} className="mb-2">
+                              <p className="font-medium">{solucao.nome}</p>
+                              <p className="text-sm text-gray-500">{solucao.descricao}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </td>
                   <td className="px-6 py-4 text-sm text-gray-600 break-words max-w-[150px]">
                     {demanda.responsavel?.nome || '-'}
                   </td>

@@ -101,6 +101,16 @@ export async function getPrioridades() {
   }
 }
 
+export async function getSolucoesByDemandaId(demandaId: string) {
+  try {
+    const response = await axios.get(`${baseUrl}/solucoes?demanda_id=${demandaId}`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching solutions:", error);
+    return [];
+  }
+}
+
 
 export async function getResponsaveis() {
   try {
