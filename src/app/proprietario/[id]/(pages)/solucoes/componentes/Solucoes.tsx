@@ -11,6 +11,7 @@ export interface SolucaoFormData {
   repositorio: string;
   link: string;
   andamento: string;
+  criticidade: string;
   tipo_id: number;
   linguagem_id: number | string | null;
   desenvolvedor_id: number;
@@ -41,7 +42,7 @@ import {
   updateTime,
   deleteTime
 } from "../actions/actions";
-import { Plus, Edit2, Trash2, X, Info, ChevronRight, ExternalLink } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Info, ChevronRight, ExternalLink, ChevronDown } from 'lucide-react';
 import Link from 'next/link';
 import { SolucaoType, BaseType, HistoricoType, TimeFormData } from '../types/types';
 import DeleteConfirmationModal from './ModalConfirmacao/DeleteConfirmationModal';
@@ -78,6 +79,7 @@ export default function Solucao() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const itemsPerPage = 6;
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [filters, setFilters] = useState({
     demanda_id: '',
     tipo_id: '',
@@ -122,6 +124,8 @@ export default function Solucao() {
   
     return luminancia > 0.5 ? 'text-gray-800' : 'text-white';
   };
+
+  
 
   // Função para carregar todas as demandas do select
   const carregarDemandasParaSelect = async () => {
@@ -283,6 +287,7 @@ export default function Solucao() {
         repositorio: formData.repositorio || '-',
         link: formData.link || '', // Garanta que o link está sendo enviado
         andamento: formData.andamento || '', // Garanta que o andamento está sendo enviado
+        criticidade: formData.criticidade || '',
         tipo_id: formData.tipo_id ? Number(formData.tipo_id) : null,
         linguagem_id: linguagemValue,
         desenvolvedor_id: formData.desenvolvedor_id ? Number(formData.desenvolvedor_id) : null,
@@ -511,6 +516,7 @@ export default function Solucao() {
                 return demanda.find((d: any) => d.id === Number(value))?.nome || 'Desconhecido';
             }
         }
+        
     };
 
     // Procura por diferentes padrões possíveis
@@ -574,13 +580,14 @@ export default function Solucao() {
       repositorio: solucao.repositorio,
       link: solucao.link,
       andamento: solucao.andamento,
+      criticidade: solucao.criticidade,
       tipo_id: solucao.tipo?.id,
       linguagem_id: solucao.linguagemId,
       desenvolvedor_id: solucao.desenvolvedor?.id,
       categoria_id: solucao.categoria?.id,
       responsavel_id: solucao.responsavel?.id,
       status_id: solucao.status?.id,
-      demanda_id: solucao.demandaId, // Corrigido: usar demandaId diretamente
+      demanda_id: solucao.demandaId, 
       data_status: solucao.data_status || solucao.dataStatus
     } as SolucaoFormData;
 
@@ -852,7 +859,7 @@ export default function Solucao() {
 
   // Add this helper function to format repository links
   const formatRepositoryLink = (repo: string) => {
-    if (!repo || repo === '-') return '-';
+    if (!repo || repo === '') return '';
     if (repo.includes('github.com')) {
       return (
         <a 
@@ -1029,6 +1036,8 @@ export default function Solucao() {
                 <option key={s.id} value={s.id}>{s.nome}</option>
               ))}
             </select>
+
+            
           </div>
           
           <div className="mt-3 flex items-center justify-between">
@@ -1088,6 +1097,7 @@ export default function Solucao() {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Data Status</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Repositório</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Andamento</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Criticidade</th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Ações</th>
                 </tr>
               </thead>
@@ -1146,7 +1156,7 @@ export default function Solucao() {
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-600">
                         <div className="flex flex-col space-y-1">
-                          <div className="flex justify-between items-center">
+                          <div className="flex justify-between items-center gap-2">
                             <span className="font-medium">{solucao.andamento || '0'}%</span>
                             <span className={`text-xs ${
                               Number(solucao.andamento) === 100 
@@ -1165,6 +1175,9 @@ export default function Solucao() {
                           <ProgressBar progress={Number(solucao.andamento) || 0} />
                         </div>
                       </td>
+                      <td className="px-6 py-4 text-sm text-gray-600">
+                      {solucao.criticidade || '-'}
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
                       <div className="flex justify-end space-x-2">
                       {formatRepositoryLink(solucao.link)} {/* <td> separado */}
@@ -1197,7 +1210,7 @@ export default function Solucao() {
         <Pagination />      
         {isModalOpen && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] overflow-y-auto">
-            <div className="relative bg-white rounded-lg shadow-2xl p-8 w-full max-w-2xl m-4">
+            <div className="relative bg-white rounded-lg shadow-2xl p-8 w-full max-w-5xl m-4">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-2xl font-bold text-gray-800">
                   {isEditing ? 'Editar Solução' : 'Nova Solução'}
@@ -1240,7 +1253,7 @@ export default function Solucao() {
                   </div>
               {activeFormTab == 'ficha-tecnica' ? (
                  <form onSubmit={handleSubmit} className="space-y-4">
-                 <div className="grid grid-cols-2 gap-4">
+                 <div className="grid grid-cols-3 gap-4">
                    
                    <div>
                      <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -1272,8 +1285,33 @@ export default function Solucao() {
                        className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors" 
                      />
                    </div>
+
+
+                   <div>
+                     <label className="block text-sm font-medium text-gray-700 mb-2">
+                       Demanda <span className="text-red-500">*</span>
+                     </label>
+                     <select 
+                       name="demanda_id" 
+                       value={formData.demanda_id || ''}
+                       onChange={handleInputChange}
+                       className={`w-full px-2 py-1.5 text-sm border ${
+                         formErrors.demanda_id ? 'border-red-500' : 'border-gray-300'
+                       } rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors`}
+                     >
+                       <option value="">Selecione uma demanda</option>
+                       {demanda.map((d) => (
+                         <option key={d.id} value={d.id}>{d.sigla || d.nome}</option>
+                       ))}
+                     </select>
+                     {formErrors.demanda_id && (
+                       <p className="mt-1 text-sm text-red-500">
+                         Este campo é obrigatório
+                       </p>
+                     )}
+                   </div>
  
-                   <div className="col-span-2">
+                   <div className="col-span-3">
                      <label className="block text-sm font-medium text-gray-700 mb-2">Descrição</label>
                      <textarea 
                        name="descricao" 
@@ -1334,59 +1372,74 @@ export default function Solucao() {
                        ))}
                      </select>
                    </div>
- 
+              
                    <div>
-                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                       Linguagens
+                     <label className="block text-sm font-medium text-gray-700 mb-2 ">
+                       Tecnologias
                      </label>
-                     <div className="space-y-2">
-                       <div className="flex flex-wrap gap-2 min-h-[2.5rem] p-2 bg-gray-50 border border-gray-200 rounded-md">
-                         {selectedLanguages.map((langId) => {
-                           const language = linguagens.find(l => l.id === langId);
-                           return (
-                             <div
-                               key={langId}
-                               className="flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-sm"
+                     <div 
+                       onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                       className="relative flex flex-wrap gap-2 p-2 bg-white border border-gray-300 rounded-md min-h-[2.5rem] cursor-pointer hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors"
+                     >
+                       {selectedLanguages.map((langId) => {
+                         const language = linguagens.find(l => l.id === langId);
+                         return (
+                           <div
+                             key={langId}
+                             className="flex items-center gap-1 px-2 py-0.5 bg-blue-100 text-blue-700  text-sm"
+                             onClick={(e) => e.stopPropagation()} // Previne que o click no item feche o dropdown
+                           >
+                             <span>{language?.nome}</span>
+                             <button
+                               type="button"
+                               onClick={(e) => {
+                                 e.stopPropagation(); // Previne que o click no X feche o dropdown
+                                 removeLanguage(langId);
+                               }}
+                               className="w-4 h-4 flex items-center justify-center rounded hover:bg-blue-200 transition-colors"
                              >
-                               <span>{language?.nome}</span>
-                               <button
-                                 type="button"
-                                 onClick={() => removeLanguage(langId)}
-                                 className="w-4 h-4 flex items-center justify-center rounded-full hover:bg-blue-200 transition-colors"
-                               >
-                                 <X className="w-3 h-3" />
-                               </button>
-                             </div>
-                           );
-                         })}
-                       </div>
+                               <X className="w-3 h-3" />
+                             </button>
+                           </div>
+                         );
+                       })}
                        
-                       <div className="relative">
-                         <select
-                           onChange={handleLanguageChange}
-                           value=""
-                           className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md text-gray-700 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors appearance-none"
+                       <div className="flex-1 flex items-center justify-end ">
+                         <svg 
+                           viewBox="0 0 24 24" 
+                           className="w-4 h-4 stroke-current text-[#000000]"
+                           fill="none"
+                           strokeWidth="4"
                          >
-                           <option value="">Adicionar linguagem...</option>
-                           {linguagens
-                             .filter(lang => !selectedLanguages.includes(lang.id))
-                             .map((lang) => (
-                               <option key={lang.id} value={lang.id}>
-                                 {lang.nome}
-                               </option>
-                             ))}
-                         </select>
-                         <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
-                           <ChevronRight className="w-4 h-4 text-gray-400" />
-                         </div>
+                           <polyline points="6 9 12 15 18 9" />
+                         </svg>
+                         
+                         {isDropdownOpen && (
+                           <div 
+                             className="absolute z-10 top-full right-0 mt-1 w-48 bg-white border border-gray-300 rounded shadow-sm"
+                             onClick={(e) => e.stopPropagation()}
+                           >
+                             {linguagens
+                               .filter(lang => !selectedLanguages.includes(lang.id))
+                               .map((lang) => (
+                                 <button
+                                   key={lang.id}
+                                   type="button"
+                                   onClick={() => {
+                                     handleLanguageChange({ target: { value: lang.id.toString() }} as any);
+                                     setIsDropdownOpen(false);
+                                   }}
+                                   className="w-full text-left px-2 py-1 text-sm hover:bg-[#0056b3] hover:text-white text-[#333333]"
+                                 >
+                                   {lang.nome}
+                                 </button>
+                               ))}
+                           </div>
+                         )}
                        </div>
-                       
-                       <p className="text-xs text-gray-500 mt-1">
-                         Selecione uma ou mais linguagens para esta solução
-                       </p>
                      </div>
                    </div>
-                   
+
                    <div>
                      <label className="block text-sm font-medium text-gray-700 mb-2">Desenvolvedor</label>
                      <select 
@@ -1402,6 +1455,79 @@ export default function Solucao() {
                      </select>
                    </div>
 
+                   <div>
+                     <label className="block text-sm font-medium text-gray-700 mb-2">Criticidade</label>
+                     <select 
+                       name="criticidade" 
+                       value={formData.criticidade || ''}
+                       onChange={handleInputChange}
+                       className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors"
+                     >
+                       <option value="">Selecione qual a criticidade</option>
+                       <option value="Alta">Alta</option>
+                       <option value="Média">Média</option>
+                       <option value="Baixa">Baixa</option>
+                     </select>
+                   </div>
+ 
+
+
+
+                  <div>
+                     <label className="block text-sm font-medium text-gray-700 mb-2">Responsável</label>
+                     <select 
+                       name="responsavel_id" 
+                       value={formData.responsavel_id || ''}
+                       onChange={handleInputChange}
+                       className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors"
+                     >
+                       <option value="">Selecione um responsável</option>
+                       {responsaveis.map((resp) => (
+                         <option key={resp.id} value={resp.id}>{resp.nome}</option>
+                       ))}
+                     </select>
+                   </div>
+
+ 
+                   
+                   
+                   <div>
+                     <label className="block text-sm font-medium text-gray-700 mb-2">Categoria</label>
+                     <select 
+                       name="categoria_id" 
+                       value={formData.categoria_id || ''}
+                       onChange={handleInputChange}
+                       className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors"
+                     >
+                       <option value="">Selecione uma categoria</option>
+                       {categorias.map((categoria) => (
+                         <option key={categoria.id} value={categoria.id}>{categoria.nome}</option>
+                       ))}
+                     </select>
+                   </div>
+ 
+                  
+
+
+                   
+ 
+                   <div>
+                     <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                     <select 
+                       name="status_id" 
+                       value={formData.status_id || ''}
+                       onChange={handleInputChange}
+                       className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors"
+                     >
+                       <option value="">Selecione um status</option>
+                       {statusList.map((status) => (
+                         <option key={status.id} value={status.id}>{status.nome}</option>
+                       ))}
+                     </select>
+                   </div>
+
+                   
+                       
                    <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Andamento (%)
@@ -1469,78 +1595,7 @@ export default function Solucao() {
                       </div>
                     </div>
                   </div>
-
- 
-                   
-                   
-                   <div>
-                     <label className="block text-sm font-medium text-gray-700 mb-2">Categoria</label>
-                     <select 
-                       name="categoria_id" 
-                       value={formData.categoria_id || ''}
-                       onChange={handleInputChange}
-                       className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors"
-                     >
-                       <option value="">Selecione uma categoria</option>
-                       {categorias.map((categoria) => (
-                         <option key={categoria.id} value={categoria.id}>{categoria.nome}</option>
-                       ))}
-                     </select>
-                   </div>
- 
-                   <div>
-                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                       Demanda <span className="text-red-500">*</span>
-                     </label>
-                     <select 
-                       name="demanda_id" 
-                       value={formData.demanda_id || ''}
-                       onChange={handleInputChange}
-                       className={`w-full px-2 py-1.5 text-sm border ${
-                         formErrors.demanda_id ? 'border-red-500' : 'border-gray-300'
-                       } rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors`}
-                     >
-                       <option value="">Selecione uma demanda</option>
-                       {demanda.map((d) => (
-                         <option key={d.id} value={d.id}>{d.sigla || d.nome}</option>
-                       ))}
-                     </select>
-                     {formErrors.demanda_id && (
-                       <p className="mt-1 text-sm text-red-500">
-                         Este campo é obrigatório
-                       </p>
-                     )}
-                   </div>
- 
-                   <div>
-                     <label className="block text-sm font-medium text-gray-700 mb-2">Responsável</label>
-                     <select 
-                       name="responsavel_id" 
-                       value={formData.responsavel_id || ''}
-                       onChange={handleInputChange}
-                       className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors"
-                     >
-                       <option value="">Selecione um responsável</option>
-                       {responsaveis.map((resp) => (
-                         <option key={resp.id} value={resp.id}>{resp.nome}</option>
-                       ))}
-                     </select>
-                   </div>
- 
-                   <div>
-                     <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
-                     <select 
-                       name="status_id" 
-                       value={formData.status_id || ''}
-                       onChange={handleInputChange}
-                       className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors"
-                     >
-                       <option value="">Selecione um status</option>
-                       {statusList.map((status) => (
-                         <option key={status.id} value={status.id}>{status.nome}</option>
-                       ))}
-                     </select>
-                   </div>
+                 
  
                    <div>
                      <label className="block text-sm font-medium text-gray-700 mb-2">Data Status</label>
@@ -1637,22 +1692,28 @@ export default function Solucao() {
       
                 {/* Times List */}
                 <div className="mt-6">
-                    <h3 className="text-lg font-medium text-gray-900 mb-4">Histórico de Times</h3>
-                    <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2">
-                      {times
-                        .sort((a, b) => {
-                          const dateA = a.dataInicio ? new Date(a.dataInicio).getTime() : 0;
-                          const dateB = b.dataInicio ? new Date(b.dataInicio).getTime() : 0;
-                          return dateA - dateB;
-                        })
-                        .map((time) => (
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">Histórico de Times</h3>
+                  <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2">
+                    {times
+                      .sort((a, b) => {
+                        const dateA = a.dataInicio ? new Date(a.dataInicio).getTime() : 0;
+                        const dateB = b.dataInicio ? new Date(b.dataInicio).getTime() : 0;
+                        return dateA - dateB;
+                      })
+                      .map((time) => {
+                        // Encontrar o responsável correspondente
+                        const responsavel = responsaveis.find(r => r.id === Number(time.nome));
+                        
+                        return (
                           <div
                             key={time.id}
                             className="p-4 bg-white rounded-lg hover:bg-gray-50 transition-colors border border-gray-200 shadow-sm"
                           >
                             <div className="flex justify-between items-center">
                               <div>
-                                <h4 className="font-medium text-gray-900 text-base">{time.nome}</h4>
+                                <h4 className="font-medium text-gray-900 text-base">
+                                  {responsavel?.nome || 'Responsável não encontrado'}
+                                </h4>
                                 <p className="text-sm text-gray-600 mt-1 font-medium">{time.funcao}</p>
                               </div>
                               <div className="flex items-center bg-blue-50 px-3 py-1.5 rounded-full border border-blue-100 shadow-sm">
@@ -1667,9 +1728,10 @@ export default function Solucao() {
                               </div>
                             </div>
                           </div>
-                        ))}
-                    </div>
+                        );
+                      })}
                   </div>
+              </div>
               </div>
               )}
              

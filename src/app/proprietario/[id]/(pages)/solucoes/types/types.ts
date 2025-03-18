@@ -8,6 +8,7 @@ export interface SolucaoType {
     tipoId: number;
     link: string;
     andamento:string;
+    criticidade: string;
     linguagemId: string | number | null;
     timeId: string | number | null;
     desenvolvedorId: number;
@@ -49,6 +50,7 @@ export interface SolucaoFormData {
   repositorio: string;
   link: string;
   andamento: string;
+  criticidade: string;
   tipo_id: number | null;
   linguagem_id: string | number | null;
   desenvolvedor_id: number | null;
@@ -75,6 +77,7 @@ export interface HistoricoType {
     descricao: string;
     link: string;
     andamento:string;
+    criticidade: string;
     tipoId: number;
     timesId: number;
     linguagemId: number;

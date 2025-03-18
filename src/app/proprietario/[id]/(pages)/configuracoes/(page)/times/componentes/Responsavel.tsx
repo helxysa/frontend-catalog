@@ -155,7 +155,7 @@ export default function Responsavel({ proprietarioId }: { proprietarioId?: strin
         {/* Header */}
         <div className="flex justify-between items-center mb-6 mt-[70px] lg:mt-0">
         <h1 className="text-2xl sm:text-2xl font-bold text-gray-800">
-            Adicione um responsável
+            Adicione um membro
           </h1>
           <div className="flex gap-2">
             <button 
@@ -224,7 +224,7 @@ export default function Responsavel({ proprietarioId }: { proprietarioId?: strin
             <div className="bg-white rounded-lg shadow-2xl p-6 w-full max-w-md">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-xl sm:text-2xl font-bold text-gray-800">
-                  {isEditMode ? 'Editar Responsável' : 'Novo Responsável'}
+                  {isEditMode ? 'Editar Membro' : 'Novo membro'}
                 </h2>
                 <button 
                   onClick={() => setIsModalOpen(false)}
@@ -250,7 +250,7 @@ export default function Responsavel({ proprietarioId }: { proprietarioId?: strin
                   <label className="block text-sm font-medium text-gray-700 mb-2">Nome</label>
                   <input 
                     type="text" 
-                    placeholder="Digite o nome do responsável" 
+                    placeholder="Digite o nome do membro" 
                     value={currentResponsavel.nome || ''} 
                     onChange={(e) => setCurrentResponsavel({ ...currentResponsavel, nome: e.target.value })}
                     className="w-full px-3 py-2 sm:px-4 sm:py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800 placeholder-gray-500 text-sm sm:text-base"
@@ -260,7 +260,7 @@ export default function Responsavel({ proprietarioId }: { proprietarioId?: strin
                   <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
                   <input 
                     type="email"
-                    placeholder="Digite o email do responsável" 
+                    placeholder="Digite o email do membro" 
                     value={currentResponsavel.email || ''} 
                     onChange={(e) => setCurrentResponsavel({ ...currentResponsavel, email: e.target.value })}
                     className="w-full px-3 py-2 sm:px-4 sm:py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800 placeholder-gray-500 text-sm sm:text-base"
