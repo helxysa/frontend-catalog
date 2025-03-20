@@ -14,6 +14,10 @@
   }
 }
 
+/* .vsc-initialized {
+  all: unset !important;
+} */
+
 body {
   color: var(--foreground);
   background: var(--background);

@@ -725,18 +725,23 @@ export default function Demanda() {
                     {demanda.prioridade?.nome || '-'}
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-600 break-words max-w-[150px] relative group">
-                        <span className="cursor-pointer hover:text-blue-500">
-                          {solucoes[demanda.id]?.length || 0}
-                        </span>
-                        <div className="absolute hidden group-hover:block bg-white shadow-lg p-4 rounded-lg z-10">
+                    <span className="cursor-pointer hover:text-blue-500">
+                      {solucoes[demanda.id]?.length || 0}
+                    </span>
+                    {solucoes[demanda.id]?.length > 0 && (
+                      <div className="absolute left-full top-0 ml-2 z-20 hidden group-hover:block bg-white shadow-xl rounded-lg p-4 w-80 border border-gray-200">
+                        <div className="max-h-80 overflow-y-auto">
+                          <h4 className="font-medium text-gray-800 mb-2 pb-2 border-b border-gray-200">Soluções</h4>
                           {solucoes[demanda.id]?.map(solucao => (
-                            <div key={solucao.id} className="mb-2">
-                              <p className="font-medium">{solucao.nome}</p>
-                              <p className="text-sm text-gray-500">{solucao.descricao}</p>
+                            <div key={solucao.id} className="mb-3 pb-3 border-b border-gray-100 last:border-0">
+                              <p className="font-medium text-gray-700">{solucao.nome}</p>
+                              <p className="text-sm text-gray-500 mt-1">{solucao.descricao}</p>
                             </div>
                           ))}
                         </div>
-                      </td>
+                      </div>
+                    )}
+                  </td>
                   <td className="px-6 py-4 text-sm text-gray-600 break-words max-w-[150px]">
                     {demanda.responsavel?.nome || '-'}
                   </td>

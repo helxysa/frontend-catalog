@@ -191,57 +191,47 @@ export default function Solucao() {
     }
   };
 
-  const handleTimeDelete = async (id: string) => {
-    try {
-      await deleteTime(id);
-      const updatedTimes = await getTimes();
-      setTimes(updatedTimes);
-    } catch (error) {
-      console.error('Error deleting time:', error);
-    }
-  };
 
   // Modifique a função que busca as soluções para atualizar o totalPages
   const fetchSolucoes = async (page = currentPage) => {
-  try {
-    const solucoesData = await getSolucoes(page, itemsPerPage);
-    const solucoesArray = solucoesData?.data || [];
-
-    // Preservar a ordem atual das soluções existentes
-    const currentOrder = new Map(solucoes.map((s, index) => [String(s.id), index]));
-    
-    const solucoesOrdenadas = solucoesArray.sort((a: SolucaoType, b: SolucaoType) => {
-      const indexA = currentOrder.get(String(a.id));
-      const indexB = currentOrder.get(String(b.id));
-
-      // Se ambos existem na ordem atual, manter a ordem relativa
-      if (indexA !== undefined && indexB !== undefined) {
-        return indexA - indexB;
+    try {
+      const solucoesData = await getSolucoes(page, itemsPerPage);
+      const solucoesArray = solucoesData?.data || [];
+  
+      // Preservar a ordem atual das soluções existentes
+      const currentOrder = new Map(solucoes.map((s, index) => [String(s.id), index]));
+      
+      const solucoesOrdenadas = solucoesArray.sort((a: SolucaoType, b: SolucaoType) => {
+        const indexA = currentOrder.get(String(a.id));
+        const indexB = currentOrder.get(String(b.id));
+  
+        // Se ambos existem na ordem atual, manter a ordem relativa
+        if (indexA !== undefined && indexB !== undefined) {
+          return indexA - indexB;
+        }
+        // Se apenas um existe, colocar o novo no final
+        if (indexA !== undefined) return -1;
+        if (indexB !== undefined) return 1;
+        // Se nenhum existe, manter a ordem como veio da API
+        return 0;
+      });
+  
+      setSolucoes(solucoesOrdenadas);
+      setFilteredSolucoes(solucoesOrdenadas);
+      
+      // Atualizar o total de páginas
+      if (solucoesData?.meta) {
+        const total = solucoesData.meta.total || 0;
+        const calculatedPages = Math.ceil(total / itemsPerPage);
+        setTotalPages(calculatedPages);
       }
-      // Se apenas um existe, colocar o novo no final
-      if (indexA !== undefined) return -1;
-      if (indexB !== undefined) return 1;
-      // Se nenhum existe, manter a ordem como veio da API
-      return 0;
-    });
-
-    setSolucoes(solucoesOrdenadas);
-    setFilteredSolucoes(solucoesOrdenadas);
-    
-    // Atualizar o total de páginas
-    if (solucoesData?.meta) {
-      const total = solucoesData.meta.total || 0;
-      const calculatedPages = Math.ceil(total / itemsPerPage);
-      setTotalPages(calculatedPages);
-      console.log('Total items:', total, 'Total pages:', calculatedPages);
+      
+      return solucoesData;
+    } catch (error) {
+      console.error('Erro ao buscar soluções:', error);
+      return null;
     }
-    
-    return solucoesData;
-  } catch (error) {
-    console.error('Erro ao buscar soluções:', error);
-    return null;
-  }
-};
+  };
 
   // Efeito para carregar as soluções paginadas e outros dados
   useEffect(() => {
@@ -293,7 +283,7 @@ export default function Solucao() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
+  
     try {
       const linguagemValue = selectedLanguages.length > 0 ? selectedLanguages.join(',') : null;
       
@@ -304,8 +294,8 @@ export default function Solucao() {
         descricao: formData.descricao || '-',
         versao: formData.versao || '-',
         repositorio: formData.repositorio || '-',
-        link: formData.link || '', // Garanta que o link está sendo enviado
-        andamento: formData.andamento || '', // Garanta que o andamento está sendo enviado
+        link: formData.link || '',
+        andamento: formData.andamento || '',
         criticidade: formData.criticidade || '',
         tipo_id: formData.tipo_id ? Number(formData.tipo_id) : null,
         linguagem_id: linguagemValue,
@@ -313,37 +303,23 @@ export default function Solucao() {
         categoria_id: formData.categoria_id ? Number(formData.categoria_id) : null,
         responsavel_id: formData.responsavel_id ? Number(formData.responsavel_id) : null,
         status_id: formData.status_id ? Number(formData.status_id) : null,
-        demanda_id: Number(formData.demanda_id),
+        demanda_id: formData.demanda_id ? Number(formData.demanda_id) : null, // Garantir que seja null se não houver valor
         data_status: formData.data_status || new Date().toISOString().split('T')[0]
-    };
-
-      console.log('Submitting data:', formDataToSubmit);
-
+      };
+  
       if (isEditing) {
         try {
           // Atualizar solução existente
-          await updateSolucao(isEditing, formDataToSubmit);
-          console.log('Solução atualizada com sucesso');
+          const updatedSolucao = await updateSolucao(isEditing, formDataToSubmit);
           
-          // Buscar soluções atualizadas e recalcular páginas
-          const updatedData = await fetchSolucoes();
+          // Atualizar a lista de soluções localmente
+          const updatedSolucoes = solucoes.map(solucao =>
+            solucao.id === updatedSolucao.id ? updatedSolucao : solucao
+          );
           
-          // Criar um mapa dos IDs originais para manter a ordem
-          const idToIndexMap = new Map();
-          solucoes.forEach((solucao, index) => {
-            idToIndexMap.set(String(solucao.id), index);
-          });
-          
-          // Criar uma nova lista ordenada baseada na ordem original
-          const orderedSolucoes = [...updatedData.data].sort((a, b) => {
-            const indexA = idToIndexMap.get(String(a.id)) ?? 999;
-            const indexB = idToIndexMap.get(String(b.id)) ?? 999;
-            return indexA - indexB;
-          });
-          
-          // Atualizar os estados com a lista ordenada
-          setSolucoes(orderedSolucoes);
-          setFilteredSolucoes(orderedSolucoes);
+          // Atualizar os estados com a lista atualizada
+          setSolucoes(updatedSolucoes);
+          setFilteredSolucoes(updatedSolucoes);
           
           // Limpar formulário e fechar modal
           setIsModalOpen(false);
@@ -352,25 +328,19 @@ export default function Solucao() {
           setIsEditing(null);
         } catch (error) {
           console.error('Erro ao atualizar solução:', error);
+          // Exibir mensagem de erro para o usuário, se necessário
         }
       } else {
         // Criar nova solução
         const newSolucao = await createSolucao(formDataToSubmit);
         
-        // Buscar soluções atualizadas e recalcular páginas
+        // Buscar soluções atualizadas
         await fetchSolucoes();
         
-        // Limpar formulário e fechar modal
         setIsModalOpen(false);
         setFormData({} as SolucaoFormData);
         setSelectedLanguages([]);
       }
-      
-      setIsModalOpen(false);
-      setFormData({} as SolucaoFormData);
-      setSelectedLanguages([]);
-      setIsEditing(null);
-      
     } catch (error) {
       console.error('Submit error:', error);
     }
@@ -409,6 +379,15 @@ export default function Solucao() {
     });
   };
 
+  const handleTimeDelete = async (id: string) => {
+    try {
+      await deleteTime(id);
+      const updatedTimes = await getTimes();
+      setTimes(updatedTimes);
+    } catch (error) {
+      console.error('Error deleting time:', error);
+    }
+  };
   
   const formatDate = (dateString?: string | null) => {
    
@@ -1093,77 +1072,77 @@ export default function Solucao() {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-md overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className={`
+        <div className="bg-white rounded-lg  shadow-md">
+        <div className="w-full">
+        <table className={` 
+              
               w-full
               transition-all duration-300
               ${isCollapsed ? 'table-auto' : ''}
             `}>
-              <thead>
-                <tr className="bg-gray-200 text-gray-600 leading-normal">
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">#</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nome</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Sigla</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Versão</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tipo</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Linguagem</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Desenvolvedor</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Demanda</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Categoria</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Responsável</th>
-                 
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Repositório</th>
-                  
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Criticidade</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Andamento</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Data Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Ações</th>
+            <thead className="bg-gray-200 ">
+              <tr>
+              <th className="px-2 py-5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[5%]">#</th>
+                <th className="px-2 py-5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[15%]">Nome</th>
+                <th className="px-2 py-5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[8%]">Sigla</th>
+                <th className="px-2 py-5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[8%]">Versão</th>
+                {/* Adjust other column widths as needed */}
+                <th className="px-2 py-5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[8%]">Tipo</th>
+                <th className="px-2 py-5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[20%]">Linguagem</th>
+                <th className="px-2 py-5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[20%]">Desenvolvedor</th>
+                <th className="px-2 py-5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[20%]">Demanda</th>
+                <th className="px-2 py-5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[8%]">Categoria</th>
+                <th className="px-2 py-5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[8%]">Responsável</th>
+                <th className="px-2 py-5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[8%]">Repositório</th>
+                <th className="px-2 py-5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[8%]">Criticidade</th>
+                <th className="px-2 py-5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[8%]">Andamento</th>
+                <th className="px-2 py-5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[8%]">Data Status</th>
+                <th className="px-2 py-5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[8%]">Status</th>
+                <th className="px-2 py-5 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-[8%]">Ações</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {(filteredSolucoes || []).map((solucao, index) => (
                   <tr key={solucao.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4 text-sm text-gray-600">
+                    <td className="px-4 py-2 text-sm text-gray-600">
                       {index + 1}
                     </td>
-                    <td className="px-6 py-4 text-sm font-medium text-gray-800 break-words max-w-[200px]">
+                    <td className="px-4 py-2 text-sm font-medium text-gray-800 break-words max-w-[200px]">
                       {solucao.nome || '-'}
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-600 break-words max-w-[150px]">
+                    <td className="px-4 py-2 text-sm text-gray-600 break-words max-w-[150px]">
                       {solucao.sigla || '-'}
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-600">
+                    <td className="px-4 py-2 text-sm text-gray-600">
                       {solucao.versao || '-'}
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-600 break-words max-w-[150px]">
+                    <td className="px-4 py-2 text-sm text-gray-600 break-words max-w-[150px]">
                       {solucao.tipo?.nome || '-'}
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-600">
+                    <td className="px-4 py-2 text-sm text-gray-600">
                       {renderTableLinguagens(solucao)}
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-600 break-words max-w-[150px]">
+                    <td className="px-4 py-2 text-sm text-gray-600 break-words max-w-[150px]">
                       {solucao.desenvolvedor?.nome || '-'}
                     </td>
                     
-                    <td className="px-6 py-4 text-sm text-gray-600 break-words max-w-[150px]">
+                    <td className="px-4 py-2 text-sm text-gray-600 break-words max-w-[150px]">
                       {solucao.demanda?.nome || '-'}
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-600 break-words max-w-[150px]">
+                    <td className="px-4 py-2 text-sm text-gray-600 break-words max-w-[150px]">
                       {solucao.categoria?.nome || '-'}
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-600 break-words max-w-[150px]">
+                    <td className="px-4 py-2 text-sm text-gray-600 break-words max-w-[150px]">
                       {solucao.responsavel?.nome || '-'}
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-600">
+                    <td className="px-4 py-2 text-sm text-gray-600">
                       {formatRepositoryLink(solucao.repositorio)}
                     </td>
                   
-                      <td className="px-6 py-4 text-sm text-gray-600">
+                      <td className="px-4 py-2 text-sm text-gray-600">
                       {solucao.criticidade || '-'}
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-600">
+                    <td className="px-4 py-2 text-sm text-gray-600">
                         <div className="flex flex-col space-y-1">
                           <div className="flex justify-between items-center gap-2">
                             <span className="font-medium">{solucao.andamento || '0'}%</span>
@@ -1184,10 +1163,10 @@ export default function Solucao() {
                           <ProgressBar progress={Number(solucao.andamento) || 0} />
                         </div>
                       </td>
-                    <td className="px-6 py-4 text-sm text-gray-600 whitespace-normal">
+                    <td className="px-4 py-2 text-sm text-gray-600 whitespace-normal">
                       {formatDate(solucao.data_status || solucao.dataStatus)}
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-600">
+                    <td className="px-4 py-2 text-sm text-gray-600">
                       {solucao.status?.propriedade ? (
                         <span
                           className={`rounded-md px-2 py-1 break-words max-w-[150px] inline-block ${determinarCorTexto(solucao.status.propriedade)}`}
@@ -1199,7 +1178,7 @@ export default function Solucao() {
                         <span className="text-gray-500">-</span>
                       )}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
+                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500 text-right">
                       <div className="flex justify-end space-x-2">
                       {formatRepositoryLink(solucao.link)} {/* <td> separado */}
                         
@@ -1231,8 +1210,8 @@ export default function Solucao() {
         </div>
         <Pagination />      
         {isModalOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] overflow-y-auto">
-            <div className="relative bg-white rounded-lg shadow-2xl p-8 w-full max-w-5xl m-4">
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100]">
+              <div className="bg-white rounded-lg shadow-2xl p-6 w-full max-w-4xl z-[101]">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-2xl font-bold text-gray-800">
                   {isEditing ? 'Editar Solução' : 'Nova Solução'}
@@ -1748,6 +1727,15 @@ export default function Solucao() {
                                   </span>
                                 </p>
                               </div>
+                              <div> 
+                              <button
+              onClick={() => handleTimeDelete(time.id)}
+              className="text-red-400 hover:text-red-700 ml-2 p-1 rounded-full hover:bg-red-50 transition-colors"
+              title="Excluir time"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+                              </div>
                             </div>
                           </div>
                         );
@@ -1784,7 +1772,7 @@ export default function Solucao() {
               <div className="mb-6">
                 <div className="flex space-x-4 border-b border-gray-200">
                   <button
-                    className={`py-3 px-6 focus:outline-none transition-colors ${
+                    className={`py-3 px-2 focus:outline-none transition-colors ${
                       activeTab === 'details'
                         ? 'border-b-2 border-blue-500 text-blue-600 font-medium'
                         : 'text-gray-500 hover:text-gray-700'

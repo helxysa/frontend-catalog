@@ -38,13 +38,17 @@ export async function createSolucao(solucao: any) {
 
 export async function updateSolucao(id: string, solucao: any) {
     try {
-        const response = await axios.put(`${url}/${id}`, solucao);
-        return response.data;
+      const response = await axios.put(`${url}/${id}`, solucao, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      return response.data;
     } catch (error) {
-        console.error("Error updating solution:", error);
-        return null;
+      console.error("Error updating solution:", error);
+      throw error; // Lançar o erro para que ele seja tratado no handleSubmit
     }
-}
+  }
 
 export async function deleteSolucao(id: string) {
     try {
