@@ -78,7 +78,7 @@ export default function Solucao() {
   const [historicoSolucao, setHistoricoSolucao] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const itemsPerPage = 6;
+  const itemsPerPage = 15;
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [filters, setFilters] = useState({
     demanda_id: '',
@@ -317,6 +317,7 @@ export default function Solucao() {
             solucao.id === updatedSolucao.id ? updatedSolucao : solucao
           );
           
+
           // Atualizar os estados com a lista atualizada
           setSolucoes(updatedSolucoes);
           setFilteredSolucoes(updatedSolucoes);
@@ -326,6 +327,7 @@ export default function Solucao() {
           setFormData({} as SolucaoFormData);
           setSelectedLanguages([]);
           setIsEditing(null);
+          await fetchSolucoes();
         } catch (error) {
           console.error('Erro ao atualizar solução:', error);
           // Exibir mensagem de erro para o usuário, se necessário
@@ -1080,69 +1082,69 @@ export default function Solucao() {
               transition-all duration-300
               ${isCollapsed ? 'table-auto' : ''}
             `}>
-            <thead className="bg-gray-200 ">
+              <thead className="bg-gray-100 rounded-t-lg">
               <tr>
-              <th className="px-2 py-5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[5%]">#</th>
-                <th className="px-2 py-5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[15%]">Nome</th>
-                <th className="px-2 py-5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[8%]">Sigla</th>
-                <th className="px-2 py-5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[8%]">Versão</th>
+              <th className="px-1 py-5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[5%]">#</th>
+                <th className="px-1 py-5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[15%]">Nome</th>
+                <th className="px-1 py-5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[8%]">Sigla</th>
+                <th className="px-1 py-5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[8%]">Versão</th>
                 {/* Adjust other column widths as needed */}
-                <th className="px-2 py-5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[8%]">Tipo</th>
-                <th className="px-2 py-5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[20%]">Linguagem</th>
-                <th className="px-2 py-5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[20%]">Desenvolvedor</th>
-                <th className="px-2 py-5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[20%]">Demanda</th>
-                <th className="px-2 py-5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[8%]">Categoria</th>
-                <th className="px-2 py-5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[8%]">Responsável</th>
-                <th className="px-2 py-5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[8%]">Repositório</th>
-                <th className="px-2 py-5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[8%]">Criticidade</th>
-                <th className="px-2 py-5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[8%]">Andamento</th>
-                <th className="px-2 py-5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[8%]">Data Status</th>
-                <th className="px-2 py-5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[8%]">Status</th>
-                <th className="px-2 py-5 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-[8%]">Ações</th>
+                <th className="px-1 py-5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[8%]">Tipo</th>
+                <th className="px-1 py-5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[20%]">Linguagem</th>
+                <th className="px-1 py-5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[20%]">Desenvolvedor</th>
+                <th className="px-1 py-5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[20%]">Demanda</th>
+                <th className="px-1 py-5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[8%]">Categoria</th>
+                <th className="px-1 py-5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[8%]">Responsável</th>
+                <th className="px-1 py-5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[8%]">Repositório</th>
+                <th className="px-1 py-5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[8%]">Criticidade</th>
+                <th className="px-1 py-5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[8%]">Andamento</th>
+                <th className="px-1 py-5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[8%]">Data Status</th>
+                <th className="px-1 py-5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[8%]">Status</th>
+                <th className="px-1 py-5 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-[8%]">Ações</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {(filteredSolucoes || []).map((solucao, index) => (
                   <tr key={solucao.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-4 py-2 text-sm text-gray-600">
+                    <td className="px-3 py-2 text-sm text-gray-600">
                       {index + 1}
                     </td>
-                    <td className="px-4 py-2 text-sm font-medium text-gray-800 break-words max-w-[200px]">
+                    <td className="px-3 py-2 text-sm font-medium text-gray-800 break-words max-w-[200px]">
                       {solucao.nome || '-'}
                     </td>
-                    <td className="px-4 py-2 text-sm text-gray-600 break-words max-w-[150px]">
+                    <td className="px-3 py-2 text-sm text-gray-600 break-words max-w-[150px]">
                       {solucao.sigla || '-'}
                     </td>
-                    <td className="px-4 py-2 text-sm text-gray-600">
+                    <td className="px-3 py-2 text-sm text-gray-600">
                       {solucao.versao || '-'}
                     </td>
-                    <td className="px-4 py-2 text-sm text-gray-600 break-words max-w-[150px]">
+                    <td className="px-3 py-2 text-sm text-gray-600 break-words max-w-[150px]">
                       {solucao.tipo?.nome || '-'}
                     </td>
-                    <td className="px-4 py-2 text-sm text-gray-600">
+                    <td className="px-3 py-2 text-sm text-gray-600">
                       {renderTableLinguagens(solucao)}
                     </td>
-                    <td className="px-4 py-2 text-sm text-gray-600 break-words max-w-[150px]">
+                    <td className="px-3 py-2 text-sm text-gray-600 break-words max-w-[150px]">
                       {solucao.desenvolvedor?.nome || '-'}
                     </td>
                     
-                    <td className="px-4 py-2 text-sm text-gray-600 break-words max-w-[150px]">
+                    <td className="px-3 py-2 text-sm text-gray-600 break-words max-w-[150px]">
                       {solucao.demanda?.nome || '-'}
                     </td>
-                    <td className="px-4 py-2 text-sm text-gray-600 break-words max-w-[150px]">
+                    <td className="px-3 py-2 text-sm text-gray-600 break-words max-w-[150px]">
                       {solucao.categoria?.nome || '-'}
                     </td>
-                    <td className="px-4 py-2 text-sm text-gray-600 break-words max-w-[150px]">
+                    <td className="px-3 py-2 text-sm text-gray-600 break-words max-w-[150px]">
                       {solucao.responsavel?.nome || '-'}
                     </td>
-                    <td className="px-4 py-2 text-sm text-gray-600">
+                    <td className="px-3 py-2 text-sm text-gray-600">
                       {formatRepositoryLink(solucao.repositorio)}
                     </td>
                   
-                      <td className="px-4 py-2 text-sm text-gray-600">
+                      <td className="px-3 py-2 text-sm text-gray-600">
                       {solucao.criticidade || '-'}
                     </td>
-                    <td className="px-4 py-2 text-sm text-gray-600">
+                    <td className="px-3 py-2 text-sm text-gray-600">
                         <div className="flex flex-col space-y-1">
                           <div className="flex justify-between items-center gap-2">
                             <span className="font-medium">{solucao.andamento || '0'}%</span>
@@ -1163,10 +1165,10 @@ export default function Solucao() {
                           <ProgressBar progress={Number(solucao.andamento) || 0} />
                         </div>
                       </td>
-                    <td className="px-4 py-2 text-sm text-gray-600 whitespace-normal">
+                    <td className="px-3 py-2 text-sm text-gray-600 whitespace-normal">
                       {formatDate(solucao.data_status || solucao.dataStatus)}
                     </td>
-                    <td className="px-4 py-2 text-sm text-gray-600">
+                    <td className="px-3 py-2 text-sm text-gray-600">
                       {solucao.status?.propriedade ? (
                         <span
                           className={`rounded-md px-2 py-1 break-words max-w-[150px] inline-block ${determinarCorTexto(solucao.status.propriedade)}`}
@@ -1178,7 +1180,7 @@ export default function Solucao() {
                         <span className="text-gray-500">-</span>
                       )}
                     </td>
-                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500 text-right">
+                    <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500 text-right">
                       <div className="flex justify-end space-x-2">
                       {formatRepositoryLink(solucao.link)} {/* <td> separado */}
                         
@@ -1231,7 +1233,7 @@ export default function Solucao() {
               <div className="mb-6 border-b border-gray-200">
                     <div className="flex space-x-4">
                       <button
-                        className={`py-2 px-4 ${
+                        className={`py-2 px-3 ${
                           activeFormTab === 'ficha-tecnica'
                             ? 'border-b-2 border-blue-500 text-blue-600'
                             : 'text-gray-500 hover:text-gray-700'
@@ -1346,7 +1348,7 @@ export default function Solucao() {
                    </div>
 
                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Link do Sistema</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Link</label>
                       <input 
                         type="text" 
                         name="link" 
@@ -1796,132 +1798,121 @@ export default function Solucao() {
 
               <div className="max-h-[60vh] overflow-y-auto pr-4">
                 {activeTab === 'details' ? (
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {/* Informações Básicas */}
-                    <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100 w-full h-[300px]">
-                      <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                        <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-14 0 9 9 0 0118 0z" />
-                        </svg>
-                        Informações Básicas
-                      </h3>
-                      <div className="space-y-3 overflow-y-auto h-[200px]">
-                        <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
-                          <span className="text-sm font-medium text-gray-600">Nome:</span>
-                          <span className="text-sm text-gray-800 font-medium group-hover:text-blue-600">{selectedDemandDetails.nome}</span>
-                        </div>
-                        <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
-                          <span className="text-sm font-medium text-gray-600">Sigla:</span>
-                          <span className="text-sm text-gray-800 font-medium group-hover:text-blue-600">{selectedDemandDetails.sigla}</span>
-                        </div>
-                        <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
-                          <span className="text-sm font-medium text-gray-600">Versão:</span>
-                          <span className="text-sm text-gray-800 font-medium group-hover:text-blue-600">{selectedDemandDetails.versao}</span>
-                        </div>
+                    <div className="bg-white rounded-lg shadow-sm p-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+                      {/* Informações Básicas */}
+                      <div className="col-span-2 mb-4">
+                        <h3 className="text-lg font-semibold text-gray-800 mb-3 pb-2 border-b border-gray-200 flex items-center gap-2">
+                          Informações da Solução
+                        </h3>
                       </div>
-                    </div>
-
-                    {/* Detalhes da Solução */}
-                    <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100 w-full h-[300px]">
-                      <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                        <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                        </svg>
-                        Detalhes da Solução
-                      </h3>
-                      <div className="space-y-3 overflow-y-auto h-[200px]">
-                        <div className="p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
-                          <span className="text-sm font-medium text-gray-600">Descrição:</span>
-                          <div className="mt-2 p-3 bg-white rounded-md border border-gray-200">
-                            <p className="text-sm text-gray-800 leading-relaxed whitespace-pre-line">
-                              {selectedDemandDetails.descricao || 'Nenhuma descrição fornecida'}
-                            </p>
-                          </div>
-                        </div>
+                      
+                      <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
+                        <span className="text-sm font-medium text-gray-600">Nome:</span>
+                        <span className="text-sm text-gray-800 font-medium">{selectedDemandDetails.nome}</span>
                       </div>
-                    </div>
+                      
+                      <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
+                        <span className="text-sm font-medium text-gray-600">Sigla:</span>
+                        <span className="text-sm text-gray-800 font-medium">{selectedDemandDetails.sigla}</span>
+                      </div>
+                      
+                      <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
+                        <span className="text-sm font-medium text-gray-600">Versão:</span>
+                        <span className="text-sm text-gray-800 font-medium">{selectedDemandDetails.versao}</span>
+                      </div>
+                      
+                      <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
+                        <span className="text-sm font-medium text-gray-600">Repositório:</span>
+                        <span className="text-sm text-gray-800 font-medium">
+                          {formatRepositoryLink(selectedDemandDetails.repositorio)}
+                        </span>
+                      </div>
 
-                    {/* Configurações Técnicas */}
-                    <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100 w-full h-[300px]">
-                      <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                        <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-                        </svg>
-                        Configurações Técnicas
-                      </h3>
-                      <div className="space-y-3 overflow-y-auto h-[200px]">
-                        <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
-                          <span className="text-sm font-medium text-gray-600">Tipo:</span>
-                          <span className="text-sm text-gray-800 font-medium">
-                            {tipos.find(tipo => tipo.id === selectedDemandDetails.tipo?.id)?.nome || '-'}
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
-                            <span className="text-sm font-medium text-gray-600">Repositório:</span>
-                            {selectedDemandDetails.repositorio ? (
-                              <Link
-                                href={selectedDemandDetails.repositorio}
-                                target="_blank"
-                                className="text-sm text-gray-800 font-medium group-hover:text-blue-600 flex items-center gap-1"
-                              >
-                                <span>Acessar Repositório</span>
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                                </svg>
-                              </Link>
-                            ) : (
-                              <span className="text-sm text-gray-800 font-medium">-</span>
-                            )}
-                          </div>
-                         <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
-                          <span className="text-sm font-medium text-gray-600">Tipo:</span>
-                          <span className="text-sm text-gray-800 font-medium">
-                            {tipos.find(tipo => tipo.id === selectedDemandDetails.tipo?.id)?.nome || '-'}
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
-                          <span className="text-sm font-medium text-gray-600">Linguagem:</span>
-                          <span className="text-sm text-gray-800 font-medium">
-                            {renderDetalhesLinguagens(selectedDemandDetails)}
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
-                          <span className="text-sm font-medium text-gray-600">Status:</span>
-                          <span 
-                            className={`rounded-md px-3 py-1 text-sm font-medium ${determinarCorTexto(selectedDemandDetails.status?.propriedade)}`}
-                            style={{ backgroundColor: selectedDemandDetails.status?.propriedade }}
+                      <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
+                        <span className="text-sm font-medium text-gray-600">Link:</span>
+                        {selectedDemandDetails.link ? (
+                          <a 
+                            href={selectedDemandDetails.link} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-sm text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1"
                           >
-                            {selectedDemandDetails.status?.nome || '-'}
-                          </span>
+                            Acessar <ExternalLink className="w-3 h-3" />
+                          </a>
+                        ) : (
+                          <span className="text-sm text-gray-800 font-medium">-</span>
+                        )}
+                      </div>
+                      
+                      <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
+                        <span className="text-sm font-medium text-gray-600">Tipo:</span>
+                        <span className="text-sm text-gray-800 font-medium">{selectedDemandDetails.tipo?.nome || '-'}</span>
+                      </div>
+                      
+                      <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
+                        <span className="text-sm font-medium text-gray-600">Categoria:</span>
+                        <span className="text-sm text-gray-800 font-medium">{selectedDemandDetails.categoria?.nome || '-'}</span>
+                      </div>
+                      
+                      <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
+                        <span className="text-sm font-medium text-gray-600">Demanda:</span>
+                        <span className="text-sm text-gray-800 font-medium">{selectedDemandDetails.demanda?.nome || '-'}</span>
+                      </div>
+                      
+                      <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
+                        <span className="text-sm font-medium text-gray-600">Status:</span>
+                        <span
+                          className={`rounded-md px-3 py-1 text-sm font-medium ${determinarCorTexto(selectedDemandDetails.status?.propriedade)}`}
+                          style={{ backgroundColor: selectedDemandDetails.status?.propriedade }}
+                        >
+                          {selectedDemandDetails.status?.nome || '-'}
+                        </span>
+                      </div>
+                      
+                      <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
+                        <span className="text-sm font-medium text-gray-600">Responsável:</span>
+                        <span className="text-sm text-gray-800 font-medium">{selectedDemandDetails.responsavel?.nome || '-'}</span>
+                      </div>
+                      
+                      <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
+                        <span className="text-sm font-medium text-gray-600">Desenvolvedor:</span>
+                        <span className="text-sm text-gray-800 font-medium">{selectedDemandDetails.desenvolvedor?.nome || '-'}</span>
+                      </div>
+                      
+                      <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
+                        <span className="text-sm font-medium text-gray-600">Criticidade:</span>
+                        <span className="text-sm text-gray-800 font-medium">{selectedDemandDetails.criticidade || '-'}</span>
+                      </div>
+                      
+                      <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
+                        <span className="text-sm font-medium text-gray-600">Data Status:</span>
+                        <span className="text-sm text-gray-800 font-medium">{formatDate(selectedDemandDetails.data_status || selectedDemandDetails.dataStatus)}</span>
+                      </div>
+                      
+                      <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
+                        <span className="text-sm font-medium text-gray-600">Andamento:</span>
+                        <div className="flex flex-col w-1/2 items-end">
+                          <span className="text-sm text-gray-800 font-medium mb-1">{selectedDemandDetails.andamento || '0'}%</span>
+                          <ProgressBar progress={Number(selectedDemandDetails.andamento) || 0} />
                         </div>
                       </div>
-                    </div>
-
-                    {/* Responsabilidades */}
-                    <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100 w-full h-[300px] ">
-                      <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                        <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                        </svg>
-                        Responsabilidades
-                      </h3>
-                      <div className="space-y-3 overflow-y-auto h-[200px]">
-                        <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
-                          <span className="text-sm font-medium text-gray-600">Categoria:</span>
-                          <span className="text-sm text-gray-800 font-medium">{selectedDemandDetails.categoria?.nome || '-'}</span>
+                      
+                      <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
+                        <span className="text-sm font-medium text-gray-600">Linguagens:</span>
+                        <div className="text-right">
+                          {renderDetalhesLinguagens(selectedDemandDetails)}
                         </div>
-                        <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
-                          <span className="text-sm font-medium text-gray-600">Responsável:</span>
-                          <span className="text-sm text-gray-800 font-medium">{selectedDemandDetails.responsavel?.nome || '-'}</span>
-                        </div>
-                        <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
-                          <span className="text-sm font-medium text-gray-600">Status:</span>
-                          <span 
-                            className={`rounded-md px-3 py-1 text-sm font-medium ${determinarCorTexto(selectedDemandDetails.status?.propriedade)}`}
-                            style={{ backgroundColor: selectedDemandDetails.status?.propriedade }}
-                          >
-                            {selectedDemandDetails.status?.nome || '-'}
-                          </span>
+                      </div>
+                      
+                      <div className="col-span-2 mt-4">
+                        <h3 className="text-lg font-semibold text-gray-800 mb-3 pb-2 border-b border-gray-200">
+                          Descrição
+                        </h3>
+                        <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 mt-2">
+                          <p className="text-sm text-gray-800 leading-relaxed whitespace-pre-wrap break-words">
+                            {selectedDemandDetails.descricao || 'Nenhuma descrição fornecida'}
+                          </p>
                         </div>
                       </div>
                     </div>
