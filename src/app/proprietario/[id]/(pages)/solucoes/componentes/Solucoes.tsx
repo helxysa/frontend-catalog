@@ -1796,7 +1796,7 @@ export default function Solucao() {
                 </div>
               </div>
 
-              <div className="max-h-[60vh] overflow-y-auto pr-4">
+              <div className="max-h-[50vh] overflow-y-auto pr-4">
                 {activeTab === 'details' ? (
                     <div className="bg-white rounded-lg shadow-sm p-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
@@ -1976,18 +1976,19 @@ export default function Solucao() {
                                             Informações Básicas
                                           </h4>
                                           <div className="space-y-3">
-                                            <p className="flex items-center justify-between group hover:bg-white hover:shadow-sm p-2 rounded-md transition-all">
+                                    
+                                            <div className="flex items-center justify-between group hover:bg-white hover:shadow-sm p-2 rounded-md transition-all">
                                               <span className="font-medium text-gray-600">Nome:</span>
                                               <span className="text-gray-900 font-medium group-hover:text-blue-600">{evento.solucao.nome}</span>
-                                            </p>
-                                            <p className="flex items-center justify-between group hover:bg-white hover:shadow-sm p-2 rounded-md transition-all">
+                                            </div>
+                                            <div className="flex items-center justify-between group hover:bg-white hover:shadow-sm p-2 rounded-md transition-all">
                                               <span className="font-medium text-gray-600">Sigla:</span>
                                               <span className="text-gray-900 font-medium group-hover:text-blue-600">{evento.solucao.sigla}</span>
-                                            </p>
-                                            <p className="flex items-center justify-between group hover:bg-white hover:shadow-sm p-2 rounded-md transition-all">
+                                            </div>
+                                            <div className="flex items-center justify-between group hover:bg-white hover:shadow-sm p-2 rounded-md transition-all">
                                               <span className="font-medium text-gray-600">Versão:</span>
                                               <span className="text-gray-900 font-medium group-hover:text-blue-600">{evento.solucao.versao}</span>
-                                            </p>
+                                            </div>
                                           </div>
                                         </div>
                                         
@@ -1996,13 +1997,13 @@ export default function Solucao() {
                                             Detalhes Técnicos
                                           </h4>
                                           <div className="space-y-3">
-                                            <p className="flex items-center justify-between group hover:bg-white hover:shadow-sm p-2 rounded-md transition-all">
+                                            <div className="flex items-center justify-between group hover:bg-white hover:shadow-sm p-2 rounded-md transition-all">
                                               <span className="font-medium text-gray-600">Tipo:</span>
                                               <span className="text-gray-900 font-medium group-hover:text-blue-600">
                                                 {tipos.find(tipo => tipo.id === evento.solucao.tipoId)?.nome || '-'}
                                               </span>
-                                            </p>
-                                            <p className="flex items-center justify-between group hover:bg-white hover:shadow-sm p-2 rounded-md transition-all">
+                                            </div>
+                                            <div className="flex items-center justify-between group hover:bg-white hover:shadow-sm p-2 rounded-md transition-all">
                                                 <span className="font-medium text-gray-600">Linguagem:</span>
                                                 <span className="text-gray-900 font-medium group-hover:text-blue-600">
                                                   {renderDetalhesLinguagens({
@@ -2010,11 +2011,11 @@ export default function Solucao() {
                                                     timeId: evento.solucao.timesId
                                                   })}
                                                 </span>
-                                              </p>
-                                            <p className="flex items-center justify-between group hover:bg-white hover:shadow-sm p-2 rounded-md transition-all">
+                                              </div>
+                                            <div className="flex items-center justify-between group hover:bg-white hover:shadow-sm p-2 rounded-md transition-all">
                                               <span className="font-medium text-gray-600">Status:</span>
                                               <span className="text-gray-900 font-medium group-hover:text-blue-600">{evento.solucao.statusId || '-'}</span>
-                                            </p>
+                                            </div>
                                           </div>
                                         </div>
                                       </div>

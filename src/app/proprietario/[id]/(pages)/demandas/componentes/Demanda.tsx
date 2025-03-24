@@ -842,9 +842,9 @@ export default function Demanda() {
         <Pagination />
 
         {isModalOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] overflow-y-auto">
-            <div className="relative bg-white rounded-lg shadow-2xl p-8 w-full max-w-2xl m-4">
-              <div className="flex justify-between items-center mb-6">
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] overflow-y-auto pt-16">
+      <div className="relative bg-white rounded-lg shadow-2xl p-8 w-full max-w-2xl m-4 mt-10">
+              <div className="flex justify-between items-center mb-2">
                 <h2 className="text-2xl font-bold text-gray-800">
                   {isEditing ? 'Editar Demanda' : 'Nova Demanda'}
                 </h2>
@@ -854,7 +854,7 @@ export default function Demanda() {
                     setIsEditing(null);
                     setFormData({} as DemandaFormData);
                   }}
-                  className="text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full p-2"
+                  className="text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full p-3"
                 >
                   <X className="w-6 h-6" />
                 </button>
@@ -1068,7 +1068,7 @@ export default function Demanda() {
                 </div>
               </div>
 
-              <div className="max-h-[60vh] overflow-y-auto pr-4">
+              <div className="max-h-[50vh] overflow-y-auto pr-4">
                 {activeTab === 'details' ? (
                <div className="bg-white rounded-lg shadow-sm p-6">
                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">

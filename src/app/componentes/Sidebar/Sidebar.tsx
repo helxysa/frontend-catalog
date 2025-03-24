@@ -154,38 +154,14 @@ export function Sidebar() {
           </Link>
         ))}
 
-        <div className="relative">
-          <button 
-            className={`w-full ${getItemClasses('/relatorios')}`}
-            onClick={toggleReportMenu}
-          >
-            <FileText className={`w-5 h-5 ${isActive('/relatorios') ? 'text-blue-600' : 'text-gray-400'} group-hover:text-gray-600`} />
-            {!isCollapsed && (
-              <>
+          {/* <Link href={`/proprietario/${proprietarioId}/relatorios`} prefetch className="block">
+            <div className={getItemClasses(`/proprietario/${proprietarioId}/relatorios`)}>
+              <FileText className={`w-5 h-5 ${isActive(`/proprietario/${proprietarioId}/relatorios`) ? 'text-blue-600' : 'text-gray-400'} group-hover:text-gray-600`} />
+              {!isCollapsed && (
                 <span className="ml-3 text-sm font-medium">Relatórios</span>
-                <ChevronDown 
-                  className={`w-4 h-4 ml-auto text-gray-400 transition-transform 
-                    ${isReportMenuOpen ? 'rotate-180' : ''}`} 
-                />
-              </>
-            )}
-          </button>
-          
-          {!isCollapsed && (
-            <div 
-              className={`${isReportMenuOpen ? 'block' : 'hidden'} ${isMobile ? 'ml-2 mt-1 space-y-2' : 'ml-4 mt-1 space-y-1'} py-1`}
-            >
-              <Link href={`/proprietario/${proprietarioId}/relatorios/demandas`} prefetch className="block">
-                <div className={getItemClasses('/relatorios/demandas')}>
-                  <ListChecks className={`w-4 h-4 ${isActive('/relatorios/demandas') ? 'text-blue-600' : 'text-gray-400'} group-hover:text-gray-600`} />
-                  <span className="ml-3 text-sm">Demandas</span>
-                </div>
-              </Link>
+              )}
             </div>
-            
-            
-          )}
-        </div>  
+          </Link>  */}
 
         <div className="relative">
           <button 
