@@ -6,15 +6,21 @@ if (!baseUrl) {
 }
 const url = `${baseUrl}/solucoes`;
 
-export async function getSolucoes(page: number = 1, limit: number = 8) {
-    try {
-        const response = await axios.get(`${url}?page=${page}&limit=${limit}`);
-        return response.data;
-    } catch (error) {
-        console.error("Error fetching solutions:", error);
-        return null;
-    }
-}
+export const getSolucoes = async (page: number, itemsPerPage: number, proprietarioId: number) => {
+  try {
+    const response = await axios.get(`${baseUrl}/proprietarios/${proprietarioId}/solucoes`, {
+      params: {
+        page,
+        itemsPerPage,
+      }
+    });
+    console.log('Resposta do backend:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching soluções:', error);
+    return null;
+  }
+};
 
 export async function getSolucaoById(id: string) {
     try {
@@ -246,6 +252,24 @@ export async function deleteTime(id: string) {
         return response.data;
     } catch (error) {
         console.error("Error deleting time:", error);
+        return null;
+    }
+}
+
+export async function updateSolucoesSemProprietario() {
+    try {
+        const storedId = localStorage.getItem('selectedProprietarioId');
+        if (!storedId) {
+            throw new Error("ProprietarioId not found in localStorage");
+        }
+        
+        const response = await axios.post(`${url}/update-sem-proprietario`, {
+            proprietario_id: storedId
+        });
+        
+        return response.data;
+    } catch (error) {
+        console.error("Error updating solutions without owner:", error);
         return null;
     }
 }

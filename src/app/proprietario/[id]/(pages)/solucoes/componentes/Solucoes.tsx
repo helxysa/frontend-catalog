@@ -1,28 +1,7 @@
 'use client'
 
-
-
-export interface SolucaoFormData {
-  nome: string;
-  demanda_id: number | null;  
-  sigla: string;
-  descricao: string;
-  versao: string;
-  repositorio: string;
-  link: string;
-  andamento: string;
-  criticidade: string;
-  tipo_id: number;
-  linguagem_id: number | string | null;
-  desenvolvedor_id: number;
-  categoria_id: number;
-  responsavel_id: number;
-  status_id: number;
-  data_status: string;
-}
-
-
 import { useEffect, useState } from 'react';
+import { useParams } from 'next/navigation';
 import { 
   getSolucoes, 
   getTipos, 
@@ -49,6 +28,26 @@ import DeleteConfirmationModal from './ModalConfirmacao/DeleteConfirmationModal'
 import { useSidebar } from '../../../../../componentes/Sidebar/SidebarContext';
 import { Times } from '../types/types';
 
+import UpdateSolucoesButton from '../components/UpdateSolucoesButton';
+
+interface SolucaoFormData {
+  nome: string;
+  demanda_id: number | null;  
+  sigla: string;
+  descricao: string;
+  versao: string;
+  repositorio: string;
+  link: string;
+  andamento: string;
+  criticidade: string;
+  tipo_id: number | null;
+  linguagem_id: string | null;
+  desenvolvedor_id: number | null;
+  categoria_id: number | null;
+  responsavel_id: number | null;
+  status_id: number | null;
+  data_status: string;
+}
 
 type CustomChangeEvent = {
   target: {
@@ -58,6 +57,7 @@ type CustomChangeEvent = {
 };
 
 export default function Solucao() {
+  const params = useParams();
   const [solucoes, setSolucoes] = useState<SolucaoType[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedDemandDetails, setSelectedDemandDetails] = useState<SolucaoType | null>(null);
@@ -110,6 +110,12 @@ export default function Solucao() {
   });
   const [selectedTimeId, setSelectedTimeId] = useState<string | null>(null);
 
+  useEffect(() => {
+    const proprietarioId = params.id;
+    if (proprietarioId) {
+      localStorage.setItem('selectedProprietarioId', String(proprietarioId));
+    }
+  }, [params.id]);
 
   const determinarCorTexto = (corHex: string | undefined) => {
     if (!corHex) return 'text-gray-800'; 
@@ -195,38 +201,16 @@ export default function Solucao() {
   // Modifique a função que busca as soluções para atualizar o totalPages
   const fetchSolucoes = async (page = currentPage) => {
     try {
-      const solucoesData = await getSolucoes(page, itemsPerPage);
-      const solucoesArray = solucoesData?.data || [];
-  
-      // Preservar a ordem atual das soluções existentes
-      const currentOrder = new Map(solucoes.map((s, index) => [String(s.id), index]));
-      
-      const solucoesOrdenadas = solucoesArray.sort((a: SolucaoType, b: SolucaoType) => {
-        const indexA = currentOrder.get(String(a.id));
-        const indexB = currentOrder.get(String(b.id));
-  
-        // Se ambos existem na ordem atual, manter a ordem relativa
-        if (indexA !== undefined && indexB !== undefined) {
-          return indexA - indexB;
-        }
-        // Se apenas um existe, colocar o novo no final
-        if (indexA !== undefined) return -1;
-        if (indexB !== undefined) return 1;
-        // Se nenhum existe, manter a ordem como veio da API
-        return 0;
-      });
-  
-      setSolucoes(solucoesOrdenadas);
-      setFilteredSolucoes(solucoesOrdenadas);
-      
-      // Atualizar o total de páginas
-      if (solucoesData?.meta) {
-        const total = solucoesData.meta.total || 0;
-        const calculatedPages = Math.ceil(total / itemsPerPage);
-        setTotalPages(calculatedPages);
+      const storedId = localStorage.getItem('selectedProprietarioId');
+      if (!storedId) {
+        console.error('proprietario_id não encontrado no localStorage');
+        return null;
       }
-      
-      return solucoesData;
+
+      const solucoesData = await getSolucoes(page, itemsPerPage, Number(storedId));
+      const solucoesArray = solucoesData || []; // Removi o .data, pois o backend já retorna o array diretamente
+      setSolucoes(solucoesArray);
+      console.log('Soluções recebidas:', solucoesArray); // Adicione este log
     } catch (error) {
       console.error('Erro ao buscar soluções:', error);
       return null;
@@ -251,10 +235,9 @@ export default function Solucao() {
       setCategorias(categoriasData || []);
       setResponsaveis(responsaveisData || []);
       setStatusList(statusData || []);
-      
       // Certifique-se de que o total de páginas seja calculado corretamente
-      if (solucoesData?.meta) {
-        const total = solucoesData.meta.total || 0;
+      if (solucoesData && typeof solucoesData === 'object' && 'meta' in solucoesData) {
+        const total = (solucoesData as { meta: { total: number } }).meta.total || 0;
         setTotalPages(Math.ceil(total / itemsPerPage));
         console.log('Total items:', total, 'Total pages:', Math.ceil(total / itemsPerPage));
       }
@@ -301,7 +284,7 @@ export default function Solucao() {
         sigla: formData.sigla || '-',
         descricao: formData.descricao || '-',
         versao: formData.versao || '-',
-        repositorio: formData.repositorio || '-',
+        repositorio: formData.repositorio || '',
         link: formData.link || '',
         andamento: formData.andamento || '',
         criticidade: formData.criticidade || '',
@@ -368,18 +351,18 @@ export default function Solucao() {
     if (name === 'andamento') {
       // Garante que o valor está entre 0 e 100
       const numValue = Math.min(Math.max(Number(value) || 0, 0), 100);
-      setFormData(prev => ({
+      setFormData((prev: SolucaoFormData) => ({
         ...prev,
         [name]: numValue.toString()
       }));
     } else {
-      setFormData(prev => ({
+      setFormData((prev: SolucaoFormData) => ({
         ...prev,
         [name]: value
       }));
     }
 
-    setFormData(prev => {
+    setFormData((prev: SolucaoFormData) => {
       const updated = {
         ...prev,
         [name]: newValue
@@ -938,6 +921,7 @@ export default function Solucao() {
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold text-gray-800">Crie sua solução</h1>
           <div className="flex gap-2">
+            <UpdateSolucoesButton />
             <button 
               onClick={handleOpenModal}
               className="bg-blue-600 text-white px-4 py-2 rounded-md flex items-center gap-2 hover:bg-blue-700 transition-colors"
@@ -1112,7 +1096,7 @@ export default function Solucao() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {(filteredSolucoes || []).map((solucao, index) => (
+                {(solucoes || []).map((solucao, index) => (
                   <tr key={solucao.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-3 py-2 text-sm text-gray-600">
                       {index + 1}
