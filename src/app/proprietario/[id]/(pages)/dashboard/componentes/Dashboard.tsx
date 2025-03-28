@@ -50,6 +50,13 @@ type MonthlyDemandasData = {
   }[];
 };
 
+const ensureArray = <T,>(data: T | T[] | null | undefined): T[] => {
+  if (Array.isArray(data)) {
+    return data;
+  }
+  return [];
+};
+
 export default function Dashboard() {
   const [dashboardData, setDashboardData] = useState<{
     demandas: DemandaType[];
@@ -81,10 +88,13 @@ export default function Dashboard() {
         ]);
 
         console.log('Soluções recebidas:', solucoes);
-
+        
+        // Garantir que solucoes seja um array
+        const solucoesArray = Array.isArray(solucoes) ? solucoes : [];
+        
         setDashboardData({
           demandas,
-          solucoes,
+          solucoes: solucoesArray,
           alinhamentos,
           status,
           categorias,
@@ -101,7 +111,7 @@ export default function Dashboard() {
   const processAlinhamentoData = () => {
     const counts: { [key: string]: number } = {};
     
-    dashboardData.demandas.forEach(demanda => {
+    ensureArray(dashboardData.demandas).forEach(demanda => {
       const alinhamentoNome = demanda.alinhamento?.nome || 'Sem alinhamento';
       counts[alinhamentoNome] = (counts[alinhamentoNome] || 0) + 1;
     });
@@ -127,7 +137,7 @@ export default function Dashboard() {
 
   const processSolucaoData = () => {
     const counts: { [key: string]: number } = {};
-    dashboardData.solucoes.forEach(solucao => {
+    ensureArray(dashboardData.solucoes).forEach(solucao => {
       const tipoNome = solucao.tipo?.nome || 'Outros';
       counts[tipoNome] = (counts[tipoNome] || 0) + 1;
     });
@@ -144,7 +154,7 @@ export default function Dashboard() {
 
   const processStatusData = () => {
     const counts: { [key: string]: number } = {};
-    dashboardData.solucoes.forEach(solucao => {
+    ensureArray(dashboardData.solucoes).forEach(solucao => {
       const statusNome = solucao.status?.nome || 'Não definido';
       counts[statusNome] = (counts[statusNome] || 0) + 1;
     });
@@ -161,7 +171,7 @@ export default function Dashboard() {
 
   const processCategoriaData = () => {
     const counts: { [key: string]: number } = {};
-    dashboardData.solucoes.forEach(solucao => {
+    ensureArray(dashboardData.solucoes).forEach(solucao => {
       const categoriaNome = solucao.categoria?.nome || 'Outros';
       counts[categoriaNome] = (counts[categoriaNome] || 0) + 1;
     });
@@ -180,7 +190,7 @@ export default function Dashboard() {
   const processMonthlyCategoriaData = (): MonthlyCategoriaData => {
     const monthlyData: { [month: string]: { [categoria: string]: number } } = {};
 
-    dashboardData.solucoes.forEach(solucao => {
+    ensureArray(dashboardData.solucoes).forEach(solucao => {
       const statusDate = solucao.data_status || solucao.dataStatus;
       
       if (!statusDate) {
@@ -230,7 +240,7 @@ export default function Dashboard() {
     const monthlyData: { [month: string]: { [categoria: string]: number } } = {};
 
     // Processa apenas os meses que têm dados
-    dashboardData.solucoes.forEach(solucao => {
+    ensureArray(dashboardData.solucoes).forEach(solucao => {
       const statusDate = solucao.data_status || solucao.dataStatus;
       if (!statusDate) return;
       
@@ -266,7 +276,7 @@ export default function Dashboard() {
   const processMonthlyDemandasData = (): MonthlyDemandasData => {
     const monthlyData: { [month: string]: number } = {};
 
-    dashboardData.demandas.forEach(demanda => {
+    ensureArray(dashboardData.demandas).forEach(demanda => {
       const date = new Date(demanda.createdAt);
       const monthYear = `${date.getMonth() + 1}/${date.getFullYear()}`;
       monthlyData[monthYear] = (monthlyData[monthYear] || 0) + 1;
@@ -294,7 +304,7 @@ export default function Dashboard() {
   const processSolucoesPorDesenvolvedor = () => {
     const solucoesPorDesenvolvedor: { [key: string]: SolucaoType[] } = {};
 
-    dashboardData.solucoes.forEach(solucao => {
+    ensureArray(dashboardData.solucoes).forEach(solucao => {
       const desenvolvedorId = String(solucao.desenvolvedor?.id);
       if (!solucoesPorDesenvolvedor[desenvolvedorId]) {
         solucoesPorDesenvolvedor[desenvolvedorId] = [];
@@ -311,8 +321,8 @@ export default function Dashboard() {
     });
   };
 
-  const ativos = dashboardData.solucoes.filter(s => s.status?.propriedade === 'ativo').length;
-  const inativos = dashboardData.solucoes.filter(s => s.status?.propriedade === 'inativo').length;
+  const ativos = ensureArray(dashboardData.solucoes).filter(s => s.status?.propriedade === 'ativo').length;
+  const inativos = ensureArray(dashboardData.solucoes).filter(s => s.status?.propriedade === 'inativo').length;
 
   const chartOptions = {
     responsive: true,
@@ -322,6 +332,10 @@ export default function Dashboard() {
       },
     },
   };
+
+  const solucoesComDemanda = ensureArray(dashboardData.solucoes).filter(s => s.demandaId !== null);
+  const solucoesSemDemanda = ensureArray(dashboardData.solucoes).filter(s => s.demandaId === null);
+  const totalSolucoes = ensureArray(dashboardData.solucoes).length;
 
   return (
     <div className={`
@@ -338,21 +352,31 @@ export default function Dashboard() {
         <div className="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-gray-500 text-sm font-medium">Demanda</h3>
+              <h3 className="text-gray-500 text-sm font-medium">Demandas</h3>
               <p className="text-2xl font-bold text-gray-800">{dashboardData.demandas.length}</p>
             </div>
             <ClipboardList className="w-8 h-8 text-blue-500" />
           </div>
         </div>
 
-        {/* Card Soluções */}
+        {/* Novo Card para Soluções Detalhadas */}
         <div className="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-gray-500 text-sm font-medium">Soluções</h3>
-              <p className="text-2xl font-bold text-gray-800">{dashboardData.solucoes.length}</p>
+          <div className="flex flex-col">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-gray-500 text-sm font-medium">Total de Soluções</h3>
+              <Lightbulb className="w-8 h-8 text-green-500" />
             </div>
-            <Lightbulb className="w-8 h-8 text-green-500" />
+            <p className="text-2xl font-bold text-gray-800">{totalSolucoes}</p>
+            <div className="mt-2 space-y-1">
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-gray-600">Com Demanda:</span>
+                <span className="font-medium text-blue-600">{solucoesComDemanda.length}</span>
+              </div>
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-gray-600">Sem Demanda:</span>
+                <span className="font-medium text-orange-600">{solucoesSemDemanda.length}</span>
+              </div>
+            </div>
           </div>
         </div>
 

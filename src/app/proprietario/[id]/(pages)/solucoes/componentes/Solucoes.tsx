@@ -285,10 +285,18 @@ export default function Solucao() {
     e.preventDefault();
   
     try {
+      const storedId = localStorage.getItem('selectedProprietarioId');
+      
+      if (!storedId) {
+        console.error('proprietario_id não encontrado no localStorage');
+        return;
+      }
+
       const linguagemValue = selectedLanguages.length > 0 ? selectedLanguages.join(',') : null;
       
       const formDataToSubmit = {
         ...formData,
+        proprietario_id: Number(storedId), // Adiciona o proprietario_id do localStorage
         nome: formData.nome || '-',
         sigla: formData.sigla || '-',
         descricao: formData.descricao || '-',
@@ -303,7 +311,7 @@ export default function Solucao() {
         categoria_id: formData.categoria_id ? Number(formData.categoria_id) : null,
         responsavel_id: formData.responsavel_id ? Number(formData.responsavel_id) : null,
         status_id: formData.status_id ? Number(formData.status_id) : null,
-        demanda_id: formData.demanda_id ? Number(formData.demanda_id) : null, // Garantir que seja null se não houver valor
+        demanda_id: formData.demanda_id ? Number(formData.demanda_id) : null,
         data_status: formData.data_status || new Date().toISOString().split('T')[0]
       };
   

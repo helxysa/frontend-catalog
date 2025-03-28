@@ -49,9 +49,9 @@ export async function getSolucoes() {
   }
 
   try {
-    // Usa a nova rota específica para o dashboard
-    const response = await axios.get(`${url}/proprietarios/${storedId}/dashboard/solucoes`);
-    return response.data;
+    const response = await axios.get(`${url}/proprietarios/${storedId}/dashboard/todas-solucoes`);
+    console.log('Response from API:', response.data);
+    return response.data.data || []; // Retorna o array de dados dentro do objeto response
   } catch (error) {
     console.error('Erro ao buscar soluções:', error);
     throw error;
