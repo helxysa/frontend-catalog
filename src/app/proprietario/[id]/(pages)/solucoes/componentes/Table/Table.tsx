@@ -316,6 +316,9 @@ export default function DataTable({
         )
       },
       cell: ({ row }) => <div>{row.original.demanda?.nome || '-'}</div>,
+      filterFn: (row, id, value) => {
+        return row.original.demanda?.nome === value;
+      },
     },
     {
       accessorKey: "categoria",
@@ -542,6 +545,10 @@ export default function DataTable({
     },
   })
 
+  const handleClearFilters = () => {
+    table.resetColumnFilters();
+  };
+
   return (
     <div className="w-full">
       <div className="flex items-center justify-between py-4 gap-4">
@@ -555,6 +562,25 @@ export default function DataTable({
             className="w-[200px] bg-white border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 shadow-sm"
           />
           
+          {/* Filtro de Demanda */}
+          <select
+            value={(table.getColumn("demanda")?.getFilterValue() as string) ?? ""}
+            onChange={(event) =>
+              table.getColumn("demanda")?.setFilterValue(event.target.value)
+            }
+            className="w-[180px] h-10 rounded-md border border-gray-300 bg-white px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 shadow-sm"
+          >
+            <option value="">Todas as demandas</option>
+            {Array.from(new Set(solucoes.map(s => s.demanda?.nome)))
+              .filter(Boolean)
+              .sort()
+              .map((demanda) => (
+                <option key={demanda} value={demanda}>
+                  {demanda}
+                </option>
+              ))}
+          </select>
+
           {/* Filtro de Tipo */}
           <select
             value={(table.getColumn("tipo")?.getFilterValue() as string) ?? ""}
@@ -688,36 +714,46 @@ export default function DataTable({
           </select>
         </div>
 
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button 
-              variant="outline" 
-              size="icon"
-              className="bg-white h-10 w-10 shrink-0"
-            >
-              <Columns className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            {table
-              .getAllColumns()
-              .filter((column) => column.getCanHide())
-              .map((column) => {
-                return (
-                  <DropdownMenuCheckboxItem
-                    key={column.id}
-                    className="capitalize"
-                    checked={column.getIsVisible()}
-                    onCheckedChange={(value) =>
-                      column.toggleVisibility(!!value)
-                    }
-                  >
-                    {column.id}
-                  </DropdownMenuCheckboxItem>
-                )
-              })}
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={handleClearFilters}
+            className="bg-white h-10"
+          >
+            Limpar Filtros
+          </Button>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button 
+                variant="outline" 
+                size="icon"
+                className="bg-white h-10 w-10 shrink-0"
+              >
+                <Columns className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {table
+                .getAllColumns()
+                .filter((column) => column.getCanHide())
+                .map((column) => {
+                  return (
+                    <DropdownMenuCheckboxItem
+                      key={column.id}
+                      className="capitalize"
+                      checked={column.getIsVisible()}
+                      onCheckedChange={(value) =>
+                        column.toggleVisibility(!!value)
+                      }
+                    >
+                      {column.id}
+                    </DropdownMenuCheckboxItem>
+                  )
+                })}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
       <div className="rounded-md border bg-white">
         <Table>

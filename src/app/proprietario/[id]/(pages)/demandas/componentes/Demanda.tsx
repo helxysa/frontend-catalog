@@ -219,33 +219,36 @@ export default function Demanda() {
   const handleFormSubmit = async (formDataToSubmit: DemandaFormData) => {
     if (isEditing) {
       try {
-        // Atualizar demanda existente
-        const updatedDemanda = await updateDemanda(isEditing, formDataToSubmit);
-        console.log('Demanda atualizada com sucesso');
-
-        // Criar uma cópia do estado atual das demandas
-        const currentDemandas = [...demandas];
-
-        // Encontrar o índice da demanda editada
-        const editedIndex = currentDemandas.findIndex(d => String(d.id) === String(isEditing));
-
-        if (editedIndex !== -1) {
-          // Buscar a demanda atualizada da API
-          const updatedData = await getDemandas();
-          const updatedDemandaFromAPI = updatedData.data.find((d: DemandaType) => String(d.id) === String(isEditing));
-          
-          if (updatedDemandaFromAPI) {
-            // Atualizar a demanda mantendo sua posição original
-            currentDemandas[editedIndex] = updatedDemandaFromAPI;
-            setDemandas(currentDemandas);
-            setFilteredDemandas(currentDemandas);
-            
-            // Atualizar também as soluções associadas a esta demanda
-            fetchSolucoes(isEditing);
+        await updateDemanda(isEditing, formDataToSubmit);
+        
+        // Manter a ordem atual das demandas
+        const updatedDemandas = demandas.map(demanda => {
+          if (String(demanda.id) === String(isEditing)) {
+            // Atualizar apenas os campos da demanda editada
+            return {
+              ...demanda,
+              nome: formDataToSubmit.nome,
+              sigla: formDataToSubmit.sigla,
+              descricao: formDataToSubmit.descricao,
+              link: formDataToSubmit.link,
+              demandante: formDataToSubmit.demandante,
+              fatorGerador: formDataToSubmit.fator_gerador,
+              alinhamento: alinhamentos.find(a => a.id === Number(formDataToSubmit.alinhamento_id)),
+              prioridade: prioridades.find(p => p.id === Number(formDataToSubmit.prioridade_id)),
+              responsavel: responsaveis.find(r => r.id === Number(formDataToSubmit.responsavel_id)),
+              status: statusList.find(s => s.id === Number(formDataToSubmit.status_id)),
+              dataStatus: formDataToSubmit.data_status
+            };
           }
-        }
+          return demanda;
+        });
 
-        // Limpar formulário e fechar modal
+        setDemandas(updatedDemandas as DemandaType[]);
+        setFilteredDemandas(updatedDemandas as DemandaType[]);
+        
+        // Atualizar soluções se necessário
+        fetchSolucoes(isEditing);
+        
         setIsModalOpen(false);
         setFormData({} as DemandaFormData);
         setIsEditing(null);

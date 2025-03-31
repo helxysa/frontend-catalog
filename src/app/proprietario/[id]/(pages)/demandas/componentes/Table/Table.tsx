@@ -118,9 +118,9 @@ export default function DataTable({
     );
   };
 
-  
-
-  
+  const handleClearFilters = () => {
+    table.resetColumnFilters();
+  };
 
   const columns: ColumnDef<DemandaType>[] = [
     {
@@ -219,7 +219,6 @@ export default function DataTable({
             variant="ghost"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
             className="text-xs font-medium text-gray-600 w-full justify-start p-0 hover:bg-transparent"
-
           >
             Prioridade
             <ArrowUpDown className="" />
@@ -227,6 +226,9 @@ export default function DataTable({
         )
       },
       cell: ({ row }) => <div className="w-[120px] truncate">{row.original.prioridade?.nome || '-'}</div>,
+      filterFn: (row, id, value) => {
+        return row.original.prioridade?.nome.toLowerCase() === value.toLowerCase();
+      },
     },
     {
       accessorKey: "solucoes",
@@ -253,7 +255,6 @@ export default function DataTable({
             variant="ghost"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
             className="text-xs font-medium text-gray-600 w-full justify-start p-0 hover:bg-transparent"
-
           >
             Responsável
             <ArrowUpDown className="" />
@@ -261,6 +262,9 @@ export default function DataTable({
         )
       },
       cell: ({ row }) => <div className="w-[120px] truncate">{row.original.responsavel?.nome || '-'}</div>,
+      filterFn: (row, id, value) => {
+        return row.original.responsavel?.nome === value;
+      },
     },
     {
       accessorKey: "data_status",
@@ -287,7 +291,6 @@ export default function DataTable({
             variant="ghost"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
             className="text-xs font-medium text-gray-600 w-full justify-start p-0 hover:bg-transparent"
-
           >
             Status
             <ArrowUpDown className="" />
@@ -301,7 +304,6 @@ export default function DataTable({
             <span
               className={`rounded-md px-2 py-1 inline-block truncate ${determinarCorTexto(status.propriedade)}`}
               style={{ backgroundColor: status.propriedade }}
-              
             >
               {status.nome || '-'}
             </span>
@@ -309,6 +311,9 @@ export default function DataTable({
         ) : (
           <span className="text-gray-500">-</span>
         );
+      },
+      filterFn: (row, id, value) => {
+        return row.original.status?.nome === value;
       },
     },
     {
@@ -343,7 +348,9 @@ export default function DataTable({
     },
   ];
 
-  const [sorting, setSorting] = React.useState<SortingState>([])
+  const [sorting, setSorting] = React.useState<SortingState>([
+    { id: "index", desc: false }
+  ])
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
   const [pagination, setPagination] = React.useState({
@@ -362,6 +369,9 @@ export default function DataTable({
     getFilteredRowModel: getFilteredRowModel(),
     onColumnVisibilityChange: setColumnVisibility,
     onPaginationChange: setPagination,
+    initialState: {
+      sorting: [{ id: "index", desc: false }],
+    },
     state: {
       sorting,
       columnFilters,
@@ -402,7 +412,7 @@ export default function DataTable({
               ))}
           </select>
 
-       
+         
          
 
           <select
@@ -413,12 +423,12 @@ export default function DataTable({
             className="w-[180px] h-10 rounded-md border border-gray-300 bg-white px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 shadow-sm"
           >
             <option value="">Todos os responsáveis</option>
-            {Array.from(new Set(demandas.map(s => s.alinhamento?.nome)))
+            {Array.from(new Set(demandas.map(s => s.responsavel?.nome)))
               .filter(Boolean)
               .sort()
-              .map((alinhamento) => (
-                <option key={alinhamento} value={alinhamento}>
-                  {alinhamento}
+              .map((responsavel) => (
+                <option key={responsavel} value={responsavel}>
+                  {responsavel}
                 </option>
               ))}
           </select>
@@ -480,36 +490,46 @@ export default function DataTable({
           
         </div>
 
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button 
-              variant="outline" 
-              size="icon"
-              className="bg-white h-10 w-10 shrink-0"
-            >
-              <Columns className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            {table
-              .getAllColumns()
-              .filter((column) => column.getCanHide())
-              .map((column) => {
-                return (
-                  <DropdownMenuCheckboxItem
-                    key={column.id}
-                    className="capitalize"
-                    checked={column.getIsVisible()}
-                    onCheckedChange={(value) =>
-                      column.toggleVisibility(!!value)
-                    }
-                  >
-                    {column.id}
-                  </DropdownMenuCheckboxItem>
-                )
-              })}
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={handleClearFilters}
+            className="bg-white h-10"
+          >
+            Limpar Filtros
+          </Button>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button 
+                variant="outline" 
+                size="icon"
+                className="bg-white h-10 w-10 shrink-0"
+              >
+                <Columns className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {table
+                .getAllColumns()
+                .filter((column) => column.getCanHide())
+                .map((column) => {
+                  return (
+                    <DropdownMenuCheckboxItem
+                      key={column.id}
+                      className="capitalize"
+                      checked={column.getIsVisible()}
+                      onCheckedChange={(value) =>
+                        column.toggleVisibility(!!value)
+                      }
+                    >
+                      {column.id}
+                    </DropdownMenuCheckboxItem>
+                  )
+                })}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
       <div className="rounded-md border bg-white">
         <Table>
