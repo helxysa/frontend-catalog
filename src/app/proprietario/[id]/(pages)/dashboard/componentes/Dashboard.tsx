@@ -12,7 +12,7 @@ import {
   Legend 
 } from 'chart.js';
 import { Doughnut, Bar, Pie } from 'react-chartjs-2';
-import { getDemandas, getSolucoes, getAlinhamentos, getStatus, getCategorias, getDesenvolvedores } from "../actions/actions";
+import { getDemandas, getSolucoes, getAlinhamentos, getStatus, getCategorias, getDesenvolvedores, getTipos } from "../actions/actions";
 import type { DemandaType } from '../../demandas/types/types';
 import type { SolucaoType } from '../../solucoes/types/types';
 import type { Desenvolvedor } from '../../configuracoes/(page)/desenvolvedores/types/types';
@@ -65,26 +65,29 @@ export default function Dashboard() {
     status: Status[];
     categorias: any[];
     desenvolvedores: Desenvolvedor[];
+    tipos: any[];
   }>({
     demandas: [],
     solucoes: [],
     alinhamentos: [],
     status: [],
     categorias: [],
-    desenvolvedores: []
+    desenvolvedores: [],
+    tipos: []
   });
   const { isCollapsed } = useSidebar();
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [demandas, solucoes, alinhamentos, status, categorias, desenvolvedores] = await Promise.all([
+        const [demandas, solucoes, alinhamentos, status, categorias, desenvolvedores, tipos] = await Promise.all([
           getDemandas(),
           getSolucoes(),
           getAlinhamentos(),
           getStatus(),
           getCategorias(),
-          getDesenvolvedores()
+          getDesenvolvedores(),
+          getTipos()
         ]);
 
         console.log('Soluções recebidas:', solucoes);
@@ -98,7 +101,8 @@ export default function Dashboard() {
           alinhamentos,
           status,
           categorias,
-          desenvolvedores
+          desenvolvedores,
+          tipos
         });
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
@@ -111,8 +115,8 @@ export default function Dashboard() {
   const processAlinhamentoData = () => {
     const counts: { [key: string]: number } = {};
     
-    ensureArray(dashboardData.demandas).forEach(demanda => {
-      const alinhamentoNome = demanda.alinhamento?.nome || 'Sem alinhamento';
+    ensureArray(dashboardData.solucoes).forEach(solucao => {
+      const alinhamentoNome = solucao.demanda?.alinhamento?.nome || 'Sem alinhamento';
       counts[alinhamentoNome] = (counts[alinhamentoNome] || 0) + 1;
     });
 
@@ -138,7 +142,9 @@ export default function Dashboard() {
   const processSolucaoData = () => {
     const counts: { [key: string]: number } = {};
     ensureArray(dashboardData.solucoes).forEach(solucao => {
-      const tipoNome = solucao.tipo?.nome || 'Outros';
+      const tipoId = solucao.tipoId ? Number(solucao.tipoId) : null;
+      const tipo = tipoId ? dashboardData.tipos?.find(t => t.id === tipoId) : null;
+      const tipoNome = tipo?.nome || 'Não definido';
       counts[tipoNome] = (counts[tipoNome] || 0) + 1;
     });
 
@@ -155,7 +161,9 @@ export default function Dashboard() {
   const processStatusData = () => {
     const counts: { [key: string]: number } = {};
     ensureArray(dashboardData.solucoes).forEach(solucao => {
-      const statusNome = solucao.status?.nome || 'Não definido';
+      const statusId = solucao.statusId ? solucao.statusId.toString() : null;
+      const status = statusId ? dashboardData.status?.find(s => s.id.toString() === statusId) : null;
+      const statusNome = status?.nome || 'Não definido';
       counts[statusNome] = (counts[statusNome] || 0) + 1;
     });
 
@@ -172,7 +180,9 @@ export default function Dashboard() {
   const processCategoriaData = () => {
     const counts: { [key: string]: number } = {};
     ensureArray(dashboardData.solucoes).forEach(solucao => {
-      const categoriaNome = solucao.categoria?.nome || 'Outros';
+      const categoriaId = solucao.categoriaId ? Number(solucao.categoriaId) : null;
+      const categoria = categoriaId ? dashboardData.categorias?.find(c => c.id === categoriaId) : null;
+      const categoriaNome = categoria?.nome || 'Não definido';
       counts[categoriaNome] = (counts[categoriaNome] || 0) + 1;
     });
 
@@ -201,7 +211,9 @@ export default function Dashboard() {
       try {
         const date = new Date(statusDate);
         const monthYear = `${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()}`;
-        const categoriaNome = solucao.categoria?.nome || 'Outros';
+        const categoriaId = solucao.categoriaId ? Number(solucao.categoriaId) : null;
+        const categoria = categoriaId ? dashboardData.categorias?.find(c => c.id === categoriaId) : null;
+        const categoriaNome = categoria?.nome || 'Não definido';
 
         if (!monthlyData[monthYear]) {
           monthlyData[monthYear] = {};
@@ -248,7 +260,9 @@ export default function Dashboard() {
       if (date.getFullYear() !== currentYear) return;
       
       const monthName = date.toLocaleString('pt-BR', { month: 'short' });
-      const categoriaNome = solucao.categoria?.nome || 'Outros';
+      const categoriaId = solucao.categoriaId ? Number(solucao.categoriaId) : null;
+      const categoria = categoriaId ? dashboardData.categorias?.find(c => c.id === categoriaId) : null;
+      const categoriaNome = categoria?.nome || 'Não definido';
 
       if (!monthlyData[monthName]) {
         monthlyData[monthName] = {};
@@ -302,18 +316,21 @@ export default function Dashboard() {
   };
 
   const processSolucoesPorDesenvolvedor = () => {
-    const solucoesPorDesenvolvedor: { [key: string]: SolucaoType[] } = {};
+    const solucoesPorDesenvolvedor: { [key: number]: SolucaoType[] } = {};
 
     ensureArray(dashboardData.solucoes).forEach(solucao => {
-      const desenvolvedorId = String(solucao.desenvolvedor?.id);
-      if (!solucoesPorDesenvolvedor[desenvolvedorId]) {
-        solucoesPorDesenvolvedor[desenvolvedorId] = [];
+      const desenvolvedorId = solucao.desenvolvedorId ? Number(solucao.desenvolvedorId) : null;
+      if (desenvolvedorId) {
+        if (!solucoesPorDesenvolvedor[desenvolvedorId]) {
+          solucoesPorDesenvolvedor[desenvolvedorId] = [];
+        }
+        solucoesPorDesenvolvedor[desenvolvedorId].push(solucao);
       }
-      solucoesPorDesenvolvedor[desenvolvedorId].push(solucao);
     });
 
-    return Object.entries(solucoesPorDesenvolvedor).map(([desenvolvedorId, solucoes]) => {
-      const desenvolvedor = dashboardData.desenvolvedores.find(d => String(d.id) === desenvolvedorId);
+    return Object.entries(solucoesPorDesenvolvedor).map(([desenvolvedorIdStr, solucoes]) => {
+      const desenvolvedorId = Number(desenvolvedorIdStr);
+      const desenvolvedor = dashboardData.desenvolvedores.find(d => d.id.toString() === desenvolvedorIdStr);
       return {
         desenvolvedor: desenvolvedor ? desenvolvedor.nome : 'Desenvolvedor não encontrado',
         solucoes
@@ -359,46 +376,36 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Novo Card para Soluções Detalhadas */}
+        {/* Card Total de Soluções */}
         <div className="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow">
-          <div className="flex flex-col">
-            <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center justify-between">
+            <div>
               <h3 className="text-gray-500 text-sm font-medium">Total de Soluções</h3>
-              <Lightbulb className="w-8 h-8 text-green-500" />
+              <p className="text-2xl font-bold text-gray-800">{totalSolucoes}</p>
             </div>
-            <p className="text-2xl font-bold text-gray-800">{totalSolucoes}</p>
-            <div className="mt-2 space-y-1">
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-gray-600">Com Demanda:</span>
-                <span className="font-medium text-blue-600">{solucoesComDemanda.length}</span>
-              </div>
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-gray-600">Sem Demanda:</span>
-                <span className="font-medium text-orange-600">{solucoesSemDemanda.length}</span>
-              </div>
-            </div>
+            <Lightbulb className="w-8 h-8 text-green-500" />
           </div>
         </div>
 
-        {/* Card Ativos */}
+        {/* Card Soluções Sem Demanda */}
         <div className="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-gray-500 text-sm font-medium">Ativos</h3>
-              <p className="text-2xl font-bold text-gray-800">{ativos}</p>
+              <h3 className="text-gray-500 text-sm font-medium">Soluções Sem Demanda</h3>
+              <p className="text-2xl font-bold text-orange-600">{solucoesSemDemanda.length}</p>
             </div>
-            <CheckCircle2 className="w-8 h-8 text-teal-500" />
+            <XCircle className="w-8 h-8 text-orange-500" />
           </div>
         </div>
 
-        {/* Card Inativos */}
+        {/* Card Soluções Com Demanda */}
         <div className="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-gray-500 text-sm font-medium">Inativos</h3>
-              <p className="text-2xl font-bold text-gray-800">{inativos}</p>
+              <h3 className="text-gray-500 text-sm font-medium">Soluções Com Demanda</h3>
+              <p className="text-2xl font-bold text-blue-600">{solucoesComDemanda.length}</p>
             </div>
-            <XCircle className="w-8 h-8 text-red-500" />
+            <CheckCircle2 className="w-8 h-8 text-blue-500" />
           </div>
         </div>
       </div>

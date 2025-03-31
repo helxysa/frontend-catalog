@@ -25,7 +25,12 @@ export interface SolucaoType {
     categoria?: { id: number; nome: string };
     responsavel?: { id: number; nome: string };
     status?: { id: number; nome: string; propriedade: string };
-    demanda?: { id: number; nome: string, fatorGerador: string };
+    demanda?: { 
+      id: number; 
+      nome: string; 
+      fatorGerador: string;
+      alinhamento?: { id: number; nome: string };
+    };
 }
 
 export interface BaseType {
