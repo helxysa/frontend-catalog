@@ -19,6 +19,8 @@ import { DemandaType, ResponsavelType, AlinhamentoType, PrioridadeType, StatusTy
 import DeleteConfirmationModal from './ModalConfirmacao/DeleteConfirmationModal';
 import { useSidebar } from '../../../../../componentes/Sidebar/SidebarContext';
 import Link from 'next/link';
+import Form from './Form/Form';
+import DataTable from './Table/Table';
 
 export default function Demanda() {
   const [demandas, setDemandas] = useState<DemandaType[]>([]);
@@ -214,97 +216,61 @@ export default function Demanda() {
     }
   }, [isModalOpen]);
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-  
-    try {
-      // Validar campos obrigatórios
-      const errors = {
-        nome: !formData.nome,
-        proprietario_id: !formData.proprietario_id
-      };
-  
-      setFormErrors(errors);
-  
-      if (errors.nome || errors.proprietario_id) {
-        return;
-      }
-  
-      // Preparar dados para envio
-      const formDataToSubmit = {
-        ...formData,
-        nome: formData.nome || '-',
-        sigla: formData.sigla || '-',
-        descricao: formData.descricao || '-',
-        link: formData.link || '',
-        fator_gerador: formData.fator_gerador || '-',
-        demandante: formData.demandante || '-',
-        alinhamento_id: formData.alinhamento_id ? Number(formData.alinhamento_id) : null,
-        prioridade_id: formData.prioridade_id ? Number(formData.prioridade_id) : null,
-        responsavel_id: formData.responsavel_id ? Number(formData.responsavel_id) : null,
-        status_id: formData.status_id ? Number(formData.status_id) : null,
-        data_status: formData.data_status || new Date().toISOString().split('T')[0]
-      };
-  
-      console.log(formDataToSubmit);
-  
-      if (isEditing) {
-        try {
-          // Atualizar demanda existente
-          const updatedDemanda = await updateDemanda(isEditing, formDataToSubmit);
-          console.log('Demanda atualizada com sucesso');
-  
-          // Criar uma cópia do estado atual das demandas
-          const currentDemandas = [...demandas];
-  
-          // Encontrar o índice da demanda editada
-          const editedIndex = currentDemandas.findIndex(d => String(d.id) === String(isEditing));
-  
-          if (editedIndex !== -1) {
-            // Buscar a demanda atualizada da API
-            const updatedData = await getDemandas();
-            const updatedDemandaFromAPI = updatedData.data.find((d: DemandaType) => String(d.id) === String(isEditing));
-            
-            if (updatedDemandaFromAPI) {
-              // Atualizar a demanda mantendo sua posição original
-              currentDemandas[editedIndex] = updatedDemandaFromAPI;
-              setDemandas(currentDemandas);
-              setFilteredDemandas(currentDemandas);
-              
-              // Atualizar também as soluções associadas a esta demanda
-              fetchSolucoes(isEditing);
-            }
-          }
-  
-          // Limpar formulário e fechar modal
-          setIsModalOpen(false);
-          setFormData({} as DemandaFormData);
-          setIsEditing(null);
-        } catch (error) {
-          console.error('Erro ao atualizar demanda:', error);
-        }
-      } else {
-        // Criar nova demanda
-        const newDemanda = await createDemanda(formDataToSubmit);
-        
-        // Adicionar a nova demanda ao estado atual sem recarregar tudo
-        if (newDemanda) {
-          const updatedDemandas = [...demandas, newDemanda];
-          setDemandas(updatedDemandas);
-          setFilteredDemandas(updatedDemandas);
+  const handleFormSubmit = async (formDataToSubmit: DemandaFormData) => {
+    if (isEditing) {
+      try {
+        // Atualizar demanda existente
+        const updatedDemanda = await updateDemanda(isEditing, formDataToSubmit);
+        console.log('Demanda atualizada com sucesso');
+
+        // Criar uma cópia do estado atual das demandas
+        const currentDemandas = [...demandas];
+
+        // Encontrar o índice da demanda editada
+        const editedIndex = currentDemandas.findIndex(d => String(d.id) === String(isEditing));
+
+        if (editedIndex !== -1) {
+          // Buscar a demanda atualizada da API
+          const updatedData = await getDemandas();
+          const updatedDemandaFromAPI = updatedData.data.find((d: DemandaType) => String(d.id) === String(isEditing));
           
-          // Buscar soluções para a nova demanda
-          fetchSolucoes(newDemanda.id);
-        } else {
-          // Se não conseguir obter a nova demanda, recarregar tudo
-          await fetchDemandas();
+          if (updatedDemandaFromAPI) {
+            // Atualizar a demanda mantendo sua posição original
+            currentDemandas[editedIndex] = updatedDemandaFromAPI;
+            setDemandas(currentDemandas);
+            setFilteredDemandas(currentDemandas);
+            
+            // Atualizar também as soluções associadas a esta demanda
+            fetchSolucoes(isEditing);
+          }
         }
-        
+
+        // Limpar formulário e fechar modal
         setIsModalOpen(false);
         setFormData({} as DemandaFormData);
+        setIsEditing(null);
+      } catch (error) {
+        console.error('Erro ao atualizar demanda:', error);
       }
-    } catch (error) {
-      console.error('Submit error:', error);
+    } else {
+      // Criar nova demanda
+      const newDemanda = await createDemanda(formDataToSubmit);
+      
+      // Adicionar a nova demanda ao estado atual sem recarregar tudo
+      if (newDemanda) {
+        const updatedDemandas = [...demandas, newDemanda];
+        setDemandas(updatedDemandas);
+        setFilteredDemandas(updatedDemandas);
+        
+        // Buscar soluções para a nova demanda
+        fetchSolucoes(newDemanda.id);
+      } else {
+        // Se não conseguir obter a nova demanda, recarregar tudo
+        await fetchDemandas();
+      }
+      
+      setIsModalOpen(false);
+      setFormData({} as DemandaFormData);
     }
   };
 
@@ -561,469 +527,49 @@ export default function Demanda() {
           </div>
         </div>
 
-        {/* Filters Section */}
-        <div className={` bg-white rounded-lg shadow-md p-4 mb-6`}>
-          <div className="mb-3">
-            <h2 className="text-base font-semibold text-gray-800">Filtros</h2>
-          </div>
+        
+        <DataTable 
+          demandas={filteredDemandas}
+          isCollapsed={isCollapsed}
+          onEdit={(demanda) => {
+            const formattedData: DemandaFormData = {
+              proprietario_id: Number(demanda.proprietario?.id) || 0,
+              nome: demanda.nome || '',
+              sigla: demanda.sigla || '',
+              descricao: demanda.propriedade || '',
+              link: demanda.link || '',
+              demandante: demanda.demandante || '',
+              fator_gerador: demanda.fatorGerador || '',
+              alinhamento_id: Number(demanda.alinhamento?.id) || 0,
+              prioridade_id: Number(demanda.prioridade?.id) || 0,
+              responsavel_id: Number(demanda.responsavel?.id) || 0,
+              status_id: Number(demanda.status?.id) || 0,
+              data_status: demanda.dataStatus || ''
+            };
+            setFormData(formattedData);
+            setIsEditing(demanda.id);
+            setIsModalOpen(true);
+          }}
+          onDelete={handleDeleteClick}
+          onInfo={handleInfoClick}
+        />
 
-          <div className={`
-            grid gap-2
-            transition-all duration-300
-            ${isCollapsed
-              ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6'
-              : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6'}
-          `}>
-            <select
-              name="demandante"
-              value={filters.demandante}
-              onChange={handleFilterChange}
-              className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors"
-            >
-              <option value="">Demandante</option>
-              {[...new Set(demandas.map((d: DemandaType) => d.demandante))]
-                .filter(Boolean)
-                .sort()
-                .map((demandante: string) => (
-                  <option key={demandante} value={demandante}>{demandante}</option>
-                ))}
-            </select>
-
-            <select
-              name="fator_gerador"
-              value={filters.fator_gerador}
-              onChange={handleFilterChange}
-              className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors"
-            >
-              <option value="">Fator Gerador</option>
-              {[...new Set(demandas.map((d: DemandaType) => d.fatorGerador))]
-                .filter(Boolean)
-                .sort()
-                .map((fator: string) => (
-                  <option key={fator} value={fator}>{fator}</option>
-                ))}
-            </select>
-
-            <select
-              name="alinhamento_id"
-              value={filters.alinhamento_id}
-              onChange={handleFilterChange}
-              className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors"
-            >
-              <option value="">Alinhamento</option>
-              {alinhamentos
-                .sort((a, b) => a.nome.localeCompare(b.nome))
-                .map(a => (
-                  <option key={a.id} value={a.id}>{a.nome}</option>
-                ))}
-            </select>
-
-            <select
-              name="prioridade_id"
-              value={filters.prioridade_id}
-              onChange={handleFilterChange}
-              className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors"
-            >
-              <option value="">Prioridade</option>
-              {prioridades
-                .sort((a, b) => a.nome.localeCompare(b.nome))
-                .map(p => (
-                  <option key={p.id} value={p.id}>{p.nome}</option>
-                ))}
-            </select>
-
-            <select
-              name="responsavel_id"
-              value={filters.responsavel_id}
-              onChange={handleFilterChange}
-              className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors"
-            >
-              <option value="">Responsável</option>
-              {responsaveis
-                .sort((a, b) => a.nome.localeCompare(b.nome))
-                .map(r => (
-                  <option key={r.id} value={r.id}>{r.nome}</option>
-                ))}
-            </select>
-
-            <select
-              name="status_id"
-              value={filters.status_id}
-              onChange={handleFilterChange}
-              className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors"
-            >
-              <option value="">Status</option>
-              {statusList
-                .sort((a, b) => a.nome.localeCompare(b.nome))
-                .map(s => (
-                  <option key={s.id} value={s.id}>{s.nome}</option>
-                ))}
-            </select>
-          </div>
-
-          <div className="mt-3 flex items-center justify-between">
-            <div className="mb-6">
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Buscar demandas..."
-                  value={tempSearchTerm}
-                  onChange={handleSearchChange}
-                  className="w-full px-4 py-2 pl-10 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white text-gray-700 placeholder-gray-400"
-                />
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <svg className="h-5 w-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                </div>
-              </div>
-            </div>
-            <div className="flex space-x-2">
-              <button
-                onClick={clearFilters}
-                className="px-3 py-1.5 text-sm text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
-              >
-                Limpar
-              </button>
-              <button
-                onClick={applyFilters}
-                className="px-3 py-1.5 text-sm text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors"
-              >
-                Aplicar
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow-md overflow-hidden">
-          <table className={`
-              w-full
-              transition-all duration-300
-              ${isCollapsed ? 'table-auto' : ''}
-            `}>
-            <thead className="bg-gray-200">
-              <tr>
-                <th className="px-3 py-3 text-left text-sm font-medium text-gray-500 text-xs uppercase  ">#</th>
-                <th className="px-3 py-3 text-left text-sm font-medium text-gray-500 text-xs uppercase ">Sigla</th>
-                <th className="px-3 py-3 text-left text-sm font-medium text-gray-500 text-xs uppercase ">Nome</th>
-                <th className="px-3 py-3 text-left text-sm font-medium text-gray-500 text-xs uppercase ">Fator Gerador</th>
-                <th className="px-3 py-3 text-left text-sm font-medium text-gray-500 text-xs uppercase ">Demandante</th>
-                <th className="px-3 py-3 text-left text-sm font-medium text-gray-500 text-xs uppercase ">Alinhamento</th>
-                <th className="px-3 py-3 text-left text-sm font-medium text-gray-500 text-xs uppercase ">Prioridade</th>
-                <th className="px-3 py-3 text-left text-sm font-medium text-gray-500 text-xs uppercase ">Soluções</th>
-                <th className="px-3 py-3 text-left text-sm font-medium text-gray-500 text-xs uppercase ">Responsável</th>
-                <th className="px-3 py-3 text-left text-sm font-medium text-gray-500 text-xs uppercase ">Data Status</th>
-                <th className="px-3 py-3 text-left text-sm font-medium text-gray-500 text-xs uppercase ">Status</th>
-                <th className="px-3 py-3 text-right text-sm font-medium text-gray-500 text-xs uppercase ">Ações</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {Array.isArray(filteredDemandas) && filteredDemandas.map((demanda: DemandaType, index: number) => (
-                <tr key={demanda.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-4 text-sm text-gray-600">
-                    {index + 1}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-600 break-words max-w-[150px]">
-                    {demanda.sigla || '-'}
-                  </td>
-                  <td className="px-6 py-4 text-sm font-medium text-gray-800 break-words max-w-[200px]">
-                    {demanda.nome || '-'}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-600 break-words max-w-[200px]">
-                    {demanda.fatorGerador || '-'}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-600 break-words max-w-[150px]">
-                    {demanda.demandante || '-'}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-600 break-words max-w-[150px]">
-                    {demanda.alinhamento?.nome || '-'}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-600 break-words max-w-[150px]">
-                    {demanda.prioridade?.nome || '-'}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-600 break-words max-w-[150px] relative group">
-                    <span className="cursor-pointer hover:text-blue-500">
-                      {solucoes[demanda.id]?.length || 0}
-                    </span>
-                    {solucoes[demanda.id]?.length > 0 && (
-                      <div className="absolute left-full top-0 ml-2 z-20 hidden group-hover:block bg-white shadow-xl rounded-lg p-4 w-80 border border-gray-200">
-                        <div className="max-h-80 overflow-y-auto">
-                          <h4 className="font-medium text-gray-800 mb-2 pb-2 border-b border-gray-200">Soluções</h4>
-                          {solucoes[demanda.id]?.map(solucao => (
-                            <div key={solucao.id} className="mb-3 pb-3 border-b border-gray-100 last:border-0">
-                              <p className="font-medium text-gray-700">{solucao.nome}</p>
-                              <p className="text-sm text-gray-500 mt-1">{solucao.descricao}</p>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-600 break-words max-w-[150px]">
-                    {demanda.responsavel?.nome || '-'}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-600 whitespace-normal">
-                    {formatDate(demanda.dataStatus)}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-600">
-                    {demanda.status?.propriedade ? (
-                      <span
-                        className={`rounded-md px-2 py-1 break-words max-w-[150px] inline-block ${determinarCorTexto(demanda.status.propriedade)}`}
-                        style={{ backgroundColor: demanda.status.propriedade }}
-                      >
-                        {demanda.status.nome || '-'}
-                      </span>
-                    ) : (
-                      <span className="text-gray-500">-</span>
-                    )}
-                  </td>
-
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
-                    <div className="flex justify-end space-x-2">
-                      <button
-                        onClick={() => handleInfoClick(demanda)}
-                        className="text-blue-500 hover:text-blue-700 rounded-full hover:bg-blue-50 transition-colors"
-                      >
-                        <Info className="w-5 h-5" />
-                      </button>
-                      {demanda.link && (
-                        <Link
-                          href={demanda.link}
-                          target="_blank"
-                          className="text-purple-500 hover:text-purple-700 rounded-full hover:bg-purple-50 transition-colors"
-                        >
-                          <ExternalLink className="w-5 h-5" />
-                        </Link>
-                      )}
-                      <button
-                        onClick={() => {
-                          const formattedData: DemandaFormData = {
-                            proprietario_id: Number(demanda.proprietario?.id) || 0,
-                            nome: demanda.nome || '',
-                            sigla: demanda.sigla || '',
-                            descricao: demanda.propriedade || '',
-                            link: demanda.link || '',
-                            demandante: demanda.demandante || '',
-                            fator_gerador: demanda.fatorGerador || '',
-                            alinhamento_id: Number(demanda.alinhamento?.id) || 0,
-                            prioridade_id: Number(demanda.prioridade?.id) || 0,
-                            responsavel_id: Number(demanda.responsavel?.id) || 0,
-                            status_id: Number(demanda.status?.id) || 0,
-                            data_status: demanda.dataStatus || ''
-                          };
-                          setFormData(formattedData);
-                          setIsEditing(demanda.id);
-                          setIsModalOpen(true);
-                        }}
-                        className="text-green-600 hover:text-green-800 rounded-full hover:bg-green-50 transition-colors"
-                      >
-                        <Edit2 className="w-5 h-5" />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteClick(demanda.id)}
-                        className="text-red-400 hover:text-red-700 rounded-full hover:bg-red-50 transition-colors"
-                      >
-                        <Trash2 className="w-5 h-5" />
-                      </button>
-                      <DeleteConfirmationModal
-                        isOpen={isDeleteModalOpen}
-                        onClose={() => setIsDeleteModalOpen(false)}
-                        onConfirm={confirmDelete}
-                        itemName="esta demanda"
-                      />
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        <Pagination />
-
-        {isModalOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] overflow-y-auto pt-16">
-      <div className="relative bg-white rounded-lg shadow-2xl p-8 w-full max-w-2xl m-4 mt-10">
-              <div className="flex justify-between items-center mb-2">
-                <h2 className="text-2xl font-bold text-gray-800">
-                  {isEditing ? 'Editar Demanda' : 'Nova Demanda'}
-                </h2>
-                <button
-                  onClick={() => {
-                    setIsModalOpen(false);
-                    setIsEditing(null);
-                    setFormData({} as DemandaFormData);
-                  }}
-                  className="text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full p-3"
-                >
-                  <X className="w-6 h-6" />
-                </button>
-              </div>
-
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <input
-                    type="hidden"
-                    name="proprietario_id"
-                    value={formData.proprietario_id || ''}
-                  />
-
-                  <div className="col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-2 font-bold">Nome</label>
-                    <input
-                      type="text"
-                      name="nome"
-                      value={formData.nome || ''}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-md text-gray-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2 font-bold">Sigla</label>
-                    <input
-                      type="text"
-                      name="sigla"
-                      value={formData.sigla || ''}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-md text-gray-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2 font-bold">Demandante</label>
-                    <input
-                      type="text"
-                      name="demandante"
-                      value={formData.demandante || ''}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-md text-gray-500"
-                    />
-                  </div>
-
-                  <div className="col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-2 font-bold">Descrição</label>
-                    <textarea
-                      name="descricao"
-                      value={formData.descricao || ''}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-md text-gray-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2 font-bold">Fator Gerador</label>
-                    <input
-                      type="text"
-                      name="fator_gerador"
-                      value={formData.fator_gerador || ''}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-md text-gray-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2 font-bold">Link do PGA</label>
-                    <input
-                      type="text"
-                      name="link"
-                      value={formData.link || ''}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-md text-gray-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2 font-bold">Alinhamento</label>
-                    <select
-                      name="alinhamento_id"
-                      value={formData.alinhamento_id || ''}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-md text-gray-500"
-                    >
-                      <option value="">Selecione um alinhamento</option>
-                      {alinhamentos.map((align: any) => (
-                        <option key={align.id} value={align.id}>{align.nome}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2 font-bold">Prioridade</label>
-                    <select
-                      name="prioridade_id"
-                      value={formData.prioridade_id || ''}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-md text-gray-500"
-                    >
-                      <option value="">Selecione uma prioridade</option>
-                      {prioridades.map((prior: any) => (
-                        <option key={prior.id} value={prior.id}>{prior.nome}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2 font-bold">Responsável</label>
-                    <select
-                      name="responsavel_id"
-                      value={formData.responsavel_id || ''}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-md text-gray-500"
-                    >
-                      <option value="">Selecione um responsável</option>
-                      {responsaveis.map((resp: any) => (
-                        <option key={resp.id} value={resp.id}>{resp.nome}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2 font-bold">Status</label>
-                    <select
-                      name="status_id"
-                      value={formData.status_id || ''}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-md text-gray-500"
-                    >
-                      <option value="">Selecione um status</option>
-                      {statusList.map((status: any) => (
-                        <option key={status.id} value={status.id}>{status.nome}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2 font-bold">Data Status</label>
-                    <input
-                      type="date"
-                      name="data_status"
-                      value={formData.data_status || ''}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-md text-gray-500"
-                    />
-                  </div>
-                </div>
-
-                <div className="flex justify-end space-x-4 mt-6">
-                  <button
-                    type="button"
-                    onClick={() => setIsModalOpen(false)}
-                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-                  >
-                    Salvar
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
+        <Form
+          isOpen={isModalOpen}
+          onClose={() => {
+            setIsModalOpen(false);
+            setIsEditing(null);
+            setFormData({} as DemandaFormData);
+          }}
+          onSubmit={handleFormSubmit}
+          isEditing={isEditing}
+          formData={formData}
+          setFormData={setFormData}
+          alinhamentos={alinhamentos}
+          prioridades={prioridades}
+          responsaveis={responsaveis}
+          statusList={statusList}
+        />
 
         {isInfoModalOpen && selectedDemandDetails && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] overflow-y-auto">

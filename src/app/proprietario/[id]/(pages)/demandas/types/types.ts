@@ -37,13 +37,13 @@ export interface DemandaType {
     nome: string;
     sigla: string;
     descricao: string;
-    demandante: string
+    demandante: string;
     link: string;
     fator_gerador: string;
-    alinhamento_id: number;
-    prioridade_id: number;
-    responsavel_id: number;
-    status_id: number;
+    alinhamento_id: number | null;
+    prioridade_id: number | null;
+    responsavel_id: number | null;
+    status_id: number | null;
     data_status: string;
   }
   

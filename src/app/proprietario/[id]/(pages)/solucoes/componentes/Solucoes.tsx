@@ -29,6 +29,7 @@ import { useSidebar } from '../../../../../componentes/Sidebar/SidebarContext';
 import { Times } from '../types/types';
 
 import UpdateSolucoesButton from '../components/UpdateSolucoesButton';
+import Table from './Table/Table';
 
 interface SolucaoFormData {
   nome: string;
@@ -36,10 +37,10 @@ interface SolucaoFormData {
   sigla: string;
   descricao: string;
   versao: string;
-  repositorio: string;
-  link: string;
+  repositorio: string | null;
+  link: string | null;
   andamento: string;
-  criticidade: string;
+  criticidade: string | null;
   tipo_id: number | null;
   linguagem_id: string | null;
   desenvolvedor_id: number | null;
@@ -277,17 +278,18 @@ export default function Solucao() {
 
       const linguagemValue = selectedLanguages.length > 0 ? selectedLanguages.join(',') : null;
       
+      // Garantir que todos os campos estejam no formato correto
       const formDataToSubmit = {
         ...formData,
-        proprietario_id: Number(storedId), // Adiciona o proprietario_id do localStorage
+        proprietario_id: Number(storedId),
         nome: formData.nome || '-',
         sigla: formData.sigla || '-',
         descricao: formData.descricao || '-',
         versao: formData.versao || '-',
-        repositorio: formData.repositorio || '',
-        link: formData.link || '',
-        andamento: formData.andamento || '',
-        criticidade: formData.criticidade || '',
+        repositorio: formData.repositorio || null,
+        link: formData.link || null,
+        andamento: formData.andamento || '0',
+        criticidade: formData.criticidade || '', // Enviar string vazia em vez de null
         tipo_id: formData.tipo_id ? Number(formData.tipo_id) : null,
         linguagem_id: linguagemValue,
         desenvolvedor_id: formData.desenvolvedor_id ? Number(formData.desenvolvedor_id) : null,
@@ -298,36 +300,42 @@ export default function Solucao() {
         data_status: formData.data_status || new Date().toISOString().split('T')[0]
       };
   
+      console.log('Dados a serem enviados:', formDataToSubmit);
+
       if (isEditing) {
         try {
           // Atualizar solução existente
           const updatedSolucao = await updateSolucao(isEditing, formDataToSubmit);
+          console.log('Solução atualizada:', updatedSolucao);
           
-          // Atualizar a lista de soluções localmente
-          const updatedSolucoes = solucoes.map(solucao =>
-            solucao.id === updatedSolucao.id ? updatedSolucao : solucao
-          );
+          // Criar uma cópia do estado atual das soluções
+          const currentSolucoes = [...solucoes];
           
+          // Encontrar o índice da solução editada
+          const editedIndex = currentSolucoes.findIndex(s => String(s.id) === String(isEditing));
+          
+          if (editedIndex !== -1) {
+            // Buscar a solução atualizada da API
+            const updatedData = await getSolucoes(currentPage, itemsPerPage, Number(storedId));
+            const updatedSolucaoFromAPI = updatedData.find((s: SolucaoType) => String(s.id) === String(isEditing));
+            
+            if (updatedSolucaoFromAPI) {
+              // Atualizar a solução mantendo sua posição original
+              currentSolucoes[editedIndex] = updatedSolucaoFromAPI;
+              setSolucoes(currentSolucoes);
+            }
+          }
 
-          // Atualizar os estados com a lista atualizada
-          setSolucoes(updatedSolucoes);
-          setFilteredSolucoes(updatedSolucoes);
-          
-          // Limpar formulário e fechar modal
           setIsModalOpen(false);
           setFormData({} as SolucaoFormData);
           setSelectedLanguages([]);
           setIsEditing(null);
-          await fetchSolucoes();
         } catch (error) {
           console.error('Erro ao atualizar solução:', error);
-          // Exibir mensagem de erro para o usuário, se necessário
         }
       } else {
         // Criar nova solução
-        const newSolucao = await createSolucao(formDataToSubmit);
-        
-        // Buscar soluções atualizadas
+        await createSolucao(formDataToSubmit);
         await fetchSolucoes();
         
         setIsModalOpen(false);
@@ -344,32 +352,19 @@ export default function Solucao() {
     const { name, value } = e.target;
     console.log(`Changing ${name} to:`, value); // Debug log
 
-    const newValue = name === 'demanda_id' ? (value ? Number(value) : null) : value;
-    console.log('New value after processing:', newValue); // Debug log
-    
-    
     if (name === 'andamento') {
       // Garante que o valor está entre 0 e 100
       const numValue = Math.min(Math.max(Number(value) || 0, 0), 100);
-      setFormData((prev: SolucaoFormData) => ({
+      setFormData(prev => ({
         ...prev,
         [name]: numValue.toString()
       }));
     } else {
-      setFormData((prev: SolucaoFormData) => ({
+      setFormData(prev => ({
         ...prev,
         [name]: value
       }));
     }
-
-    setFormData((prev: SolucaoFormData) => {
-      const updated = {
-        ...prev,
-        [name]: newValue
-      };
-      console.log('Updated form data:', updated); // Debug log
-      return updated;
-    });
   };
 
   const handleTimeDelete = async (id: string) => {
@@ -563,24 +558,28 @@ export default function Solucao() {
   };
 
   const handleEditClick = (solucao: SolucaoType) => {
+    console.log('Solução recebida para edição:', solucao);
+    
     const formDataToSet = {
-      nome: solucao.nome,
-      sigla: solucao.sigla,
-      descricao: solucao.descricao,
-      versao: solucao.versao,
-      repositorio: solucao.repositorio,
-      link: solucao.link,
-      andamento: solucao.andamento,
-      criticidade: solucao.criticidade,
-      tipo_id: solucao.tipo?.id,
-      linguagem_id: solucao.linguagemId,
-      desenvolvedor_id: solucao.desenvolvedor?.id,
-      categoria_id: solucao.categoria?.id,
-      responsavel_id: solucao.responsavel?.id,
-      status_id: solucao.status?.id,
-      demanda_id: solucao.demandaId, 
-      data_status: solucao.data_status || solucao.dataStatus
+      nome: solucao.nome || '',
+      sigla: solucao.sigla || '',
+      descricao: solucao.descricao || '',
+      versao: solucao.versao || '',
+      repositorio: solucao.repositorio || '',
+      link: solucao.link || '',
+      andamento: solucao.andamento || '',
+      criticidade: solucao.criticidade || '', // Garantir que seja string vazia se null
+      tipo_id: solucao.tipo?.id || null,
+      linguagem_id: solucao.linguagemId || null,
+      desenvolvedor_id: solucao.desenvolvedor?.id || null,
+      categoria_id: solucao.categoria?.id || null,
+      responsavel_id: solucao.responsavel?.id || null,
+      status_id: solucao.status?.id || null,
+      demanda_id: solucao.demandaId || null,
+      data_status: solucao.data_status || solucao.dataStatus || ''
     } as SolucaoFormData;
+
+    console.log('FormData configurado para edição:', formDataToSet);
 
     setFormData(formDataToSet);
     setIsEditing(solucao.id.toString());
@@ -826,27 +825,6 @@ export default function Solucao() {
     return '-';
   };
 
-  const Pagination = () => {
-    if (totalPages <= 1) return null;
-    
-    return (
-      <div className="mt-6 flex gap-2">
-        {Array.from({ length: totalPages }, (_, i) => (
-          <button
-            key={i + 1}
-            onClick={() => setCurrentPage(i + 1)}
-            className={`px-3 py-1 rounded ${
-              currentPage === i + 1
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-300 text-gray-600 hover:bg-gray-200'
-            }`}
-          >
-            {i + 1}
-          </button>
-        ))}
-      </div>
-    );
-  };
 
   // Add this helper function to format repository links
   const formatRepositoryLink = (repo: string) => {
@@ -932,7 +910,7 @@ export default function Solucao() {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-md p-4 mb-6">
+        {/* <div className="bg-white rounded-lg shadow-md p-4 mb-6">
           <div className="mb-3">
             <h2 className="text-base font-semibold text-gray-800">Filtros</h2>
           </div>
@@ -1064,145 +1042,20 @@ export default function Solucao() {
               </button>
             </div>
           </div>
-        </div>
+        </div> */}
 
-        <div className="bg-white rounded-lg  shadow-md">
-        <div className="w-full">
-        <table className={` 
-              
-              w-full
-              transition-all duration-300
-              ${isCollapsed ? 'table-auto' : ''}
-            `}>
-              <thead className="bg-gray-100 rounded-t-lg">
-              <tr>
-              <th className="px-1 py-5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[5%]">#</th>
-                <th className="px-1 py-5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[15%]">Nome</th>
-                <th className="px-1 py-5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[8%]">Sigla</th>
-                <th className="px-1 py-5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[8%]">Versão</th>
-                {/* Adjust other column widths as needed */}
-                <th className="px-1 py-5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[8%]">Tipo</th>
-                <th className="px-1 py-5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[20%]">Linguagem</th>
-                <th className="px-1 py-5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[20%]">Desenvolvedor</th>
-                <th className="px-1 py-5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[20%]">Demanda</th>
-                <th className="px-1 py-5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[8%]">Categoria</th>
-                <th className="px-1 py-5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[8%]">Responsável</th>
-                <th className="px-1 py-5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[8%]">Repositório</th>
-                <th className="px-1 py-5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[8%]">Criticidade</th>
-                <th className="px-1 py-5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[8%]">Andamento</th>
-                <th className="px-1 py-5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[8%]">Data Status</th>
-                <th className="px-1 py-5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[8%]">Status</th>
-                <th className="px-1 py-5 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-[8%]">Ações</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {(solucoes || []).map((solucao, index) => (
-                  <tr key={solucao.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-3 py-2 text-sm text-gray-600">
-                      {index + 1}
-                    </td>
-                    <td className="px-3 py-2 text-sm font-medium text-gray-800 break-words max-w-[200px]">
-                      {solucao.nome || '-'}
-                    </td>
-                    <td className="px-3 py-2 text-sm text-gray-600 break-words max-w-[150px]">
-                      {solucao.sigla || '-'}
-                    </td>
-                    <td className="px-3 py-2 text-sm text-gray-600">
-                      {solucao.versao || '-'}
-                    </td>
-                    <td className="px-3 py-2 text-sm text-gray-600 break-words max-w-[150px]">
-                      {solucao.tipo?.nome || '-'}
-                    </td>
-                    <td className="px-3 py-2 text-sm text-gray-600">
-                      {renderTableLinguagens(solucao)}
-                    </td>
-                    <td className="px-3 py-2 text-sm text-gray-600 break-words max-w-[150px]">
-                      {solucao.desenvolvedor?.nome || '-'}
-                    </td>
-                    
-                    <td className="px-3 py-2 text-sm text-gray-600 break-words max-w-[150px]">
-                      {solucao.demanda?.nome || '-'}
-                    </td>
-                    <td className="px-3 py-2 text-sm text-gray-600 break-words max-w-[150px]">
-                      {solucao.categoria?.nome || '-'}
-                    </td>
-                    <td className="px-3 py-2 text-sm text-gray-600 break-words max-w-[150px]">
-                      {solucao.responsavel?.nome || '-'}
-                    </td>
-                    <td className="px-3 py-2 text-sm text-gray-600">
-                      {formatRepositoryLink(solucao.repositorio)}
-                    </td>
-                  
-                      <td className="px-3 py-2 text-sm text-gray-600">
-                      {solucao.criticidade || '-'}
-                    </td>
-                    <td className="px-3 py-2 text-sm text-gray-600">
-                        <div className="flex flex-col space-y-1">
-                          <div className="flex justify-between items-center gap-2">
-                            <span className="font-medium">{solucao.andamento || '0'}%</span>
-                            <span className={`text-xs ${
-                              Number(solucao.andamento) === 100 
-                                ? 'text-green-600' 
-                                : Number(solucao.andamento) > 0 
-                                  ? 'text-blue-600' 
-                                  : 'text-gray-500'
-                            }`}>
-                              {Number(solucao.andamento) === 100 
-                                ? 'Concluído' 
-                                : Number(solucao.andamento) > 0 
-                                  ? 'Em andamento' 
-                                  : 'Não iniciado'}
-                            </span>
-                          </div>
-                          <ProgressBar progress={Number(solucao.andamento) || 0} />
-                        </div>
-                      </td>
-                    <td className="px-3 py-2 text-sm text-gray-600 whitespace-normal">
-                      {formatDate(solucao.data_status || solucao.dataStatus)}
-                    </td>
-                    <td className="px-3 py-2 text-sm text-gray-600">
-                      {solucao.status?.propriedade ? (
-                        <span
-                          className={`rounded-md px-2 py-1 break-words max-w-[150px] inline-block ${determinarCorTexto(solucao.status.propriedade)}`}
-                          style={{ backgroundColor: solucao.status.propriedade }}
-                        >
-                          {solucao.status.nome || '-'}
-                        </span>
-                      ) : (
-                        <span className="text-gray-500">-</span>
-                      )}
-                    </td>
-                    <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500 text-right">
-                      <div className="flex justify-end space-x-2">
-                      {formatRepositoryLink(solucao.link)} {/* <td> separado */}
-                        
-                        <button
-                          onClick={() => handleEditClick(solucao)}
-                          className="text-green-600 hover:text-green-800 rounded-full hover:bg-green-50 transition-colors"
-                        >
-                          <Edit2 className="w-5 h-5" />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteClick(solucao.id.toString())}
-                          className="text-red-400 hover:text-red-700 rounded-full hover:bg-red-50 transition-colors"
-                        >
-                          <Trash2 className="w-5 h-5" />
-                        </button>
-                        <button
-                          onClick={() => handleInfoClick(solucao)}
-                          className="text-blue-500 hover:text-blue-700 rounded-full hover:bg-blue-50 transition-colors"
-                        >
-                          <Info className="w-5 h-5" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-        <Pagination />      
+        {/* Substitua a seção da tabela pelo componente Table */}
+        <Table 
+          solucoes={solucoes}
+          linguagens={linguagens}
+          isCollapsed={isCollapsed}
+          onEdit={handleEditClick}
+          onDelete={handleDeleteClick}
+          onInfo={handleInfoClick}
+        />
+        
+        {/* <Pagination /> */}
+        
         {isModalOpen && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100]">
               <div className="bg-white rounded-lg shadow-2xl p-6 w-full max-w-4xl z-[101]">
