@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  transpilePackages: ['@tanstack/react-table'],
   /* config options here */
   async redirects() {
     return [
