@@ -33,7 +33,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 
-import { SolucaoType, BaseType } from '../../types';
+import { SolucaoType, BaseType } from '../../types/types';
 
 interface TableProps {
   solucoes: SolucaoType[];
