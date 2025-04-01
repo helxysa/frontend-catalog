@@ -826,6 +826,12 @@ export default function Demanda() {
           </div>
         )}
       </div>
+      <DeleteConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={confirmDelete}
+        itemName="esta demanda"
+      />
     </div>
   );
 }

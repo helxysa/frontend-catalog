@@ -268,7 +268,7 @@ export default function DataTable({
             className="text-xs font-medium text-gray-600 w-full justify-start p-0 hover:bg-transparent"
 
           >
-            Linguagem
+            Tecnologia
             <ArrowUpDown />
           </Button>
         )
@@ -608,7 +608,7 @@ export default function DataTable({
             }
             className="w-[200px] h-10 rounded-md border border-gray-300 bg-white px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 shadow-sm"
           >
-            <option value="">Todas as linguagens</option>
+            <option value="">Todas as tecnologias</option>
             {linguagens
               .sort((a, b) => a.nome.localeCompare(b.nome))
               .map((linguagem) => (
