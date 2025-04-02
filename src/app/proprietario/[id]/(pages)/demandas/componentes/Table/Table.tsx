@@ -170,7 +170,7 @@ export default function DataTable({
             className="text-xs font-medium text-gray-600 w-full justify-start p-0 hover:bg-transparent"
 
           >
-            Fator Gerador
+            Fato Gerador
             <ArrowUpDown className="" />
           </Button>
         )

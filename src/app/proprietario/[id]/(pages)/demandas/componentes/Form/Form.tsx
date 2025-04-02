@@ -148,7 +148,7 @@ export default function Form({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2 font-bold">Fator Gerador</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2 font-bold">Fato Gerador</label>
               <input
                 type="text"
                 name="fator_gerador"

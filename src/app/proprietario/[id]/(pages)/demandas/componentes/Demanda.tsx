@@ -644,7 +644,7 @@ export default function Demanda() {
                  </div>
                  
                  <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
-                   <span className="text-sm font-medium text-gray-600">Fator Gerador:</span>
+                   <span className="text-sm font-medium text-gray-600">Fato Gerador:</span>
                    <span className="text-sm text-gray-800 font-medium">{selectedDemandDetails.fatorGerador}</span>
                  </div>
                  
@@ -787,7 +787,7 @@ export default function Demanda() {
                                           </h4>
                                           <div className="space-y-3">
                                             <p className="flex items-center justify-between group hover:bg-white hover:shadow-sm p-2 rounded-md transition-all">
-                                              <span className="font-medium text-gray-600">Fator Gerador:</span>
+                                              <span className="font-medium text-gray-600">Fato Gerador:</span>
                                               <span className="text-gray-900 font-medium group-hover:text-blue-600">{evento.demanda.fatorGerador}</span>
                                             </p>
                                             <p className="flex items-center justify-between group hover:bg-white hover:shadow-sm p-2 rounded-md transition-all">
