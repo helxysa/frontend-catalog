@@ -13,8 +13,11 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table"
-import { ArrowUpDown, ChevronDown, Edit2, Trash2, Info, ExternalLink, Columns } from "lucide-react"
+import { ArrowUpDown, ChevronDown, Edit2, Trash2, Info, ExternalLink, Columns, FileText, FileSpreadsheet } from "lucide-react"
 import Link from 'next/link';
+import { pdf, Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
 
 import { Button } from "@/components/ui/button"
 import {
@@ -33,7 +36,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 
-import { SolucaoType, BaseType } from '../../types';
+import { SolucaoType, BaseType } from '../../types/types';
 
 interface TableProps {
   solucoes: SolucaoType[];
@@ -43,6 +46,194 @@ interface TableProps {
   onDelete: (id: string) => void;
   onInfo: (solucao: SolucaoType) => void;
 }
+
+// Estilos para o PDF
+const styles = StyleSheet.create({
+  page: {
+    flexDirection: 'column',
+    padding: 30,
+    fontFamily: 'Helvetica',
+  },
+  title: {
+    fontSize: 18,
+    marginBottom: 20,
+    textAlign: 'center',
+    fontWeight: 'bold',
+  },
+  table: {
+    display: 'flex',
+    width: 'auto',
+    borderStyle: 'solid',
+    borderWidth: 1,
+    borderColor: '#bfbfbf',
+    borderRightWidth: 0,
+    borderBottomWidth: 0,
+  },
+  tableRow: {
+    flexDirection: 'row',
+    borderBottomWidth: 1,
+    borderBottomColor: '#bfbfbf',
+  },
+  tableHeader: {
+    backgroundColor: '#f2f2f2',
+    fontWeight: 'bold',
+  },
+  tableCell: {
+    padding: 5,
+    borderStyle: 'solid',
+    borderWidth: 1,
+    borderColor: '#bfbfbf',
+    borderLeftWidth: 0,
+    borderTopWidth: 0,
+    fontSize: 10,
+  },
+});
+
+interface TablePDFProps {
+  columns: any[];
+  data: any[];
+}
+
+// Componente PDF Document modificado
+const TablePDF = ({ columns, data }: TablePDFProps) => {
+  // Função para extrair o valor de exibição seguro de um objeto complexo
+  const getSafeDisplayValue = (row: any, columnId: string): string => {
+    // Handle special cases by column ID
+    switch (columnId) {
+      case 'index':
+        return String(row.index || '-');
+      case 'nome':
+      case 'sigla':
+      case 'versao':
+      case 'criticidade':
+      case 'andamento':
+        return String(row[columnId] || '-');
+      case 'tipo':
+        return row.tipo?.nome || '-';
+      case 'desenvolvedor':
+        return row.desenvolvedor?.nome || '-';
+      case 'demanda':
+        return row.demanda?.nome || '-';
+      case 'categoria':
+        return row.categoria?.nome || '-';
+      case 'responsavel':
+        return row.responsavel?.nome || '-';
+      case 'status':
+        return row.status?.nome || '-';
+      case 'repositorio':
+        return String(row.repositorio || '-');
+      case 'data_status':
+        if (!row.data_status && !row.dataStatus) return '-';
+        try {
+          const date = new Date(row.data_status || row.dataStatus);
+          return date.toLocaleDateString('pt-BR');
+        } catch (e) {
+          return '-';
+        }
+      case 'linguagens':
+        if (row.linguagens && Array.isArray(row.linguagens)) {
+          return row.linguagens.map((l: { nome: string }) => l.nome).join(', ');
+        }
+        if (row.linguagemId) {
+          return String(row.linguagemId).split(',').join(', ');
+        }
+        return '-';
+      default:
+        return '-';
+    }
+  };
+
+  return (
+    <Document>
+      <Page size="A4" orientation="landscape" style={styles.page}>
+        <Text style={styles.title}>Relatório de Soluções</Text>
+        <View style={styles.table}>
+          {/* Cabeçalho da tabela */}
+          <View style={[styles.tableRow, styles.tableHeader]}>
+            {columns.map((column) => (
+              <View key={column.id} style={[styles.tableCell, { width: `${100 / columns.length}%` }]}>
+                <Text>{String(column.id)}</Text>
+              </View>
+            ))}
+          </View>
+          
+          {/* Linhas de dados */}
+          {data.map((row, rowIndex) => (
+            <View key={rowIndex} style={styles.tableRow}>
+              {columns.map((column) => (
+                <View key={column.id} style={[styles.tableCell, { width: `${100 / columns.length}%` }]}>
+                  <Text>{getSafeDisplayValue(row, column.id)}</Text>
+                </View>
+              ))}
+            </View>
+          ))}
+        </View>
+      </Page>
+    </Document>
+  );
+};
+
+// Função para gerar e baixar o PDF
+const generatePDF = async (columns: { id: string, accessorKey: string }[], data: any[]) => {
+  try {
+    // Criar o documento PDF
+    const pdfDoc = <TablePDF columns={columns} data={data} />;
+    
+    // Gerar o blob do PDF
+    const blob = await pdf(pdfDoc).toBlob();
+    
+    // Salvar o arquivo
+    saveAs(blob, 'solucoes.pdf');
+  } catch (error) {
+    console.error('Erro ao gerar PDF:', error);
+    alert('Houve um erro ao gerar o PDF. Por favor, tente novamente.');
+  }
+};
+
+// Função para exportar para Excel
+const exportToExcel = (columns: { id: string, accessorKey: string }[], data: any[]) => {
+  // Preparar dados para o Excel
+  const wsData = [
+    // Cabeçalho
+    columns.map((column: { id: string }) => column.id),
+    
+    // Linhas de dados
+    ...data.map(row => 
+      columns.map(column => {
+        // Simplificar o valor para texto no Excel
+        let cellValue = row[column.accessorKey] || '-';
+        
+        // Tratamento especial para alguns tipos de colunas
+        if (column.id === 'status' && row.status) {
+          cellValue = row.status.nome || '-';
+        } else if (column.id === 'tipo' && row.tipo) {
+          cellValue = row.tipo.nome || '-';
+        } else if (column.id === 'desenvolvedor' && row.desenvolvedor) {
+          cellValue = row.desenvolvedor.nome || '-';
+        } else if (column.id === 'categoria' && row.categoria) {
+          cellValue = row.categoria.nome || '-';
+        } else if (column.id === 'responsavel' && row.responsavel) {
+          cellValue = row.responsavel.nome || '-';
+        } else if (column.id === 'linguagens') {
+          // Simplificação para linguagens
+          if (row.linguagens && Array.isArray(row.linguagens)) {
+            cellValue = row.linguagens.map((l: { nome: string }) => l.nome).join(', ');
+          }
+        }
+        
+        return cellValue;
+      })
+    )
+  ];
+  
+  // Criar planilha
+  const ws = XLSX.utils.aoa_to_sheet(wsData);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Soluções");
+  
+  // Gerar arquivo e baixar
+  XLSX.writeFile(wb, "solucoes.xlsx");
+};
 
 export default function DataTable({
   solucoes,
@@ -168,7 +359,7 @@ export default function DataTable({
     return 'bg-green-500';
   };
   
-  const ProgressBar = ({ progress }: { progress: number }) => {
+  const ProgressBar = React.memo(({ progress }: { progress: number }) => {
     const progressColor = getProgressColor(progress);
     
     return (
@@ -179,7 +370,7 @@ export default function DataTable({
         />
       </div>
     );
-  };
+  });
 
   const columns: ColumnDef<SolucaoType>[] = [
     {
@@ -268,7 +459,7 @@ export default function DataTable({
             className="text-xs font-medium text-gray-600 w-full justify-start p-0 hover:bg-transparent"
 
           >
-            Linguagem
+            Tecnologia
             <ArrowUpDown />
           </Button>
         )
@@ -439,20 +630,14 @@ export default function DataTable({
     },
     {
       accessorKey: "data_status",
-      header: ({ column }) => {
+      header: () => {
         return (
-          <Button
-            variant="ghost"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-            className="text-xs font-medium text-gray-600 w-full justify-start p-0 hover:bg-transparent"
-
-          >
+          <div className="text-xs font-medium text-gray-600 w-full justify-start p-0">
             Data Status
-            <ArrowUpDown />
-          </Button>
+          </div>
         )
       },
-      cell: ({ row }) => <div>{formatDate(row.original.data_status || row.original.dataStatus)}</div>,
+      cell: ({ row }) => <div className="truncate">{formatDate(row.original.dataStatus || row.original.dataStatus)}</div>,
     },
     {
       accessorKey: "status",
@@ -525,6 +710,8 @@ export default function DataTable({
     pageIndex: 0,
     pageSize: 10,
   })
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [filterValue, setFilterValue] = React.useState("");
 
   const table = useReactTable({
     data: solucoes,
@@ -549,16 +736,35 @@ export default function DataTable({
     table.resetColumnFilters();
   };
 
+  // Adicione um estado para controlar se o dropdown está aberto
+  const [isColumnMenuOpen, setIsColumnMenuOpen] = React.useState(false);
+
+  const fetchData = async () => {
+    setIsLoading(true);
+    try {
+      // Sua lógica de busca de dados aqui
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  React.useEffect(() => {
+    const timeout = setTimeout(() => {
+      table.getColumn("nome")?.setFilterValue(filterValue);
+    }, 300);
+
+    return () => clearTimeout(timeout);
+  }, [filterValue]);
+
   return (
     <div className="w-full">
-      <div className="flex items-center justify-between py-4 gap-4">
-        <div className="flex gap-2 items-center flex-1 flex-wrap">
+      <div className="flex flex-col gap-3">
+        {/* Área de filtros */}
+        <div className="flex gap-2 items-center flex-wrap">
           <Input
             placeholder="Filtrar por nome..."
-            value={(table.getColumn("nome")?.getFilterValue() as string) ?? ""}
-            onChange={(event) =>
-              table.getColumn("nome")?.setFilterValue(event.target.value)
-            }
+            value={filterValue}
+            onChange={(e) => setFilterValue(e.target.value)}
             className="w-[200px] bg-white border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 shadow-sm"
           />
           
@@ -608,7 +814,7 @@ export default function DataTable({
             }
             className="w-[200px] h-10 rounded-md border border-gray-300 bg-white px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 shadow-sm"
           >
-            <option value="">Todas as linguagens</option>
+            <option value="">Todas as tecnologias</option>
             {linguagens
               .sort((a, b) => a.nome.localeCompare(b.nome))
               .map((linguagem) => (
@@ -713,48 +919,90 @@ export default function DataTable({
               ))}
           </select>
         </div>
-
-        <div className="flex gap-2">
+        
+        {/* Barra de ações - mais próxima da tabela */}
+        <div className="flex justify-end gap-2 mt-1 mb-2">
           <Button
             variant="outline"
             onClick={handleClearFilters}
-            className="bg-white h-10"
+            className="bg-white h-8 text-sm font-medium"
           >
             Limpar Filtros
           </Button>
 
-          <DropdownMenu>
+          <DropdownMenu open={isColumnMenuOpen} onOpenChange={setIsColumnMenuOpen}>
             <DropdownMenuTrigger asChild>
               <Button 
                 variant="outline" 
                 size="icon"
-                className="bg-white h-10 w-10 shrink-0"
+                className="bg-white h-8 w-8 shrink-0"
               >
-                <Columns className="h-4 w-4" />
+                <Columns className="h-3.5 w-3.5" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              {table
-                .getAllColumns()
-                .filter((column) => column.getCanHide())
-                .map((column) => {
-                  return (
-                    <DropdownMenuCheckboxItem
-                      key={column.id}
-                      className="capitalize"
-                      checked={column.getIsVisible()}
-                      onCheckedChange={(value) =>
-                        column.toggleVisibility(!!value)
-                      }
-                    >
-                      {column.id}
-                    </DropdownMenuCheckboxItem>
-                  )
-                })}
+            <DropdownMenuContent align="end" className="w-56">
+              <div className="p-2 text-xs font-semibold text-gray-700 border-b">
+                Colunas visíveis
+              </div>
+              
+              <div className="flex gap-1 px-2 py-1.5 border-b">
+                <Button
+                  onClick={() => generatePDF(
+                    table.getVisibleFlatColumns().map((col) => ({
+                      id: col.id,
+                      accessorKey: col.id
+                    })), 
+                    table.getFilteredRowModel().rows.map(row => row.original)
+                  )}
+                  className="flex-1 inline-flex items-center justify-center gap-1 text-xs px-2 py-1 bg-white text-red-600 border border-red-200 font-medium rounded hover:bg-red-50 transition-colors"
+                >
+                  <FileText className="w-3 h-3" />
+                  PDF
+                </Button>
+                
+                <Button
+                  onClick={() => exportToExcel(
+                    table.getVisibleFlatColumns().map((col) => ({
+                      id: col.id,
+                      accessorKey: col.id
+                    })),
+                    table.getFilteredRowModel().rows.map(row => row.original)
+                  )}
+                  className="flex-1 inline-flex items-center justify-center gap-1 text-xs px-2 py-1 bg-white text-green-600 border border-green-200 font-medium rounded hover:bg-green-50 transition-colors"
+                >
+                  <FileSpreadsheet className="w-3 h-3" />
+                  Excel
+                </Button>
+              </div>
+              
+              <div className="max-h-[300px] overflow-y-auto py-1">
+                {table
+                  .getAllColumns()
+                  .filter((column) => column.getCanHide())
+                  .map((column) => {
+                    return (
+                      <DropdownMenuCheckboxItem
+                        key={column.id}
+                        className="capitalize py-1.5"
+                        checked={column.getIsVisible()}
+                        // Importante: modificar para não fechar o menu ao clicar
+                        // Usamos stopPropagation para impedir que o clique se propague
+                        onSelect={(e) => e.preventDefault()}
+                        onCheckedChange={(value) => 
+                          column.toggleVisibility(!!value)
+                        }
+                      >
+                        {column.id}
+                      </DropdownMenuCheckboxItem>
+                    )
+                  })}
+              </div>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
       </div>
+
+      {/* Tabela */}
       <div className="rounded-md border bg-white">
         <Table>
           <TableHeader className="bg-gray-100 border-b">
@@ -777,7 +1025,13 @@ export default function DataTable({
             ))}
           </TableHeader>
           <TableBody className="bg-white">
-            {table.getRowModel().rows?.length ? (
+            {isLoading ? (
+              <TableRow>
+                <TableCell colSpan={columns.length} className="h-24 text-center">
+                  Carregando...
+                </TableCell>
+              </TableRow>
+            ) : table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}
@@ -809,6 +1063,8 @@ export default function DataTable({
           </TableBody>
         </Table>
       </div>
+      
+      {/* Paginação */}
       <div className="flex items-center justify-between space-x-2 py-4">
         <div className="flex items-center gap-2">
           <Button

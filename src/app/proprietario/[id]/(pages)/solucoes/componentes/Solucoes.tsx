@@ -28,7 +28,6 @@ import DeleteConfirmationModal from './ModalConfirmacao/DeleteConfirmationModal'
 import { useSidebar } from '../../../../../componentes/Sidebar/SidebarContext';
 import { Times } from '../types/types';
 
-import UpdateSolucoesButton from '../components/UpdateSolucoesButton';
 import Table from './Table/Table';
 
 interface SolucaoFormData {
@@ -155,7 +154,7 @@ export default function Solucao() {
   useEffect(() => {
     const loadTimes = async () => {
       const timesData = await getTimes();
-      console.log(timesData)
+      
       if (timesData) {
         setTimes(timesData);
       }
@@ -211,7 +210,6 @@ export default function Solucao() {
       const solucoesData = await getSolucoes(page, itemsPerPage, Number(storedId));
       const solucoesArray = solucoesData || []; // Removi o .data, pois o backend já retorna o array diretamente
       setSolucoes(solucoesArray);
-      console.log('Soluções recebidas:', solucoesArray); // Adicione este log
     } catch (error) {
       console.error('Erro ao buscar soluções:', error);
       return null;
@@ -240,7 +238,6 @@ export default function Solucao() {
       if (solucoesData && typeof solucoesData === 'object' && 'meta' in solucoesData) {
         const total = (solucoesData as { meta: { total: number } }).meta.total || 0;
         setTotalPages(Math.ceil(total / itemsPerPage));
-        console.log('Total items:', total, 'Total pages:', Math.ceil(total / itemsPerPage));
       }
     }).catch(error => {
       console.error('Error loading data:', error);
@@ -300,13 +297,11 @@ export default function Solucao() {
         data_status: formData.data_status || new Date().toISOString().split('T')[0]
       };
   
-      console.log('Dados a serem enviados:', formDataToSubmit);
 
       if (isEditing) {
         try {
           // Atualizar solução existente
           const updatedSolucao = await updateSolucao(isEditing, formDataToSubmit);
-          console.log('Solução atualizada:', updatedSolucao);
           
           // Criar uma cópia do estado atual das soluções
           const currentSolucoes = [...solucoes];
@@ -350,7 +345,6 @@ export default function Solucao() {
   
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement> | CustomChangeEvent) => {
     const { name, value } = e.target;
-    console.log(`Changing ${name} to:`, value); // Debug log
 
     if (name === 'andamento') {
       // Garante que o valor está entre 0 e 100
@@ -558,7 +552,6 @@ export default function Solucao() {
   };
 
   const handleEditClick = (solucao: SolucaoType) => {
-    console.log('Solução recebida para edição:', solucao);
     
     const formDataToSet = {
       nome: solucao.nome || '',
@@ -579,7 +572,6 @@ export default function Solucao() {
       data_status: solucao.data_status || solucao.dataStatus || ''
     } as SolucaoFormData;
 
-    console.log('FormData configurado para edição:', formDataToSet);
 
     setFormData(formDataToSet);
     setIsEditing(solucao.id.toString());
@@ -910,139 +902,7 @@ export default function Solucao() {
           </div>
         </div>
 
-        {/* <div className="bg-white rounded-lg shadow-md p-4 mb-6">
-          <div className="mb-3">
-            <h2 className="text-base font-semibold text-gray-800">Filtros</h2>
-          </div>
-
-         
-          <div className={`
-            grid gap-2
-            transition-all duration-300
-            ${isCollapsed 
-              ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-7 xl:grid-cols-7' 
-              : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-7 xl:grid-cols-7'}
-          `}>
-            <select
-              name="demanda_id"
-              value={filters.demanda_id}
-              onChange={handleFilterChange}
-              className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors"
-            >
-              <option value="">Demanda</option>
-              {demanda.map((d) => (
-                <option key={d.id} value={d.id}>{d.sigla || d.nome}</option>
-              ))}
-            </select>
-
-            <select
-              name="tipo_id"
-              value={filters.tipo_id}
-              onChange={handleFilterChange}
-              className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors"
-            >
-              <option value="">Tipo</option>
-              {tipos.map((t) => (
-                <option key={t.id} value={t.id}>{t.nome}</option>
-              ))}
-            </select>
-
-            <select
-              name="linguagem_id"
-              value={filters.linguagem_id}
-              onChange={handleFilterChange}
-              className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors"
-            >
-              <option value="">Linguagem</option>
-              {linguagens.map((l) => (
-                <option key={l.id} value={l.id}>{l.nome}</option>
-              ))}
-            </select>
-
-            <select
-              name="desenvolvedor_id"
-              value={filters.desenvolvedor_id}
-              onChange={handleFilterChange}
-              className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors"
-            >
-              <option value="">Desenvolvedor</option>
-              {desenvolvedores.map((d) => (
-                <option key={d.id} value={d.id}>{d.nome}</option>
-              ))}
-            </select>
-
-            <select
-              name="categoria_id"
-              value={filters.categoria_id}
-              onChange={handleFilterChange}
-              className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors"
-            >
-              <option value="">Categoria</option>
-              {categorias.map((c) => (
-                <option key={c.id} value={c.id}>{c.nome}</option>
-              ))}
-            </select>
-
-            <select
-              name="responsavel_id"
-              value={filters.responsavel_id}
-              onChange={handleFilterChange}
-              className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors"
-            >
-              <option value="">Responsável</option>
-              {responsaveis.map((r) => (
-                <option key={r.id} value={r.id}>{r.nome}</option>
-              ))}
-            </select>
-
-            <select
-              name="status_id"
-              value={filters.status_id}
-              onChange={handleFilterChange}
-              className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors"
-            >
-              <option value="">Status</option>
-              {statusList.map((s) => (
-                <option key={s.id} value={s.id}>{s.nome}</option>
-              ))}
-            </select>
-
-            
-          </div>
-          
-          <div className="mt-3 flex items-center justify-between">
-            <div className="mb-6">
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Buscar soluções..."
-                  value={tempSearchTerm}
-                  onChange={handleSearchChange}
-                  className="w-full px-4 py-2 pl-10 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white text-gray-700 placeholder-gray-400"
-                />
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <svg className="h-5 w-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                </div>
-              </div>
-            </div>
-            <div className="flex space-x-2">
-              <button
-                onClick={clearFilters}
-                className="px-3 py-1.5 text-sm text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
-              >
-                Limpar
-              </button>
-              <button
-                onClick={filterSolucoes}
-                className="px-3 py-1.5 text-sm text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors"
-              >
-                Aplicar
-              </button>
-            </div>
-          </div>
-        </div> */}
+        
 
         {/* Substitua a seção da tabela pelo componente Table */}
         <Table 

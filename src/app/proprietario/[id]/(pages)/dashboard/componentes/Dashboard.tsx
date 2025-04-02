@@ -90,7 +90,6 @@ export default function Dashboard() {
           getTipos()
         ]);
 
-        console.log('Soluções recebidas:', solucoes);
         
         // Garantir que solucoes seja um array
         const solucoesArray = Array.isArray(solucoes) ? solucoes : [];
@@ -186,9 +185,14 @@ export default function Dashboard() {
       counts[categoriaNome] = (counts[categoriaNome] || 0) + 1;
     });
 
+    // Ordenar categorias por contagem e pegar as top 5
+    const sortedCategories = Object.entries(counts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5);
+    
     return {
       labels: [''],
-      datasets: Object.entries(counts).map(([label, value], index) => ({
+      datasets: sortedCategories.map(([label, value], index) => ({
         label,
         data: [value],
         backgroundColor: ['#4285F4', '#34A853', '#FBBC05', '#EA4335', '#673AB7', '#FF4081'][index % 6],
@@ -198,7 +202,7 @@ export default function Dashboard() {
   };
 
   const processMonthlyCategoriaData = (): MonthlyCategoriaData => {
-    const monthlyData: { [month: string]: { [categoria: string]: number } } = {};
+    const monthlyData: { [month: string]: { [tipo: string]: number } } = {};
 
     ensureArray(dashboardData.solucoes).forEach(solucao => {
       const statusDate = solucao.data_status || solucao.dataStatus;
@@ -211,15 +215,15 @@ export default function Dashboard() {
       try {
         const date = new Date(statusDate);
         const monthYear = `${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()}`;
-        const categoriaId = solucao.categoriaId ? Number(solucao.categoriaId) : null;
-        const categoria = categoriaId ? dashboardData.categorias?.find(c => c.id === categoriaId) : null;
-        const categoriaNome = categoria?.nome || 'Não definido';
+        const tipoId = solucao.tipoId ? Number(solucao.tipoId) : null;
+        const tipo = tipoId ? dashboardData.tipos?.find(t => t.id === tipoId) : null;
+        const tipoNome = tipo?.nome || 'Não definido';
 
         if (!monthlyData[monthYear]) {
           monthlyData[monthYear] = {};
         }
 
-        monthlyData[monthYear][categoriaNome] = (monthlyData[monthYear][categoriaNome] || 0) + 1;
+        monthlyData[monthYear][tipoNome] = (monthlyData[monthYear][tipoNome] || 0) + 1;
       } catch (error) {
         console.error('Erro ao processar data:', statusDate, error);
       }
@@ -231,17 +235,17 @@ export default function Dashboard() {
       return yearA - yearB || monthA - monthB;
     });
 
-    const categorias = Array.from(new Set(
+    const tipos = Array.from(new Set(
       Object.values(monthlyData).flatMap(month => Object.keys(month))
     ));
 
-    const datasets = categorias.map((categoria, index) => ({
-      label: categoria,
-      data: labels.map(month => monthlyData[month][categoria] || 0),
+    const datasets = tipos.map((tipo, index) => ({
+      label: tipo,
+      data: labels.map(month => monthlyData[month][tipo] || 0),
       backgroundColor: ['#4285F4', '#34A853', '#FBBC05', '#EA4335', '#673AB7', '#FF4081'][index % 6],
       borderWidth: 1,
-      barPercentage: categorias.length <= 3 ? 0.5 : 0.9,
-      categoryPercentage: categorias.length <= 3 ? 0.7 : 0.8
+      barPercentage: tipos.length <= 3 ? 0.5 : 0.9,
+      categoryPercentage: tipos.length <= 3 ? 0.7 : 0.8
     }));
 
     return { labels, datasets };
@@ -249,7 +253,7 @@ export default function Dashboard() {
 
   const processYearlyCategoriaData = () => {
     const currentYear = new Date().getFullYear();
-    const monthlyData: { [month: string]: { [categoria: string]: number } } = {};
+    const monthlyData: { [month: string]: { [tipo: string]: number } } = {};
 
     // Processa apenas os meses que têm dados
     ensureArray(dashboardData.solucoes).forEach(solucao => {
@@ -260,28 +264,28 @@ export default function Dashboard() {
       if (date.getFullYear() !== currentYear) return;
       
       const monthName = date.toLocaleString('pt-BR', { month: 'short' });
-      const categoriaId = solucao.categoriaId ? Number(solucao.categoriaId) : null;
-      const categoria = categoriaId ? dashboardData.categorias?.find(c => c.id === categoriaId) : null;
-      const categoriaNome = categoria?.nome || 'Não definido';
+      const tipoId = solucao.tipoId ? Number(solucao.tipoId) : null;
+      const tipo = tipoId ? dashboardData.tipos?.find(t => t.id === tipoId) : null;
+      const tipoNome = tipo?.nome || 'Não definido';
 
       if (!monthlyData[monthName]) {
         monthlyData[monthName] = {};
       }
-      monthlyData[monthName][categoriaNome] = (monthlyData[monthName][categoriaNome] || 0) + 1;
+      monthlyData[monthName][tipoNome] = (monthlyData[monthName][tipoNome] || 0) + 1;
     });
 
     const labels = Object.keys(monthlyData);
-    const categorias = Array.from(new Set(
+    const tipos = Array.from(new Set(
       Object.values(monthlyData).flatMap(month => Object.keys(month))
     ));
 
-    const datasets = categorias.map((categoria, index) => ({
-      label: categoria,
-      data: labels.map(month => monthlyData[month][categoria] || 0),
+    const datasets = tipos.map((tipo, index) => ({
+      label: tipo,
+      data: labels.map(month => monthlyData[month][tipo] || 0),
       backgroundColor: ['#4285F4', '#34A853', '#FBBC05', '#EA4335', '#673AB7', '#FF4081'][index % 6],
       borderWidth: 1,
-      barPercentage: categorias.length <= 3 ? 0.5 : 0.9,
-      categoryPercentage: categorias.length <= 3 ? 0.7 : 0.8
+      barPercentage: tipos.length <= 3 ? 0.5 : 0.9,
+      categoryPercentage: tipos.length <= 3 ? 0.7 : 0.8
     }));
 
     return { labels, datasets };
@@ -538,7 +542,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
         {/* Evolução Mensal */}
         <div className="bg-white p-4 sm:p-6 rounded-lg shadow-lg">
-          <h3 className="text-gray-800 text-base font-semibold mb-4">Evolução Anual das Categorias</h3>
+          <h3 className="text-gray-800 text-base font-semibold mb-4">Evolução Anual por Tipos</h3>
           <div className="h-[400px] w-full">
             <Bar 
               data={processMonthlyCategoriaData()} 
@@ -581,7 +585,7 @@ export default function Dashboard() {
         {/* Evolução Anual */}
         <div className="bg-white p-4 sm:p-6 rounded-lg shadow-lg">
           <h3 className="text-gray-800 text-base font-semibold mb-4">
-            Evolução Mensal das Categorias ({new Date().getFullYear()})
+            Evolução Mensal dos Tipos ({new Date().getFullYear()})
           </h3>
           <div className="h-[400px] w-full">
             <Bar 

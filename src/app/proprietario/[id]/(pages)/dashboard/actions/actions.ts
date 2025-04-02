@@ -51,11 +51,9 @@ export async function getSolucoes() {
   try {
     // Get soluções
     const response = await axios.get(`${url}/proprietarios/${storedId}/dashboard/todas-solucoes`);
-    console.log('Response from API:', response.data);
     
     // Get alinhamentos
     const alinhamentosResponse = await axios.get(`${url}/proprietarios/${storedId}/alinhamentos`);
-    console.log('Alinhamentos response:', alinhamentosResponse.data);
     
     // Get demandas
     const demandasResponse = await axios.get(`${url}/proprietarios/${storedId}/dashboard/demandas`);
@@ -91,7 +89,6 @@ export async function getAlinhamentos() {
   }
   try {
     const response = await axios.get(`${url}/proprietarios/${storedId}/alinhamentos`);
-    console.log('Alinhamentos response:', response.data);
     return response.data;
   } catch (error) {
     console.error('Error fetching alinhamentos:', error);

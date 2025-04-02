@@ -14,7 +14,6 @@ export const getSolucoes = async (page: number, itemsPerPage: number, proprietar
         itemsPerPage,
       }
     });
-    console.log('Resposta do backend:', response.data);
     return response.data;
   } catch (error) {
     console.error('Error fetching soluções:', error);
