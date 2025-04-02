@@ -268,17 +268,11 @@ export default function DataTable({
     },
     {
       accessorKey: "data_status",
-      header: ({ column }) => {
+      header: () => {
         return (
-          <Button
-            variant="ghost"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-            className="text-xs font-medium text-gray-600 w-full justify-start p-0 hover:bg-transparent"
-
-          >
+          <div className="text-xs font-medium text-gray-600 w-full justify-start p-0">
             Data Status
-            <ArrowUpDown className="" />
-          </Button>
+          </div>
         )
       },
       cell: ({ row }) => <div className="truncate">{formatDate(row.original.dataStatus || row.original.dataStatus)}</div>,
@@ -322,7 +316,7 @@ export default function DataTable({
       cell: ({ row }) => {
         const solucao = row.original;
         return (
-          <div className="w-[120px] flex justify-end space-x-2">
+          <div className="flex justify-end space-x-2">
             {formatRepositoryLink(solucao.link)}
             <button
               onClick={() => onEdit(solucao)}

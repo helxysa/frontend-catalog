@@ -359,7 +359,7 @@ export default function DataTable({
     return 'bg-green-500';
   };
   
-  const ProgressBar = ({ progress }: { progress: number }) => {
+  const ProgressBar = React.memo(({ progress }: { progress: number }) => {
     const progressColor = getProgressColor(progress);
     
     return (
@@ -370,7 +370,7 @@ export default function DataTable({
         />
       </div>
     );
-  };
+  });
 
   const columns: ColumnDef<SolucaoType>[] = [
     {
@@ -630,20 +630,14 @@ export default function DataTable({
     },
     {
       accessorKey: "data_status",
-      header: ({ column }) => {
+      header: () => {
         return (
-          <Button
-            variant="ghost"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-            className="text-xs font-medium text-gray-600 w-full justify-start p-0 hover:bg-transparent"
-
-          >
+          <div className="text-xs font-medium text-gray-600 w-full justify-start p-0">
             Data Status
-            <ArrowUpDown />
-          </Button>
+          </div>
         )
       },
-      cell: ({ row }) => <div>{formatDate(row.original.data_status || row.original.dataStatus)}</div>,
+      cell: ({ row }) => <div className="truncate">{formatDate(row.original.dataStatus || row.original.dataStatus)}</div>,
     },
     {
       accessorKey: "status",
@@ -716,6 +710,8 @@ export default function DataTable({
     pageIndex: 0,
     pageSize: 10,
   })
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [filterValue, setFilterValue] = React.useState("");
 
   const table = useReactTable({
     data: solucoes,
@@ -743,6 +739,23 @@ export default function DataTable({
   // Adicione um estado para controlar se o dropdown está aberto
   const [isColumnMenuOpen, setIsColumnMenuOpen] = React.useState(false);
 
+  const fetchData = async () => {
+    setIsLoading(true);
+    try {
+      // Sua lógica de busca de dados aqui
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  React.useEffect(() => {
+    const timeout = setTimeout(() => {
+      table.getColumn("nome")?.setFilterValue(filterValue);
+    }, 300);
+
+    return () => clearTimeout(timeout);
+  }, [filterValue]);
+
   return (
     <div className="w-full">
       <div className="flex flex-col gap-3">
@@ -750,10 +763,8 @@ export default function DataTable({
         <div className="flex gap-2 items-center flex-wrap">
           <Input
             placeholder="Filtrar por nome..."
-            value={(table.getColumn("nome")?.getFilterValue() as string) ?? ""}
-            onChange={(event) =>
-              table.getColumn("nome")?.setFilterValue(event.target.value)
-            }
+            value={filterValue}
+            onChange={(e) => setFilterValue(e.target.value)}
             className="w-[200px] bg-white border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 shadow-sm"
           />
           
@@ -1014,7 +1025,13 @@ export default function DataTable({
             ))}
           </TableHeader>
           <TableBody className="bg-white">
-            {table.getRowModel().rows?.length ? (
+            {isLoading ? (
+              <TableRow>
+                <TableCell colSpan={columns.length} className="h-24 text-center">
+                  Carregando...
+                </TableCell>
+              </TableRow>
+            ) : table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}
