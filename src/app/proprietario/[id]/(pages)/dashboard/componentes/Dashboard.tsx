@@ -90,7 +90,6 @@ export default function Dashboard() {
           getTipos()
         ]);
 
-        console.log('Soluções recebidas:', solucoes);
         
         // Garantir que solucoes seja um array
         const solucoesArray = Array.isArray(solucoes) ? solucoes : [];
