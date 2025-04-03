@@ -15,6 +15,7 @@ import {
 } from "@tanstack/react-table"
 import { ArrowUpDown, ChevronDown, Edit2, Trash2, Info, ExternalLink, Columns } from "lucide-react"
 import Link from 'next/link';
+import { useState, useEffect } from "react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -34,6 +35,7 @@ import {
 } from "@/components/ui/table"
 
 import { DemandaType } from "../../types/types";
+import { getSolucoesByDemandaId } from "../../actions/actions";
 
 
 interface TableProps {
@@ -122,6 +124,21 @@ export default function DataTable({
     table.resetColumnFilters();
   };
 
+  const [solucoes, setSolucoes] = useState<{ [key: string]: any[] }>({});
+
+  const fetchSolucoes = async (demandaId: string) => {
+    const solucoesData = await getSolucoesByDemandaId(demandaId);
+    setSolucoes(prev => ({ ...prev, [demandaId]: solucoesData }));
+  };
+
+  useEffect(() => {
+    if (demandas) {
+      demandas.forEach(demanda => {
+        fetchSolucoes(demanda.id);
+      });
+    }
+  }, [demandas]);
+
   const columns: ColumnDef<DemandaType>[] = [
     {
         id: "index",
@@ -170,7 +187,7 @@ export default function DataTable({
             className="text-xs font-medium text-gray-600 w-full justify-start p-0 hover:bg-transparent"
 
           >
-            Fator Gerador
+            Fato Gerador
             <ArrowUpDown className="" />
           </Button>
         )
@@ -238,14 +255,45 @@ export default function DataTable({
             variant="ghost"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
             className="text-xs font-medium text-gray-600 w-full justify-start p-0 hover:bg-transparent"
-
           >
             Soluções
             <ArrowUpDown className="" />
           </Button>
         )
       },
-      cell: ({ row }) => <div className="truncate">teste</div>,
+      cell: ({ row }) => {
+        const solucoesDemanda = solucoes[row.original.id] || [];
+        const count = solucoesDemanda.length;
+        const [position, setPosition] = useState({ x: 0, y: 0 });
+
+        const handleMouseMove = (e: React.MouseEvent) => {
+          setPosition({ x: e.clientX, y: e.clientY });
+        };
+
+        return (
+          <div className="relative group" onMouseMove={handleMouseMove}>
+            <div className="cursor-help">{count}</div>
+            {count > 0 && (
+              <div 
+                className="fixed hidden group-hover:block z-[9999] bg-white border border-gray-200 shadow-lg rounded-md p-2"
+                style={{ 
+                  left: `${position.x + 10}px`, 
+                  top: `${position.y + 10}px`,
+                }}
+              >
+                <div className="text-sm font-medium text-gray-700 mb-1">Soluções:</div>
+                <ul className="space-y-1">
+                  {solucoesDemanda.map((solucao, index) => (
+                    <li key={index} className="text-sm text-gray-600 whitespace-nowrap">
+                      - {solucao.nome}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        );
+      },
     },
     {
       accessorKey: "responsavel",

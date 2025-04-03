@@ -30,6 +30,7 @@ export interface DemandaType {
       nome: string;
     };
     dataStatus: string;
+    solucoes?: any[];
   }
 
   export interface DemandaFormData {

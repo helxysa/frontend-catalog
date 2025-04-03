@@ -179,7 +179,6 @@ export function Sidebar() {
               </>
             )}
           </button>
-          
           {!isCollapsed && ['categorias', 'alinhamentos', 'desenvolvedores', 'tecnologias', 'prioridades', 'times', 'status', 'tipos', 'responsaveis'].map((item) => {
             const getItemIcon = (itemName: string) => {
               const iconMap: { [key: string]: any } = {

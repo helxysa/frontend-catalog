@@ -578,104 +578,8 @@ export default function Solucao() {
     setIsModalOpen(true);
   };
 
-  const handleFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFilters(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
+ 
 
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setTempSearchTerm(value);
-    
-    // Aplicar filtro imediatamente enquanto o usuário digita
-    if (value) {
-      const searchLower = value.toLowerCase();
-      const filtered = solucoes?.filter((s: SolucaoType) => {
-        return (
-          s.status?.nome.toLowerCase().includes(searchLower) ||
-          s.nome?.toLowerCase().includes(searchLower) ||
-          s.sigla?.toLowerCase().includes(searchLower) ||
-          (s.linguagemId && typeof s.linguagemId === 'string' 
-            ? s.linguagemId.split(',').some(id => linguagens.find(l => l.id === Number(id))?.nome.toLowerCase().includes(searchLower)) 
-          : false) ||
-          s.desenvolvedor?.nome.toLowerCase().includes(searchLower) ||
-          s.categoria?.nome.toLowerCase().includes(searchLower) ||
-          s.responsavel?.nome.toLowerCase().includes(searchLower) ||
-          s.status?.nome.toLowerCase().includes(searchLower)
-        );
-      }) || [];
-      setFilteredSolucoes(filtered);
-    } else {
-      setFilteredSolucoes(solucoes);
-    }
-  };
-
-  const clearFilters = () => {
-    setFilters({
-      demanda_id: '',
-      tipo_id: '',
-      linguagem_id: '',
-      desenvolvedor_id: '',
-      categoria_id: '',
-      responsavel_id: '',
-      status_id: ''
-    });
-    setTempSearchTerm('');
-    setSearch('');
-    setFilteredSolucoes(solucoes);
-  };
-
-  const filterSolucoes = () => {
-    let filtered = [...solucoes] as SolucaoType[];
-    
-    // Aplicar filtro de texto
-    if (tempSearchTerm) {
-      const searchLower = tempSearchTerm.toLowerCase();
-      filtered = filtered.filter(s => 
-        s.nome?.toLowerCase().includes(searchLower) ||
-        s.sigla?.toLowerCase().includes(searchLower) ||
-        s.descricao?.toLowerCase().includes(searchLower) ||
-        s.versao?.toLowerCase().includes(searchLower) ||
-        s.tipo?.nome.toLowerCase().includes(searchLower) ||
-        (s.linguagemId && typeof s.linguagemId === 'string' 
-          ? s.linguagemId.split(',').some(id => linguagens.find(l => l.id === Number(id))?.nome.toLowerCase().includes(searchLower)) 
-        : false) ||
-        s.desenvolvedor?.nome.toLowerCase().includes(searchLower) ||
-        s.categoria?.nome.toLowerCase().includes(searchLower) ||
-        s.responsavel?.nome.toLowerCase().includes(searchLower) ||
-        s.status?.nome.toLowerCase().includes(searchLower)
-      );
-    }
-    
-    // Aplicar outros filtros
-    if (filters.demanda_id) {
-      filtered = filtered.filter(s => s.demanda?.id === Number(filters.demanda_id));
-    }
-    if (filters.tipo_id) {
-      filtered = filtered.filter(s => s.tipo?.id === Number(filters.tipo_id));
-    }
-    if (filters.linguagem_id) {
-      filtered = filtered.filter(s => String(s.linguagemId).split(',').includes(filters.linguagem_id));
-    }
-    if (filters.desenvolvedor_id) {
-      filtered = filtered.filter(s => s.desenvolvedor?.id === Number(filters.desenvolvedor_id));
-    }
-    if (filters.categoria_id) {
-      filtered = filtered.filter(s => s.categoria?.id === Number(filters.categoria_id));
-    }
-    if (filters.responsavel_id) {
-      filtered = filtered.filter(s => s.responsavel?.id === Number(filters.responsavel_id));
-    }
-    if (filters.status_id) {
-      filtered = filtered.filter(s => s.status?.id === Number(filters.status_id));
-    }
-    
-    setSearch(tempSearchTerm);
-    setFilteredSolucoes(filtered);
-  };
 
   const handleLanguageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const value = Number(e.target.value);
@@ -703,27 +607,7 @@ export default function Solucao() {
   };
 
   // Função auxiliar para renderizar as linguagens
-  const renderLinguagensChips = (linguagemIds: string | null) => {
-    if (!linguagemIds) return '-';
-    
-    return (
-      <div className="flex flex-wrap gap-1">
-        {linguagemIds.split(',').map(id => {
-          const linguagem = linguagens.find(l => l.id === Number(id.trim()));
-          if (!linguagem) return null;
-          
-          return (
-            <span 
-              key={(linguagem as {id: number; nome: string}).id}
-              className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-700 rounded-full"
-            >
-              {(linguagem as {id: number; nome: string}).nome}
-            </span>
-          );
-        })}
-      </div>
-    );
-  };
+ 
 
   useEffect(() => {
     if (search) {
