@@ -119,7 +119,7 @@ export default function Demanda() {
       });
     }
   }, [filteredDemandas]);
-  
+
 
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -220,7 +220,7 @@ export default function Demanda() {
     if (isEditing) {
       try {
         await updateDemanda(isEditing, formDataToSubmit);
-        
+
         // Manter a ordem atual das demandas
         const updatedDemandas = demandas.map(demanda => {
           if (String(demanda.id) === String(isEditing)) {
@@ -245,10 +245,10 @@ export default function Demanda() {
 
         setDemandas(updatedDemandas as DemandaType[]);
         setFilteredDemandas(updatedDemandas as DemandaType[]);
-        
+
         // Atualizar soluções se necessário
         fetchSolucoes(isEditing);
-        
+
         setIsModalOpen(false);
         setFormData({} as DemandaFormData);
         setIsEditing(null);
@@ -258,20 +258,20 @@ export default function Demanda() {
     } else {
       // Criar nova demanda
       const newDemanda = await createDemanda(formDataToSubmit);
-      
+
       // Adicionar a nova demanda ao estado atual sem recarregar tudo
       if (newDemanda) {
         const updatedDemandas = [...demandas, newDemanda];
         setDemandas(updatedDemandas);
         setFilteredDemandas(updatedDemandas);
-        
+
         // Buscar soluções para a nova demanda
         fetchSolucoes(newDemanda.id);
       } else {
         // Se não conseguir obter a nova demanda, recarregar tudo
         await fetchDemandas();
       }
-      
+
       setIsModalOpen(false);
       setFormData({} as DemandaFormData);
     }
@@ -530,8 +530,8 @@ export default function Demanda() {
           </div>
         </div>
 
-        
-        <DataTable 
+
+        <DataTable
           demandas={filteredDemandas}
           isCollapsed={isCollapsed}
           onEdit={(demanda) => {
@@ -539,7 +539,7 @@ export default function Demanda() {
               proprietario_id: Number(demanda.proprietario?.id) || 0,
               nome: demanda.nome || '',
               sigla: demanda.sigla || '',
-              descricao: demanda.propriedade || '',
+              descricao: demanda.descricao || '',
               link: demanda.link || '',
               demandante: demanda.demandante || '',
               fator_gerador: demanda.fatorGerador || '',
@@ -627,63 +627,63 @@ export default function Demanda() {
                      Informações Básicas
                    </h3>
                  </div>
-                 
+
                  <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
                    <span className="text-sm font-medium text-gray-600">Nome:</span>
                    <span className="text-sm text-gray-800 font-medium">{selectedDemandDetails.nome}</span>
                  </div>
-                 
+
                  <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
                    <span className="text-sm font-medium text-gray-600">Sigla:</span>
                    <span className="text-sm text-gray-800 font-medium">{selectedDemandDetails.sigla}</span>
                  </div>
-                 
+
                  <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
                    <span className="text-sm font-medium text-gray-600">Demandante:</span>
                    <span className="text-sm text-gray-800 font-medium">{selectedDemandDetails.demandante}</span>
                  </div>
-                 
+
                  <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
                    <span className="text-sm font-medium text-gray-600">Fato Gerador:</span>
                    <span className="text-sm text-gray-800 font-medium">{selectedDemandDetails.fatorGerador}</span>
                  </div>
-                 
+
                  <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
                    <span className="text-sm font-medium text-gray-600">Alinhamento:</span>
                    <span className="text-sm text-gray-800 font-medium">{selectedDemandDetails.alinhamento?.nome || '-'}</span>
                  </div>
-                 
+
                  <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
                    <span className="text-sm font-medium text-gray-600">Responsável:</span>
                    <span className="text-sm text-gray-800 font-medium">{selectedDemandDetails.responsavel?.nome || '-'}</span>
                  </div>
-                 
+
                  <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
                    <span className="text-sm font-medium text-gray-600">Prioridade:</span>
                    <span className="text-sm text-gray-800 font-medium">{selectedDemandDetails.prioridade?.nome || '-'}</span>
                  </div>
-                 
+
                  <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
                    <span className="text-sm font-medium text-gray-600">Data Status:</span>
                    <span className="text-sm text-gray-800 font-medium">{formatDate(selectedDemandDetails.dataStatus, true)}</span>
                  </div>
-                 
+
                  <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
                    <span className="text-sm font-medium text-gray-600">Status:</span>
-                   <span 
+                   <span
                      className={`rounded-md px-3 py-1 text-sm font-medium ${determinarCorTexto(selectedDemandDetails.status?.propriedade)}`}
                      style={{ backgroundColor: selectedDemandDetails.status?.propriedade }}
                    >
                      {selectedDemandDetails.status?.nome || '-'}
                    </span>
                  </div>
-                 
+
                  {selectedDemandDetails.link && (
                    <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
                      <span className="text-sm font-medium text-gray-600">Link do PGA:</span>
-                     <a 
-                       href={selectedDemandDetails.link} 
-                       target="_blank" 
+                     <a
+                       href={selectedDemandDetails.link}
+                       target="_blank"
                        rel="noopener noreferrer"
                        className="text-sm text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1"
                      >
@@ -691,7 +691,7 @@ export default function Demanda() {
                      </a>
                    </div>
                  )}
-                 
+
                  <div className="col-span-2 mt-4">
                    <h3 className="text-lg font-semibold text-gray-800 mb-3 pb-2 border-b border-gray-200 flex items-center gap-2">
                      <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">

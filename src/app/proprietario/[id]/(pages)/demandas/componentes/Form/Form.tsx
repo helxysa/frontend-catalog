@@ -82,8 +82,8 @@ export default function Form({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] overflow-y-auto pt-16">
-      <div className="relative bg-white rounded-lg shadow-2xl p-8 w-full max-w-2xl m-4 mt-10">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] overflow-y-auto pt-7">
+      <div className="relative bg-white rounded-lg shadow-2xl p-8 w-full max-w-3xl m-4 ">
         <div className="flex justify-between items-center mb-2">
           <h2 className="text-2xl font-bold text-gray-800">
             {isEditing ? 'Editar Demanda' : 'Nova Demanda'}
@@ -145,6 +145,7 @@ export default function Form({
                 onChange={handleInputChange}
                 className="w-full px-4 py-3 border border-gray-300 rounded-md text-gray-500"
               />
+              
             </div>
 
             <div>
