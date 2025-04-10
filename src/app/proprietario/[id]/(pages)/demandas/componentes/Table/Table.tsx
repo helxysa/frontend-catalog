@@ -58,14 +58,14 @@ export default function DataTable({
     if (!dateString) {
       return '-';
     }
-    
+
     try {
       const date = new Date(dateString);
-      
+
       if (isNaN(date.getTime())) {
         return '-';
       }
-      
+
       return new Intl.DateTimeFormat('pt-BR', {
         day: '2-digit',
         month: '2-digit',
@@ -77,16 +77,16 @@ export default function DataTable({
   };
 
   const determinarCorTexto = (corHex: string | undefined) => {
-    if (!corHex) return 'text-gray-800'; 
-   
+    if (!corHex) return 'text-gray-800';
+
     corHex = corHex.replace('#', '');
-    
+
     const r = parseInt(corHex.substr(0, 2), 16);
     const g = parseInt(corHex.substr(2, 2), 16);
     const b = parseInt(corHex.substr(4, 2), 16);
-    
+
     const luminancia = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-  
+
     return luminancia > 0.5 ? 'text-gray-800' : 'text-white';
   };
 
@@ -94,7 +94,7 @@ export default function DataTable({
     if (!repo || repo === '') return '';
     if (repo.includes('github.com')) {
       return (
-        <a 
+        <a
           href={repo}
           target="_blank"
           rel="noopener noreferrer"
@@ -274,10 +274,10 @@ export default function DataTable({
           <div className="relative group" onMouseMove={handleMouseMove}>
             <div className="cursor-help">{count}</div>
             {count > 0 && (
-              <div 
+              <div
                 className="fixed hidden group-hover:block z-[9999] bg-white border border-gray-200 shadow-lg rounded-md p-2"
-                style={{ 
-                  left: `${position.x + 10}px`, 
+                style={{
+                  left: `${position.x + 10}px`,
                   top: `${position.y + 10}px`,
                 }}
               >
@@ -342,10 +342,18 @@ export default function DataTable({
       cell: ({ row }) => {
         const status = row.original.status;
         return status?.propriedade ? (
-          <div className="w-[100px]">
+          <div className="w-[90px] max-w-[90px]">
             <span
-              className={`rounded-md px-2 py-1 inline-block truncate ${determinarCorTexto(status.propriedade)}`}
-              style={{ backgroundColor: status.propriedade }}
+              className={`rounded-md px-2 py-1 inline-block text-sm ${determinarCorTexto(status.propriedade)}`}
+              style={{
+                backgroundColor: status.propriedade,
+                maxWidth: '100%',
+                display: 'inline-block',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap'
+              }}
+              title={status.nome || '-'}
             >
               {status.nome || '-'}
             </span>
@@ -434,7 +442,7 @@ export default function DataTable({
             }
             className="w-[200px] bg-white border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 shadow-sm"
           />
-          
+
           {/* Filtro de Tipo */}
           <select
             value={(table.getColumn("demandante")?.getFilterValue() as string) ?? ""}
@@ -454,8 +462,8 @@ export default function DataTable({
               ))}
           </select>
 
-         
-         
+
+
 
           <select
             value={(table.getColumn("responsavel")?.getFilterValue() as string) ?? ""}
@@ -529,7 +537,7 @@ export default function DataTable({
               ))}
           </select>
 
-          
+
         </div>
 
         <div className="flex gap-2">
@@ -543,8 +551,8 @@ export default function DataTable({
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 size="icon"
                 className="bg-white h-10 w-10 shrink-0"
               >
@@ -579,7 +587,7 @@ export default function DataTable({
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
-                  <TableHead 
+                  <TableHead
                     key={header.id}
                     className="text-xs font-medium text-gray-600 h-9 px-2"
                   >
@@ -602,7 +610,7 @@ export default function DataTable({
                   className="border-b hover:bg-gray-50/80 transition-colors"
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell 
+                    <TableCell
                       key={cell.id}
                       className="px-2 py-2"
                     >
