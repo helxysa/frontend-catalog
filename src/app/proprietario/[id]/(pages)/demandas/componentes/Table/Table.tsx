@@ -451,7 +451,7 @@ export default function DataTable({
             }
             className="w-[180px] h-10 rounded-md border border-gray-300 bg-white px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 shadow-sm"
           >
-            <option value="">Todos os tipos</option>
+            <option value="">Todos os demandantes</option>
             {Array.from(new Set(demandas.map(s => s.demandante)))
               .filter(Boolean)
               .sort()
@@ -519,7 +519,7 @@ export default function DataTable({
               ))}
           </select>
 
-          <select
+          {/* <select
             value={(table.getColumn("fatorGerador")?.getFilterValue() as string) ?? ""}
             onChange={(event) =>
               table.getColumn("fatorGerador")?.setFilterValue(event.target.value)
@@ -535,7 +535,7 @@ export default function DataTable({
                   {fator}
                 </option>
               ))}
-          </select>
+          </select> */}
 
 
         </div>
