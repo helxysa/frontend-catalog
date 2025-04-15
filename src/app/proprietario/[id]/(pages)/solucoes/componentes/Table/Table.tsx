@@ -106,20 +106,21 @@ const TablePDF = ({ columns, data }: TablePDFProps) => {
       case 'sigla':
       case 'versao':
       case 'criticidade':
+        return row[columnId] ? String(row[columnId]) : '-';
       case 'andamento':
         return String(row[columnId] || '-');
       case 'tipo':
-        return row.tipo?.nome || '-';
+        return (row.tipo && row.tipo.nome) ? row.tipo.nome : '-';
       case 'desenvolvedor':
-        return row.desenvolvedor?.nome || '-';
+        return (row.desenvolvedor && row.desenvolvedor.nome) ? row.desenvolvedor.nome : '-';
       case 'demanda':
-        return row.demanda?.nome || '-';
+        return (row.demanda && row.demanda.nome) ? row.demanda.nome : '-';
       case 'categoria':
-        return row.categoria?.nome || '-';
+        return (row.categoria && row.categoria.nome) ? row.categoria.nome : '-';
       case 'responsavel':
-        return row.responsavel?.nome || '-';
+        return (row.responsavel && row.responsavel.nome) ? row.responsavel.nome : '-';
       case 'status':
-        return row.status?.nome || '-';
+        return (row.status && row.status.nome) ? row.status.nome : '-';
       case 'repositorio':
         return String(row.repositorio || '-');
       case 'data_status':
@@ -131,10 +132,10 @@ const TablePDF = ({ columns, data }: TablePDFProps) => {
           return '-';
         }
       case 'linguagens':
-        if (row.linguagens && Array.isArray(row.linguagens)) {
+        if (row.linguagens && Array.isArray(row.linguagens) && row.linguagens.length > 0) {
           return row.linguagens.map((l: { nome: string }) => l.nome).join(', ');
         }
-        if (row.linguagemId) {
+        if (row.linguagemId && String(row.linguagemId).trim() !== '') {
           return String(row.linguagemId).split(',').join(', ');
         }
         return '-';
@@ -156,7 +157,7 @@ const TablePDF = ({ columns, data }: TablePDFProps) => {
               </View>
             ))}
           </View>
-          
+
           {/* Linhas de dados */}
           {data.map((row, rowIndex) => (
             <View key={rowIndex} style={styles.tableRow}>
@@ -178,10 +179,10 @@ const generatePDF = async (columns: { id: string, accessorKey: string }[], data:
   try {
     // Criar o documento PDF
     const pdfDoc = <TablePDF columns={columns} data={data} />;
-    
+
     // Gerar o blob do PDF
     const blob = await pdf(pdfDoc).toBlob();
-    
+
     // Salvar o arquivo
     saveAs(blob, 'solucoes.pdf');
   } catch (error) {
@@ -191,46 +192,64 @@ const generatePDF = async (columns: { id: string, accessorKey: string }[], data:
 };
 
 // Função para exportar para Excel
-const exportToExcel = (columns: { id: string, accessorKey: string }[], data: any[]) => {
+const exportToExcel = (columns: { id: string, accessorKey: string }[], data: any[], linguagensParam: BaseType[] = []) => {
   // Preparar dados para o Excel
   const wsData = [
     // Cabeçalho
     columns.map((column: { id: string }) => column.id),
-    
+
     // Linhas de dados
-    ...data.map(row => 
+    ...data.map(row =>
       columns.map(column => {
         // Simplificar o valor para texto no Excel
         let cellValue = row[column.accessorKey] || '-';
-        
+
         // Tratamento especial para alguns tipos de colunas
-        if (column.id === 'status' && row.status) {
-          cellValue = row.status.nome || '-';
-        } else if (column.id === 'tipo' && row.tipo) {
-          cellValue = row.tipo.nome || '-';
-        } else if (column.id === 'desenvolvedor' && row.desenvolvedor) {
-          cellValue = row.desenvolvedor.nome || '-';
-        } else if (column.id === 'categoria' && row.categoria) {
-          cellValue = row.categoria.nome || '-';
-        } else if (column.id === 'responsavel' && row.responsavel) {
-          cellValue = row.responsavel.nome || '-';
+        if (column.id === 'status') {
+          cellValue = (row.status && row.status.nome) ? row.status.nome : '-';
+        } else if (column.id === 'tipo') {
+          cellValue = (row.tipo && row.tipo.nome) ? row.tipo.nome : '-';
+        } else if (column.id === 'desenvolvedor') {
+          cellValue = (row.desenvolvedor && row.desenvolvedor.nome) ? row.desenvolvedor.nome : '-';
+        } else if (column.id === 'demanda') {
+          cellValue = (row.demanda && row.demanda.nome) ? row.demanda.nome : '-';
+        } else if (column.id === 'categoria') {
+          cellValue = (row.categoria && row.categoria.nome) ? row.categoria.nome : '-';
+        } else if (column.id === 'responsavel') {
+          cellValue = (row.responsavel && row.responsavel.nome) ? row.responsavel.nome : '-';
         } else if (column.id === 'linguagens') {
           // Simplificação para linguagens
-          if (row.linguagens && Array.isArray(row.linguagens)) {
+          if (row.linguagens && Array.isArray(row.linguagens) && row.linguagens.length > 0) {
             cellValue = row.linguagens.map((l: { nome: string }) => l.nome).join(', ');
+          } else if (row.linguagemId && String(row.linguagemId).trim() !== '') {
+            // Tentar extrair nomes das linguagens a partir dos IDs
+            const ids = String(row.linguagemId).split(',').map(id => Number(id.trim()));
+            const linguagensEncontradas = ids
+              .map(id => linguagensParam.find(l => l.id === id))
+              .filter(Boolean);
+
+            if (linguagensEncontradas.length > 0) {
+              cellValue = linguagensEncontradas
+                .map((l: any) => l.nome)
+                .join(', ');
+            } else {
+              cellValue = '-';
+            }
+          } else {
+            cellValue = '-';
           }
         }
-        
+
         return cellValue;
       })
     )
   ];
-  
+
   // Criar planilha
   const ws = XLSX.utils.aoa_to_sheet(wsData);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Soluções");
-  
+
   // Gerar arquivo e baixar
   XLSX.writeFile(wb, "solucoes.xlsx");
 };
@@ -248,14 +267,14 @@ export default function DataTable({
     if (!dateString) {
       return '-';
     }
-    
+
     try {
       const date = new Date(dateString);
-      
+
       if (isNaN(date.getTime())) {
         return '-';
       }
-      
+
       return new Intl.DateTimeFormat('pt-BR', {
         day: '2-digit',
         month: '2-digit',
@@ -267,16 +286,16 @@ export default function DataTable({
   };
 
   const determinarCorTexto = (corHex: string | undefined) => {
-    if (!corHex) return 'text-gray-800'; 
-   
+    if (!corHex) return 'text-gray-800';
+
     corHex = corHex.replace('#', '');
-    
+
     const r = parseInt(corHex.substr(0, 2), 16);
     const g = parseInt(corHex.substr(2, 2), 16);
     const b = parseInt(corHex.substr(4, 2), 16);
-    
+
     const luminancia = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-  
+
     return luminancia > 0.5 ? 'text-gray-800' : 'text-white';
   };
 
@@ -284,7 +303,7 @@ export default function DataTable({
     if (!repo || repo === '') return '';
     if (repo.includes('github.com')) {
       return (
-        <a 
+        <a
           href={repo}
           target="_blank"
           rel="noopener noreferrer"
@@ -311,7 +330,8 @@ export default function DataTable({
   };
 
   const renderTableLinguagens = (solucao: any) => {
-    if (solucao.linguagens && Array.isArray(solucao.linguagens)) {
+    // Verificar se temos um array de linguagens
+    if (solucao.linguagens && Array.isArray(solucao.linguagens) && solucao.linguagens.length > 0) {
       return (
         <div className="flex flex-wrap gap-1">
           {solucao.linguagens.map((linguagem: any) => (
@@ -326,9 +346,10 @@ export default function DataTable({
       );
     }
 
-    if (solucao.linguagemId) {
+    // Verificar se temos IDs de linguagens
+    if (solucao.linguagemId && String(solucao.linguagemId).trim() !== '') {
       const ids = String(solucao.linguagemId).split(',').map(id => Number(id.trim()));
-      
+
       const linguagensEncontradas = ids
         .map(id => linguagens.find(l => l.id === id))
         .filter(Boolean);
@@ -349,7 +370,8 @@ export default function DataTable({
       }
     }
 
-    return '-';
+    // Se não tiver linguagens, retornar '-'
+    return <span className="text-gray-500">-</span>;
   };
 
   const getProgressColor = (progress: number) => {
@@ -358,13 +380,13 @@ export default function DataTable({
     if (progress < 75) return 'bg-yellow-500';
     return 'bg-green-500';
   };
-  
+
   const ProgressBar = React.memo(({ progress }: { progress: number }) => {
     const progressColor = getProgressColor(progress);
-    
+
     return (
       <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
-        <div 
+        <div
           className={`h-full ${progressColor} transition-all duration-300 ease-in-out`}
           style={{ width: `${progress}%` }}
         />
@@ -444,8 +466,16 @@ export default function DataTable({
           </Button>
         )
       },
-      cell: ({ row }) => <div>{row.original.tipo?.nome || '-'}</div>,
+      cell: ({ row }) => {
+        // Verificar se o tipo existe e tem nome
+        const temTipo = row.original.tipo && row.original.tipo.nome;
+        return <div>{temTipo ? row.original.tipo?.nome : '-'}</div>;
+      },
       filterFn: (row, id, value) => {
+        if (value === 'sem_tipo') {
+          // Filtrar soluções sem tipo (tipo_id é null ou undefined)
+          return !row.original.tipo || !row.original.tipo.nome || row.original.tipo.nome === '-';
+        }
         return row.original.tipo?.nome === value;
       },
     },
@@ -467,7 +497,14 @@ export default function DataTable({
       cell: ({ row }) => renderTableLinguagens(row.original),
       filterFn: (row, id, value) => {
         if (!value) return true;
-        const linguagemIds = String(row.original.linguagemId || '').split(',').map(Number);
+        if (value === 'sem_tecnologia') {
+          // Filtrar soluções sem tecnologia (linguagem_id é null, vazio ou não contém valores válidos)
+          return !row.original.linguagemId ||
+                 row.original.linguagemId === '' ||
+                 (typeof row.original.linguagemId === 'string' && row.original.linguagemId.trim() === '');
+        }
+        // Verificar se o ID da linguagem está na lista de IDs da solução
+        const linguagemIds = String(row.original.linguagemId || '').split(',').map(Number).filter(id => !isNaN(id));
         return linguagemIds.includes(Number(value));
       },
     },
@@ -486,8 +523,16 @@ export default function DataTable({
           </Button>
         )
       },
-      cell: ({ row }) => <div>{row.original.desenvolvedor?.nome || '-'}</div>,
+      cell: ({ row }) => {
+        // Verificar se o desenvolvedor existe e tem nome
+        const temDesenvolvedor = row.original.desenvolvedor && row.original.desenvolvedor.nome;
+        return <div>{temDesenvolvedor ? row.original.desenvolvedor?.nome : '-'}</div>;
+      },
       filterFn: (row, id, value) => {
+        if (value === 'sem_desenvolvedor') {
+          // Filtrar soluções sem desenvolvedor (desenvolvedor_id é null ou undefined)
+          return !row.original.desenvolvedor || !row.original.desenvolvedor.nome || row.original.desenvolvedor.nome === '-';
+        }
         return row.original.desenvolvedor?.nome === value;
       },
     },
@@ -506,8 +551,16 @@ export default function DataTable({
           </Button>
         )
       },
-      cell: ({ row }) => <div>{row.original.demanda?.nome || '-'}</div>,
+      cell: ({ row }) => {
+        // Verificar se a demanda existe e tem nome
+        const temDemanda = row.original.demanda && row.original.demanda.nome;
+        return <div>{temDemanda ? row.original.demanda?.nome : '-'}</div>;
+      },
       filterFn: (row, id, value) => {
+        if (value === 'sem_demanda') {
+          // Filtrar soluções sem demanda (demanda_id é null ou undefined)
+          return !row.original.demanda || !row.original.demanda.nome || row.original.demanda.nome === '-';
+        }
         return row.original.demanda?.nome === value;
       },
     },
@@ -526,8 +579,16 @@ export default function DataTable({
           </Button>
         )
       },
-      cell: ({ row }) => <div>{row.original.categoria?.nome || '-'}</div>,
+      cell: ({ row }) => {
+        // Verificar se a categoria existe e tem nome
+        const temCategoria = row.original.categoria && row.original.categoria.nome;
+        return <div>{temCategoria ? row.original.categoria?.nome : '-'}</div>;
+      },
       filterFn: (row, id, value) => {
+        if (value === 'sem_categoria') {
+          // Filtrar soluções sem categoria (categoria_id é null ou undefined)
+          return !row.original.categoria || !row.original.categoria.nome || row.original.categoria.nome === '-';
+        }
         return row.original.categoria?.nome === value;
       },
     },
@@ -546,8 +607,16 @@ export default function DataTable({
           </Button>
         )
       },
-      cell: ({ row }) => <div>{row.original.responsavel?.nome || '-'}</div>,
+      cell: ({ row }) => {
+        // Verificar se o responsável existe e tem nome
+        const temResponsavel = row.original.responsavel && row.original.responsavel.nome;
+        return <div>{temResponsavel ? row.original.responsavel?.nome : '-'}</div>;
+      },
       filterFn: (row, id, value) => {
+        if (value === 'sem_responsavel') {
+          // Filtrar soluções sem responsável (responsavel_id é null ou undefined)
+          return !row.original.responsavel || !row.original.responsavel.nome || row.original.responsavel.nome === '-';
+        }
         return row.original.responsavel?.nome === value;
       },
     },
@@ -583,8 +652,17 @@ export default function DataTable({
           </Button>
         )
       },
-      cell: ({ row }) => <div>{row.getValue("criticidade") || '-'}</div>,
+      cell: ({ row }) => {
+        // Verificar se a criticidade existe e não está vazia
+        const criticidade = row.getValue("criticidade") as string | null | undefined;
+        return <div>{criticidade ? criticidade : '-'}</div>;
+      },
       filterFn: (row, id, value) => {
+        if (value === 'sem_criticidade') {
+          // Filtrar soluções sem criticidade (criticidade é null, vazio ou não informada)
+          const criticidade = row.getValue("criticidade");
+          return !criticidade || criticidade === '' || criticidade === '-';
+        }
         return row.getValue("criticidade") === value;
       },
     },
@@ -610,16 +688,16 @@ export default function DataTable({
             <div className="flex justify-between items-center gap-2">
               <span className="font-medium">{progress}%</span>
               <span className={`text-xs ${
-                progress === 100 
-                  ? 'text-green-600' 
-                  : progress > 0 
-                    ? 'text-blue-600' 
+                progress === 100
+                  ? 'text-green-600'
+                  : progress > 0
+                    ? 'text-blue-600'
                     : 'text-gray-500'
               }`}>
-                {progress === 100 
-                  ? 'Concluído' 
-                  : progress > 0 
-                    ? 'Em andamento' 
+                {progress === 100
+                  ? 'Concluído'
+                  : progress > 0
+                    ? 'Em andamento'
                     : 'Não iniciado'}
               </span>
             </div>
@@ -656,18 +734,26 @@ export default function DataTable({
       },
       cell: ({ row }) => {
         const status = row.original.status;
-        return status?.propriedade ? (
-          <span
-            className={`rounded-md px-2 py-1 inline-block ${determinarCorTexto(status.propriedade)}`}
-            style={{ backgroundColor: status.propriedade }}
-          >
-            {status.nome || '-'}
-          </span>
-        ) : (
-          <span className="text-gray-500">-</span>
-        );
+        // Verificar se o status existe, tem propriedade e nome
+        if (status && status.propriedade && status.nome) {
+          return (
+            <span
+              className={`rounded-md px-2 py-1 inline-block ${determinarCorTexto(status.propriedade)}`}
+              style={{ backgroundColor: status.propriedade }}
+            >
+              {status.nome}
+            </span>
+          );
+        } else {
+          // Se não tiver status, retornar '-'
+          return <span className="text-gray-500">-</span>;
+        }
       },
       filterFn: (row, id, value) => {
+        if (value === 'sem_status') {
+          // Filtrar soluções sem status (status_id é null ou undefined)
+          return !row.original.status || !row.original.status.nome || row.original.status.nome === '-';
+        }
         return row.original.status?.nome === value;
       },
     },
@@ -767,7 +853,7 @@ export default function DataTable({
             onChange={(e) => setFilterValue(e.target.value)}
             className="w-[200px] bg-white border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 shadow-sm"
           />
-          
+
           {/* Filtro de Demanda */}
           <select
             value={(table.getColumn("demanda")?.getFilterValue() as string) ?? ""}
@@ -777,6 +863,7 @@ export default function DataTable({
             className="w-[180px] h-10 rounded-md border border-gray-300 bg-white px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 shadow-sm"
           >
             <option value="">Todas as demandas</option>
+            <option value="sem_demanda">Não informado</option>
             {Array.from(new Set(solucoes.map(s => s.demanda?.nome)))
               .filter(Boolean)
               .sort()
@@ -796,6 +883,7 @@ export default function DataTable({
             className="w-[180px] h-10 rounded-md border border-gray-300 bg-white px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 shadow-sm"
           >
             <option value="">Todos os tipos</option>
+            <option value="sem_tipo">Não informado</option>
             {Array.from(new Set(solucoes.map(s => s.tipo?.nome)))
               .filter(Boolean)
               .sort()
@@ -815,6 +903,7 @@ export default function DataTable({
             className="w-[200px] h-10 rounded-md border border-gray-300 bg-white px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 shadow-sm"
           >
             <option value="">Todas as tecnologias</option>
+            <option value="sem_tecnologia">Não informado</option>
             {linguagens
               .sort((a, b) => a.nome.localeCompare(b.nome))
               .map((linguagem) => (
@@ -833,6 +922,7 @@ export default function DataTable({
             className="w-[220px] h-10 rounded-md border border-gray-300 bg-white px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 shadow-sm"
           >
             <option value="">Todos os desenvolvedores</option>
+            <option value="sem_desenvolvedor">Não informado</option>
             {Array.from(new Set(solucoes.map(s => s.desenvolvedor?.nome)))
               .filter(Boolean)
               .sort()
@@ -852,6 +942,7 @@ export default function DataTable({
             className="w-[180px] h-10 rounded-md border border-gray-300 bg-white px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 shadow-sm"
           >
             <option value="">Todos os status</option>
+            <option value="sem_status">Não informado</option>
             {Array.from(new Set(solucoes.map(s => s.status?.nome)))
               .filter(Boolean)
               .sort()
@@ -871,6 +962,7 @@ export default function DataTable({
             className="w-[180px] h-10 rounded-md border border-gray-300 bg-white px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 shadow-sm"
           >
             <option value="">Todas as categorias</option>
+            <option value="sem_categoria">Não informado</option>
             {Array.from(new Set(solucoes.map(s => s.categoria?.nome)))
               .filter(Boolean)
               .sort()
@@ -890,6 +982,7 @@ export default function DataTable({
             className="w-[180px] h-10 rounded-md border border-gray-300 bg-white px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 shadow-sm"
           >
             <option value="">Todos os responsáveis</option>
+            <option value="sem_responsavel">Não informado</option>
             {Array.from(new Set(solucoes.map(s => s.responsavel?.nome)))
               .filter(Boolean)
               .sort()
@@ -909,6 +1002,7 @@ export default function DataTable({
             className="w-[180px] h-10 rounded-md border border-gray-300 bg-white px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 shadow-sm"
           >
             <option value="">Todas as criticidades</option>
+            <option value="sem_criticidade">Não informado</option>
             {Array.from(new Set(solucoes.map(s => s.criticidade)))
               .filter(Boolean)
               .sort()
@@ -919,7 +1013,7 @@ export default function DataTable({
               ))}
           </select>
         </div>
-        
+
         {/* Barra de ações - mais próxima da tabela */}
         <div className="flex justify-end gap-2 mt-1 mb-2">
           <Button
@@ -932,8 +1026,8 @@ export default function DataTable({
 
           <DropdownMenu open={isColumnMenuOpen} onOpenChange={setIsColumnMenuOpen}>
             <DropdownMenuTrigger asChild>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 size="icon"
                 className="bg-white h-8 w-8 shrink-0"
               >
@@ -944,14 +1038,14 @@ export default function DataTable({
               <div className="p-2 text-xs font-semibold text-gray-700 border-b">
                 Colunas visíveis
               </div>
-              
+
               <div className="flex gap-1 px-2 py-1.5 border-b">
                 <Button
                   onClick={() => generatePDF(
                     table.getVisibleFlatColumns().map((col) => ({
                       id: col.id,
                       accessorKey: col.id
-                    })), 
+                    })),
                     table.getFilteredRowModel().rows.map(row => row.original)
                   )}
                   className="flex-1 inline-flex items-center justify-center gap-1 text-xs px-2 py-1 bg-white text-red-600 border border-red-200 font-medium rounded hover:bg-red-50 transition-colors"
@@ -959,14 +1053,15 @@ export default function DataTable({
                   <FileText className="w-3 h-3" />
                   PDF
                 </Button>
-                
+
                 <Button
                   onClick={() => exportToExcel(
                     table.getVisibleFlatColumns().map((col) => ({
                       id: col.id,
                       accessorKey: col.id
                     })),
-                    table.getFilteredRowModel().rows.map(row => row.original)
+                    table.getFilteredRowModel().rows.map(row => row.original),
+                    linguagens
                   )}
                   className="flex-1 inline-flex items-center justify-center gap-1 text-xs px-2 py-1 bg-white text-green-600 border border-green-200 font-medium rounded hover:bg-green-50 transition-colors"
                 >
@@ -974,7 +1069,7 @@ export default function DataTable({
                   Excel
                 </Button>
               </div>
-              
+
               <div className="max-h-[300px] overflow-y-auto py-1">
                 {table
                   .getAllColumns()
@@ -988,7 +1083,7 @@ export default function DataTable({
                         // Importante: modificar para não fechar o menu ao clicar
                         // Usamos stopPropagation para impedir que o clique se propague
                         onSelect={(e) => e.preventDefault()}
-                        onCheckedChange={(value) => 
+                        onCheckedChange={(value) =>
                           column.toggleVisibility(!!value)
                         }
                       >
@@ -1009,7 +1104,7 @@ export default function DataTable({
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
-                  <TableHead 
+                  <TableHead
                     key={header.id}
                     className="text-xs font-medium text-gray-600 h-9 px-2"
                   >
@@ -1038,7 +1133,7 @@ export default function DataTable({
                   className="border-b hover:bg-gray-50/80 transition-colors"
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell 
+                    <TableCell
                       key={cell.id}
                       className="px-2 py-2"
                     >
@@ -1063,7 +1158,7 @@ export default function DataTable({
           </TableBody>
         </Table>
       </div>
-      
+
       {/* Paginação */}
       <div className="flex items-center justify-between space-x-2 py-4">
         <div className="flex items-center gap-2">
