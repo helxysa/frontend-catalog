@@ -881,7 +881,7 @@ export default function Solucao() {
 
                    <div>
                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                       Demanda <span className="text-red-500">*</span>
+                       Demanda 
                      </label>
                      <select 
                        name="demanda_id" 
@@ -896,11 +896,7 @@ export default function Solucao() {
                          <option key={d.id} value={d.id}>{d.sigla || d.nome}</option>
                        ))}
                      </select>
-                     {formErrors.demanda_id && (
-                       <p className="mt-1 text-sm text-red-500">
-                         Este campo é obrigatório
-                       </p>
-                     )}
+        
                    </div>
  
                    <div className="col-span-3">

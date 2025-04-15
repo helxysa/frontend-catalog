@@ -113,7 +113,7 @@ const TablePDF = ({ columns, data }: TablePDFProps) => {
       case 'desenvolvedor':
         return row.desenvolvedor?.nome || '-';
       case 'demanda':
-        return row.demanda?.nome || '-';
+        return (row.demanda && row.demanda.nome) ? row.demanda.nome : '-';
       case 'categoria':
         return row.categoria?.nome || '-';
       case 'responsavel':
@@ -156,7 +156,7 @@ const TablePDF = ({ columns, data }: TablePDFProps) => {
               </View>
             ))}
           </View>
-          
+
           {/* Linhas de dados */}
           {data.map((row, rowIndex) => (
             <View key={rowIndex} style={styles.tableRow}>
@@ -178,10 +178,10 @@ const generatePDF = async (columns: { id: string, accessorKey: string }[], data:
   try {
     // Criar o documento PDF
     const pdfDoc = <TablePDF columns={columns} data={data} />;
-    
+
     // Gerar o blob do PDF
     const blob = await pdf(pdfDoc).toBlob();
-    
+
     // Salvar o arquivo
     saveAs(blob, 'solucoes.pdf');
   } catch (error) {
@@ -196,13 +196,13 @@ const exportToExcel = (columns: { id: string, accessorKey: string }[], data: any
   const wsData = [
     // Cabeçalho
     columns.map((column: { id: string }) => column.id),
-    
+
     // Linhas de dados
-    ...data.map(row => 
+    ...data.map(row =>
       columns.map(column => {
         // Simplificar o valor para texto no Excel
         let cellValue = row[column.accessorKey] || '-';
-        
+
         // Tratamento especial para alguns tipos de colunas
         if (column.id === 'status' && row.status) {
           cellValue = row.status.nome || '-';
@@ -210,6 +210,8 @@ const exportToExcel = (columns: { id: string, accessorKey: string }[], data: any
           cellValue = row.tipo.nome || '-';
         } else if (column.id === 'desenvolvedor' && row.desenvolvedor) {
           cellValue = row.desenvolvedor.nome || '-';
+        } else if (column.id === 'demanda') {
+          cellValue = (row.demanda && row.demanda.nome) ? row.demanda.nome : '-';
         } else if (column.id === 'categoria' && row.categoria) {
           cellValue = row.categoria.nome || '-';
         } else if (column.id === 'responsavel' && row.responsavel) {
@@ -220,17 +222,17 @@ const exportToExcel = (columns: { id: string, accessorKey: string }[], data: any
             cellValue = row.linguagens.map((l: { nome: string }) => l.nome).join(', ');
           }
         }
-        
+
         return cellValue;
       })
     )
   ];
-  
+
   // Criar planilha
   const ws = XLSX.utils.aoa_to_sheet(wsData);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Soluções");
-  
+
   // Gerar arquivo e baixar
   XLSX.writeFile(wb, "solucoes.xlsx");
 };
@@ -248,14 +250,14 @@ export default function DataTable({
     if (!dateString) {
       return '-';
     }
-    
+
     try {
       const date = new Date(dateString);
-      
+
       if (isNaN(date.getTime())) {
         return '-';
       }
-      
+
       return new Intl.DateTimeFormat('pt-BR', {
         day: '2-digit',
         month: '2-digit',
@@ -267,16 +269,16 @@ export default function DataTable({
   };
 
   const determinarCorTexto = (corHex: string | undefined) => {
-    if (!corHex) return 'text-gray-800'; 
-   
+    if (!corHex) return 'text-gray-800';
+
     corHex = corHex.replace('#', '');
-    
+
     const r = parseInt(corHex.substr(0, 2), 16);
     const g = parseInt(corHex.substr(2, 2), 16);
     const b = parseInt(corHex.substr(4, 2), 16);
-    
+
     const luminancia = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-  
+
     return luminancia > 0.5 ? 'text-gray-800' : 'text-white';
   };
 
@@ -284,7 +286,7 @@ export default function DataTable({
     if (!repo || repo === '') return '';
     if (repo.includes('github.com')) {
       return (
-        <a 
+        <a
           href={repo}
           target="_blank"
           rel="noopener noreferrer"
@@ -328,7 +330,7 @@ export default function DataTable({
 
     if (solucao.linguagemId) {
       const ids = String(solucao.linguagemId).split(',').map(id => Number(id.trim()));
-      
+
       const linguagensEncontradas = ids
         .map(id => linguagens.find(l => l.id === id))
         .filter(Boolean);
@@ -358,13 +360,13 @@ export default function DataTable({
     if (progress < 75) return 'bg-yellow-500';
     return 'bg-green-500';
   };
-  
+
   const ProgressBar = React.memo(({ progress }: { progress: number }) => {
     const progressColor = getProgressColor(progress);
-    
+
     return (
       <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
-        <div 
+        <div
           className={`h-full ${progressColor} transition-all duration-300 ease-in-out`}
           style={{ width: `${progress}%` }}
         />
@@ -506,8 +508,16 @@ export default function DataTable({
           </Button>
         )
       },
-      cell: ({ row }) => <div>{row.original.demanda?.nome || '-'}</div>,
+      cell: ({ row }) => {
+        // Verificar se a demanda existe e tem nome
+        const temDemanda = row.original.demanda && row.original.demanda.nome;
+        return <div>{temDemanda ? row.original.demanda?.nome : '-'}</div>;
+      },
       filterFn: (row, id, value) => {
+        if (value === 'sem_demanda') {
+          // Filtrar soluções sem demanda (demanda_id é null ou undefined)
+          return !row.original.demanda || !row.original.demanda.nome || row.original.demanda.nome === '-';
+        }
         return row.original.demanda?.nome === value;
       },
     },
@@ -610,16 +620,16 @@ export default function DataTable({
             <div className="flex justify-between items-center gap-2">
               <span className="font-medium">{progress}%</span>
               <span className={`text-xs ${
-                progress === 100 
-                  ? 'text-green-600' 
-                  : progress > 0 
-                    ? 'text-blue-600' 
+                progress === 100
+                  ? 'text-green-600'
+                  : progress > 0
+                    ? 'text-blue-600'
                     : 'text-gray-500'
               }`}>
-                {progress === 100 
-                  ? 'Concluído' 
-                  : progress > 0 
-                    ? 'Em andamento' 
+                {progress === 100
+                  ? 'Concluído'
+                  : progress > 0
+                    ? 'Em andamento'
                     : 'Não iniciado'}
               </span>
             </div>
@@ -767,7 +777,7 @@ export default function DataTable({
             onChange={(e) => setFilterValue(e.target.value)}
             className="w-[200px] bg-white border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 shadow-sm"
           />
-          
+
           {/* Filtro de Demanda */}
           <select
             value={(table.getColumn("demanda")?.getFilterValue() as string) ?? ""}
@@ -777,6 +787,7 @@ export default function DataTable({
             className="w-[180px] h-10 rounded-md border border-gray-300 bg-white px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 shadow-sm"
           >
             <option value="">Todas as demandas</option>
+            <option value="sem_demanda">Demandas não informadas</option>
             {Array.from(new Set(solucoes.map(s => s.demanda?.nome)))
               .filter(Boolean)
               .sort()
@@ -919,7 +930,7 @@ export default function DataTable({
               ))}
           </select>
         </div>
-        
+
         {/* Barra de ações - mais próxima da tabela */}
         <div className="flex justify-end gap-2 mt-1 mb-2">
           <Button
@@ -932,8 +943,8 @@ export default function DataTable({
 
           <DropdownMenu open={isColumnMenuOpen} onOpenChange={setIsColumnMenuOpen}>
             <DropdownMenuTrigger asChild>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 size="icon"
                 className="bg-white h-8 w-8 shrink-0"
               >
@@ -944,14 +955,14 @@ export default function DataTable({
               <div className="p-2 text-xs font-semibold text-gray-700 border-b">
                 Colunas visíveis
               </div>
-              
+
               <div className="flex gap-1 px-2 py-1.5 border-b">
                 <Button
                   onClick={() => generatePDF(
                     table.getVisibleFlatColumns().map((col) => ({
                       id: col.id,
                       accessorKey: col.id
-                    })), 
+                    })),
                     table.getFilteredRowModel().rows.map(row => row.original)
                   )}
                   className="flex-1 inline-flex items-center justify-center gap-1 text-xs px-2 py-1 bg-white text-red-600 border border-red-200 font-medium rounded hover:bg-red-50 transition-colors"
@@ -959,7 +970,7 @@ export default function DataTable({
                   <FileText className="w-3 h-3" />
                   PDF
                 </Button>
-                
+
                 <Button
                   onClick={() => exportToExcel(
                     table.getVisibleFlatColumns().map((col) => ({
@@ -974,7 +985,7 @@ export default function DataTable({
                   Excel
                 </Button>
               </div>
-              
+
               <div className="max-h-[300px] overflow-y-auto py-1">
                 {table
                   .getAllColumns()
@@ -988,7 +999,7 @@ export default function DataTable({
                         // Importante: modificar para não fechar o menu ao clicar
                         // Usamos stopPropagation para impedir que o clique se propague
                         onSelect={(e) => e.preventDefault()}
-                        onCheckedChange={(value) => 
+                        onCheckedChange={(value) =>
                           column.toggleVisibility(!!value)
                         }
                       >
@@ -1009,7 +1020,7 @@ export default function DataTable({
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
-                  <TableHead 
+                  <TableHead
                     key={header.id}
                     className="text-xs font-medium text-gray-600 h-9 px-2"
                   >
@@ -1038,7 +1049,7 @@ export default function DataTable({
                   className="border-b hover:bg-gray-50/80 transition-colors"
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell 
+                    <TableCell
                       key={cell.id}
                       className="px-2 py-2"
                     >
@@ -1063,7 +1074,7 @@ export default function DataTable({
           </TableBody>
         </Table>
       </div>
-      
+
       {/* Paginação */}
       <div className="flex items-center justify-between space-x-2 py-4">
         <div className="flex items-center gap-2">
