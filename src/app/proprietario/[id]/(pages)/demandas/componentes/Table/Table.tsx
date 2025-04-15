@@ -210,6 +210,10 @@ export default function DataTable({
         )
       },
       cell: ({ row }) => <div className="w-[120px] truncate">{row.original.demandante || '-'}</div>,
+      filterFn: (row, id, value) => {
+        const demandante = row.original.demandante || '-';
+        return demandante === value;
+      },
     },
     {
       accessorKey: "alinhamento",
@@ -244,6 +248,10 @@ export default function DataTable({
       },
       cell: ({ row }) => <div className="w-[120px] truncate">{row.original.prioridade?.nome || '-'}</div>,
       filterFn: (row, id, value) => {
+        if (value === 'sem_prioridade') {
+          // Filtrar demandas sem prioridade (prioridade é null)
+          return !row.original.prioridade || !row.original.prioridade.nome;
+        }
         return row.original.prioridade?.nome.toLowerCase() === value.toLowerCase();
       },
     },
@@ -311,6 +319,10 @@ export default function DataTable({
       },
       cell: ({ row }) => <div className="w-[120px] truncate">{row.original.responsavel?.nome || '-'}</div>,
       filterFn: (row, id, value) => {
+        if (value === 'sem_responsavel') {
+          // Filtrar demandas sem responsável (responsável é null)
+          return !row.original.responsavel || !row.original.responsavel.nome;
+        }
         return row.original.responsavel?.nome === value;
       },
     },
@@ -363,6 +375,10 @@ export default function DataTable({
         );
       },
       filterFn: (row, id, value) => {
+        if (value === 'sem_status') {
+          // Filtrar demandas sem status (status é null)
+          return !row.original.status || !row.original.status.nome;
+        }
         return row.original.status?.nome === value;
       },
     },
@@ -443,7 +459,7 @@ export default function DataTable({
             className="w-[200px] bg-white border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 shadow-sm"
           />
 
-          {/* Filtro de Tipo */}
+          {/* Filtro de Demandante */}
           <select
             value={(table.getColumn("demandante")?.getFilterValue() as string) ?? ""}
             onChange={(event) =>
@@ -453,11 +469,10 @@ export default function DataTable({
           >
             <option value="">Todos os demandantes</option>
             {Array.from(new Set(demandas.map(s => s.demandante)))
-              .filter(Boolean)
               .sort()
-              .map((tipo) => (
-                <option key={tipo} value={tipo}>
-                  {tipo}
+              .map((demandante) => (
+                <option key={demandante} value={demandante}>
+                  {demandante === "-" ? "Não informado" : demandante}
                 </option>
               ))}
           </select>
@@ -473,6 +488,7 @@ export default function DataTable({
             className="w-[180px] h-10 rounded-md border border-gray-300 bg-white px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 shadow-sm"
           >
             <option value="">Todos os responsáveis</option>
+            <option value="sem_responsavel">Não informado</option>
             {Array.from(new Set(demandas.map(s => s.responsavel?.nome)))
               .filter(Boolean)
               .sort()
@@ -491,6 +507,7 @@ export default function DataTable({
             className="w-[180px] h-10 rounded-md border border-gray-300 bg-white px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 shadow-sm"
           >
             <option value="">Todos as prioridades</option>
+            <option value="sem_prioridade">Não informado</option>
             {Array.from(new Set(demandas.map(s => s.prioridade?.nome)))
               .filter(Boolean)
               .sort()
@@ -509,6 +526,7 @@ export default function DataTable({
             className="w-[180px] h-10 rounded-md border border-gray-300 bg-white px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 shadow-sm"
           >
             <option value="">Todos os status</option>
+            <option value="sem_status">Não informado</option>
             {Array.from(new Set(demandas.map(s => s.status?.nome)))
               .filter(Boolean)
               .sort()
