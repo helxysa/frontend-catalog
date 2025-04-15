@@ -106,20 +106,21 @@ const TablePDF = ({ columns, data }: TablePDFProps) => {
       case 'sigla':
       case 'versao':
       case 'criticidade':
+        return row[columnId] ? String(row[columnId]) : '-';
       case 'andamento':
         return String(row[columnId] || '-');
       case 'tipo':
-        return row.tipo?.nome || '-';
+        return (row.tipo && row.tipo.nome) ? row.tipo.nome : '-';
       case 'desenvolvedor':
-        return row.desenvolvedor?.nome || '-';
+        return (row.desenvolvedor && row.desenvolvedor.nome) ? row.desenvolvedor.nome : '-';
       case 'demanda':
         return (row.demanda && row.demanda.nome) ? row.demanda.nome : '-';
       case 'categoria':
-        return row.categoria?.nome || '-';
+        return (row.categoria && row.categoria.nome) ? row.categoria.nome : '-';
       case 'responsavel':
-        return row.responsavel?.nome || '-';
+        return (row.responsavel && row.responsavel.nome) ? row.responsavel.nome : '-';
       case 'status':
-        return row.status?.nome || '-';
+        return (row.status && row.status.nome) ? row.status.nome : '-';
       case 'repositorio':
         return String(row.repositorio || '-');
       case 'data_status':
@@ -131,10 +132,10 @@ const TablePDF = ({ columns, data }: TablePDFProps) => {
           return '-';
         }
       case 'linguagens':
-        if (row.linguagens && Array.isArray(row.linguagens)) {
+        if (row.linguagens && Array.isArray(row.linguagens) && row.linguagens.length > 0) {
           return row.linguagens.map((l: { nome: string }) => l.nome).join(', ');
         }
-        if (row.linguagemId) {
+        if (row.linguagemId && String(row.linguagemId).trim() !== '') {
           return String(row.linguagemId).split(',').join(', ');
         }
         return '-';
@@ -191,7 +192,7 @@ const generatePDF = async (columns: { id: string, accessorKey: string }[], data:
 };
 
 // Função para exportar para Excel
-const exportToExcel = (columns: { id: string, accessorKey: string }[], data: any[]) => {
+const exportToExcel = (columns: { id: string, accessorKey: string }[], data: any[], linguagensParam: BaseType[] = []) => {
   // Preparar dados para o Excel
   const wsData = [
     // Cabeçalho
@@ -204,22 +205,38 @@ const exportToExcel = (columns: { id: string, accessorKey: string }[], data: any
         let cellValue = row[column.accessorKey] || '-';
 
         // Tratamento especial para alguns tipos de colunas
-        if (column.id === 'status' && row.status) {
-          cellValue = row.status.nome || '-';
-        } else if (column.id === 'tipo' && row.tipo) {
-          cellValue = row.tipo.nome || '-';
-        } else if (column.id === 'desenvolvedor' && row.desenvolvedor) {
-          cellValue = row.desenvolvedor.nome || '-';
+        if (column.id === 'status') {
+          cellValue = (row.status && row.status.nome) ? row.status.nome : '-';
+        } else if (column.id === 'tipo') {
+          cellValue = (row.tipo && row.tipo.nome) ? row.tipo.nome : '-';
+        } else if (column.id === 'desenvolvedor') {
+          cellValue = (row.desenvolvedor && row.desenvolvedor.nome) ? row.desenvolvedor.nome : '-';
         } else if (column.id === 'demanda') {
           cellValue = (row.demanda && row.demanda.nome) ? row.demanda.nome : '-';
-        } else if (column.id === 'categoria' && row.categoria) {
-          cellValue = row.categoria.nome || '-';
-        } else if (column.id === 'responsavel' && row.responsavel) {
-          cellValue = row.responsavel.nome || '-';
+        } else if (column.id === 'categoria') {
+          cellValue = (row.categoria && row.categoria.nome) ? row.categoria.nome : '-';
+        } else if (column.id === 'responsavel') {
+          cellValue = (row.responsavel && row.responsavel.nome) ? row.responsavel.nome : '-';
         } else if (column.id === 'linguagens') {
           // Simplificação para linguagens
-          if (row.linguagens && Array.isArray(row.linguagens)) {
+          if (row.linguagens && Array.isArray(row.linguagens) && row.linguagens.length > 0) {
             cellValue = row.linguagens.map((l: { nome: string }) => l.nome).join(', ');
+          } else if (row.linguagemId && String(row.linguagemId).trim() !== '') {
+            // Tentar extrair nomes das linguagens a partir dos IDs
+            const ids = String(row.linguagemId).split(',').map(id => Number(id.trim()));
+            const linguagensEncontradas = ids
+              .map(id => linguagensParam.find(l => l.id === id))
+              .filter(Boolean);
+
+            if (linguagensEncontradas.length > 0) {
+              cellValue = linguagensEncontradas
+                .map((l: any) => l.nome)
+                .join(', ');
+            } else {
+              cellValue = '-';
+            }
+          } else {
+            cellValue = '-';
           }
         }
 
@@ -313,7 +330,8 @@ export default function DataTable({
   };
 
   const renderTableLinguagens = (solucao: any) => {
-    if (solucao.linguagens && Array.isArray(solucao.linguagens)) {
+    // Verificar se temos um array de linguagens
+    if (solucao.linguagens && Array.isArray(solucao.linguagens) && solucao.linguagens.length > 0) {
       return (
         <div className="flex flex-wrap gap-1">
           {solucao.linguagens.map((linguagem: any) => (
@@ -328,7 +346,8 @@ export default function DataTable({
       );
     }
 
-    if (solucao.linguagemId) {
+    // Verificar se temos IDs de linguagens
+    if (solucao.linguagemId && String(solucao.linguagemId).trim() !== '') {
       const ids = String(solucao.linguagemId).split(',').map(id => Number(id.trim()));
 
       const linguagensEncontradas = ids
@@ -351,7 +370,8 @@ export default function DataTable({
       }
     }
 
-    return '-';
+    // Se não tiver linguagens, retornar '-'
+    return <span className="text-gray-500">-</span>;
   };
 
   const getProgressColor = (progress: number) => {
@@ -446,8 +466,16 @@ export default function DataTable({
           </Button>
         )
       },
-      cell: ({ row }) => <div>{row.original.tipo?.nome || '-'}</div>,
+      cell: ({ row }) => {
+        // Verificar se o tipo existe e tem nome
+        const temTipo = row.original.tipo && row.original.tipo.nome;
+        return <div>{temTipo ? row.original.tipo?.nome : '-'}</div>;
+      },
       filterFn: (row, id, value) => {
+        if (value === 'sem_tipo') {
+          // Filtrar soluções sem tipo (tipo_id é null ou undefined)
+          return !row.original.tipo || !row.original.tipo.nome || row.original.tipo.nome === '-';
+        }
         return row.original.tipo?.nome === value;
       },
     },
@@ -469,7 +497,14 @@ export default function DataTable({
       cell: ({ row }) => renderTableLinguagens(row.original),
       filterFn: (row, id, value) => {
         if (!value) return true;
-        const linguagemIds = String(row.original.linguagemId || '').split(',').map(Number);
+        if (value === 'sem_tecnologia') {
+          // Filtrar soluções sem tecnologia (linguagem_id é null, vazio ou não contém valores válidos)
+          return !row.original.linguagemId ||
+                 row.original.linguagemId === '' ||
+                 (typeof row.original.linguagemId === 'string' && row.original.linguagemId.trim() === '');
+        }
+        // Verificar se o ID da linguagem está na lista de IDs da solução
+        const linguagemIds = String(row.original.linguagemId || '').split(',').map(Number).filter(id => !isNaN(id));
         return linguagemIds.includes(Number(value));
       },
     },
@@ -488,8 +523,16 @@ export default function DataTable({
           </Button>
         )
       },
-      cell: ({ row }) => <div>{row.original.desenvolvedor?.nome || '-'}</div>,
+      cell: ({ row }) => {
+        // Verificar se o desenvolvedor existe e tem nome
+        const temDesenvolvedor = row.original.desenvolvedor && row.original.desenvolvedor.nome;
+        return <div>{temDesenvolvedor ? row.original.desenvolvedor?.nome : '-'}</div>;
+      },
       filterFn: (row, id, value) => {
+        if (value === 'sem_desenvolvedor') {
+          // Filtrar soluções sem desenvolvedor (desenvolvedor_id é null ou undefined)
+          return !row.original.desenvolvedor || !row.original.desenvolvedor.nome || row.original.desenvolvedor.nome === '-';
+        }
         return row.original.desenvolvedor?.nome === value;
       },
     },
@@ -536,8 +579,16 @@ export default function DataTable({
           </Button>
         )
       },
-      cell: ({ row }) => <div>{row.original.categoria?.nome || '-'}</div>,
+      cell: ({ row }) => {
+        // Verificar se a categoria existe e tem nome
+        const temCategoria = row.original.categoria && row.original.categoria.nome;
+        return <div>{temCategoria ? row.original.categoria?.nome : '-'}</div>;
+      },
       filterFn: (row, id, value) => {
+        if (value === 'sem_categoria') {
+          // Filtrar soluções sem categoria (categoria_id é null ou undefined)
+          return !row.original.categoria || !row.original.categoria.nome || row.original.categoria.nome === '-';
+        }
         return row.original.categoria?.nome === value;
       },
     },
@@ -556,8 +607,16 @@ export default function DataTable({
           </Button>
         )
       },
-      cell: ({ row }) => <div>{row.original.responsavel?.nome || '-'}</div>,
+      cell: ({ row }) => {
+        // Verificar se o responsável existe e tem nome
+        const temResponsavel = row.original.responsavel && row.original.responsavel.nome;
+        return <div>{temResponsavel ? row.original.responsavel?.nome : '-'}</div>;
+      },
       filterFn: (row, id, value) => {
+        if (value === 'sem_responsavel') {
+          // Filtrar soluções sem responsável (responsavel_id é null ou undefined)
+          return !row.original.responsavel || !row.original.responsavel.nome || row.original.responsavel.nome === '-';
+        }
         return row.original.responsavel?.nome === value;
       },
     },
@@ -593,8 +652,17 @@ export default function DataTable({
           </Button>
         )
       },
-      cell: ({ row }) => <div>{row.getValue("criticidade") || '-'}</div>,
+      cell: ({ row }) => {
+        // Verificar se a criticidade existe e não está vazia
+        const criticidade = row.getValue("criticidade") as string | null | undefined;
+        return <div>{criticidade ? criticidade : '-'}</div>;
+      },
       filterFn: (row, id, value) => {
+        if (value === 'sem_criticidade') {
+          // Filtrar soluções sem criticidade (criticidade é null, vazio ou não informada)
+          const criticidade = row.getValue("criticidade");
+          return !criticidade || criticidade === '' || criticidade === '-';
+        }
         return row.getValue("criticidade") === value;
       },
     },
@@ -666,18 +734,26 @@ export default function DataTable({
       },
       cell: ({ row }) => {
         const status = row.original.status;
-        return status?.propriedade ? (
-          <span
-            className={`rounded-md px-2 py-1 inline-block ${determinarCorTexto(status.propriedade)}`}
-            style={{ backgroundColor: status.propriedade }}
-          >
-            {status.nome || '-'}
-          </span>
-        ) : (
-          <span className="text-gray-500">-</span>
-        );
+        // Verificar se o status existe, tem propriedade e nome
+        if (status && status.propriedade && status.nome) {
+          return (
+            <span
+              className={`rounded-md px-2 py-1 inline-block ${determinarCorTexto(status.propriedade)}`}
+              style={{ backgroundColor: status.propriedade }}
+            >
+              {status.nome}
+            </span>
+          );
+        } else {
+          // Se não tiver status, retornar '-'
+          return <span className="text-gray-500">-</span>;
+        }
       },
       filterFn: (row, id, value) => {
+        if (value === 'sem_status') {
+          // Filtrar soluções sem status (status_id é null ou undefined)
+          return !row.original.status || !row.original.status.nome || row.original.status.nome === '-';
+        }
         return row.original.status?.nome === value;
       },
     },
@@ -787,7 +863,7 @@ export default function DataTable({
             className="w-[180px] h-10 rounded-md border border-gray-300 bg-white px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 shadow-sm"
           >
             <option value="">Todas as demandas</option>
-            <option value="sem_demanda">Demandas não informadas</option>
+            <option value="sem_demanda">Não informado</option>
             {Array.from(new Set(solucoes.map(s => s.demanda?.nome)))
               .filter(Boolean)
               .sort()
@@ -807,6 +883,7 @@ export default function DataTable({
             className="w-[180px] h-10 rounded-md border border-gray-300 bg-white px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 shadow-sm"
           >
             <option value="">Todos os tipos</option>
+            <option value="sem_tipo">Não informado</option>
             {Array.from(new Set(solucoes.map(s => s.tipo?.nome)))
               .filter(Boolean)
               .sort()
@@ -826,6 +903,7 @@ export default function DataTable({
             className="w-[200px] h-10 rounded-md border border-gray-300 bg-white px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 shadow-sm"
           >
             <option value="">Todas as tecnologias</option>
+            <option value="sem_tecnologia">Não informado</option>
             {linguagens
               .sort((a, b) => a.nome.localeCompare(b.nome))
               .map((linguagem) => (
@@ -844,6 +922,7 @@ export default function DataTable({
             className="w-[220px] h-10 rounded-md border border-gray-300 bg-white px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 shadow-sm"
           >
             <option value="">Todos os desenvolvedores</option>
+            <option value="sem_desenvolvedor">Não informado</option>
             {Array.from(new Set(solucoes.map(s => s.desenvolvedor?.nome)))
               .filter(Boolean)
               .sort()
@@ -863,6 +942,7 @@ export default function DataTable({
             className="w-[180px] h-10 rounded-md border border-gray-300 bg-white px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 shadow-sm"
           >
             <option value="">Todos os status</option>
+            <option value="sem_status">Não informado</option>
             {Array.from(new Set(solucoes.map(s => s.status?.nome)))
               .filter(Boolean)
               .sort()
@@ -882,6 +962,7 @@ export default function DataTable({
             className="w-[180px] h-10 rounded-md border border-gray-300 bg-white px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 shadow-sm"
           >
             <option value="">Todas as categorias</option>
+            <option value="sem_categoria">Não informado</option>
             {Array.from(new Set(solucoes.map(s => s.categoria?.nome)))
               .filter(Boolean)
               .sort()
@@ -901,6 +982,7 @@ export default function DataTable({
             className="w-[180px] h-10 rounded-md border border-gray-300 bg-white px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 shadow-sm"
           >
             <option value="">Todos os responsáveis</option>
+            <option value="sem_responsavel">Não informado</option>
             {Array.from(new Set(solucoes.map(s => s.responsavel?.nome)))
               .filter(Boolean)
               .sort()
@@ -920,6 +1002,7 @@ export default function DataTable({
             className="w-[180px] h-10 rounded-md border border-gray-300 bg-white px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 shadow-sm"
           >
             <option value="">Todas as criticidades</option>
+            <option value="sem_criticidade">Não informado</option>
             {Array.from(new Set(solucoes.map(s => s.criticidade)))
               .filter(Boolean)
               .sort()
@@ -977,7 +1060,8 @@ export default function DataTable({
                       id: col.id,
                       accessorKey: col.id
                     })),
-                    table.getFilteredRowModel().rows.map(row => row.original)
+                    table.getFilteredRowModel().rows.map(row => row.original),
+                    linguagens
                   )}
                   className="flex-1 inline-flex items-center justify-center gap-1 text-xs px-2 py-1 bg-white text-green-600 border border-green-200 font-medium rounded hover:bg-green-50 transition-colors"
                 >
