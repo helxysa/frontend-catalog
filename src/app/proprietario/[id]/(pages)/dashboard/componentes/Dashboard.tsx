@@ -1,15 +1,15 @@
 'use client'
 
 import { useEffect, useState } from 'react';
-import { 
-  Chart as ChartJS, 
-  ArcElement, 
+import {
+  Chart as ChartJS,
+  ArcElement,
   CategoryScale,
   LinearScale,
   BarElement,
   Title,
   Tooltip,
-  Legend 
+  Legend
 } from 'chart.js';
 import { Doughnut, Bar, Pie } from 'react-chartjs-2';
 import { getDemandas, getSolucoes, getAlinhamentos, getStatus, getCategorias, getDesenvolvedores, getTipos } from "../actions/actions";
@@ -19,6 +19,7 @@ import type { Desenvolvedor } from '../../configuracoes/(page)/desenvolvedores/t
 import type { Status } from '../../configuracoes/(page)/status/types/types';
 import { ClipboardList, Lightbulb, CheckCircle2, XCircle } from 'lucide-react';
 import { useSidebar } from '../../../../../componentes/Sidebar/SidebarContext';
+import DashboardDemandas from './DashboardDemandas';
 
 ChartJS.register(
   ArcElement,
@@ -76,6 +77,7 @@ export default function Dashboard() {
     tipos: []
   });
   const { isCollapsed } = useSidebar();
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'demandas'>('dashboard');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -90,10 +92,10 @@ export default function Dashboard() {
           getTipos()
         ]);
 
-        
+
         // Garantir que solucoes seja um array
         const solucoesArray = Array.isArray(solucoes) ? solucoes : [];
-        
+
         setDashboardData({
           demandas,
           solucoes: solucoesArray,
@@ -113,7 +115,7 @@ export default function Dashboard() {
 
   const processAlinhamentoData = () => {
     const counts: { [key: string]: number } = {};
-    
+
     ensureArray(dashboardData.solucoes).forEach(solucao => {
       const alinhamentoNome = solucao.demanda?.alinhamento?.nome || 'Sem alinhamento';
       counts[alinhamentoNome] = (counts[alinhamentoNome] || 0) + 1;
@@ -124,7 +126,7 @@ export default function Dashboard() {
     const data = sortedEntries.map(([, count]) => count);
 
     const colors = labels.map((_, index) => {
-      const hue = (index * 137.5) % 360; 
+      const hue = (index * 137.5) % 360;
       return `hsl(${hue}, 70%, 60%)`;
     });
 
@@ -189,7 +191,7 @@ export default function Dashboard() {
     const sortedCategories = Object.entries(counts)
       .sort((a, b) => b[1] - a[1])
       .slice(0, 5);
-    
+
     return {
       labels: [''],
       datasets: sortedCategories.map(([label, value], index) => ({
@@ -206,7 +208,7 @@ export default function Dashboard() {
 
     ensureArray(dashboardData.solucoes).forEach(solucao => {
       const statusDate = solucao.data_status || solucao.dataStatus;
-      
+
       if (!statusDate) {
         console.log('Solução sem data de status:', solucao);
         return;
@@ -259,10 +261,10 @@ export default function Dashboard() {
     ensureArray(dashboardData.solucoes).forEach(solucao => {
       const statusDate = solucao.data_status || solucao.dataStatus;
       if (!statusDate) return;
-      
+
       const date = new Date(statusDate);
       if (date.getFullYear() !== currentYear) return;
-      
+
       const monthName = date.toLocaleString('pt-BR', { month: 'short' });
       const tipoId = solucao.tipoId ? Number(solucao.tipoId) : null;
       const tipo = tipoId ? dashboardData.tipos?.find(t => t.id === tipoId) : null;
@@ -362,13 +364,13 @@ export default function Dashboard() {
     <div className={`
       w-full bg-gray-50
       transition-all duration-300 ease-in-out
-      ${isCollapsed 
-        ? 'ml-20 pr-[90px] w-[calc(100%-5rem)] fixed left-1 top-13 h-screen overflow-y-auto pb-20' 
+      ${isCollapsed
+        ? 'ml-20 pr-[90px] w-[calc(100%-5rem)] fixed left-1 top-13 h-screen overflow-y-auto pb-20'
         : 'w-full'
       }
       py-6 px-6
     `}>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
         {/* Card Demanda */}
         <div className="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow">
           <div className="flex items-center justify-between">
@@ -414,276 +416,313 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Charts Grid - Single column on mobile */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
-        <div className="bg-white p-4 sm:p-6 rounded-lg shadow-lg">
-          <h3 className="text-gray-800 text-base font-semibold mb-4">Alinhamento da Solução</h3>
-          <div className="h-[300px] w-full flex items-center justify-center">
-            <Pie 
-              data={processAlinhamentoData()} 
-              options={{
-                ...chartOptions,
-                maintainAspectRatio: false,
-                plugins: {
-                  ...chartOptions.plugins,
-                  legend: {
-                    ...chartOptions.plugins.legend,
-                    position: 'bottom' as const,
-                    labels: {
-                      boxWidth: 12,
-                      padding: 8,
-                      font: {
-                        size: 12
-                      }
-                    }
-                  }
-                }
-              }} 
-            />
-          </div>
-        </div>
-
-        <div className="bg-white p-4 sm:p-6 rounded-lg shadow-lg">
-          <h3 className="text-gray-800 text-base font-semibold mb-4">Tipos de Soluções</h3>
-          <div className="h-[300px] w-full flex items-center justify-center">
-            <Pie 
-              data={processSolucaoData()} 
-              options={{
-                ...chartOptions,
-                maintainAspectRatio: false,
-                plugins: {
-                  ...chartOptions.plugins,
-                  legend: {
-                    ...chartOptions.plugins.legend,
-                    position: 'bottom' as const,
-                    labels: {
-                      boxWidth: 12,
-                      padding: 8,
-                      font: {
-                        size: 12
-                      }
-                    }
-                  }
-                }
-              }} 
-            />
-          </div>
-        </div>
-
-        <div className="bg-white p-4 sm:p-6 rounded-lg shadow-lg">
-          <h3 className="text-gray-800 text-base font-semibold mb-4">Status das Soluções</h3>
-          <div className="h-[300px] w-full flex items-center justify-center">
-            <Doughnut 
-              data={processStatusData()} 
-              options={{
-                ...chartOptions,
-                maintainAspectRatio: false,
-                plugins: {
-                  ...chartOptions.plugins,
-                  legend: {
-                    ...chartOptions.plugins.legend,
-                    position: 'bottom' as const,
-                    labels: {
-                      boxWidth: 12,
-                      padding: 8,
-                      font: {
-                        size: 12
-                      }
-                    }
-                  }
-                }
-              }} 
-            />
-          </div>
-        </div>
-
-        <div className="bg-white p-4 sm:p-6 rounded-lg shadow-lg">
-          <h3 className="text-gray-800 text-base font-semibold mb-4">Categorias das Soluções</h3>
-          <div className="h-[300px] w-full">
-            <Bar 
-              data={processCategoriaData()} 
-              options={{
-                ...chartOptions,
-                maintainAspectRatio: false,
-                scales: {
-                  y: {
-                    beginAtZero: true,
-                    ticks: {
-                      stepSize: 1,
-                      font: {
-                        size: 12
-                      }
-                    }
-                  },
-                  x: {
-                    display: false
-                  }
-                },
-                plugins: {
-                  ...chartOptions.plugins,
-                  legend: {
-                    position: 'bottom' as const,
-                    labels: {
-                      boxWidth: 12,
-                      padding: 8,
-                      font: {
-                        size: 12
-                      }
-                    }
-                  }
-                }
-              }} 
-            />
-          </div>
+      {/* Dashboard Switcher - Posicionado logo abaixo dos cards */}
+      <div className="mb-6 bg-white p-4 rounded-lg shadow-md">
+        <div className="flex space-x-4 border-b border-gray-200">
+          <button
+            className={`py-3 px-6 focus:outline-none transition-colors ${
+              activeTab === 'dashboard'
+                ? 'border-b-2 border-blue-500 text-blue-600 font-medium'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+            onClick={() => setActiveTab('dashboard')}
+          >
+            Soluções
+          </button>
+          <button
+            className={`py-3 px-6 focus:outline-none transition-colors ${
+              activeTab === 'demandas'
+                ? 'border-b-2 border-blue-500 text-blue-600 font-medium'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+            onClick={() => setActiveTab('demandas')}
+          >
+            Demandas
+          </button>
         </div>
       </div>
 
-      {/* Monthly Evolution Charts - Side by Side */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-        {/* Evolução Mensal */}
-        <div className="bg-white p-4 sm:p-6 rounded-lg shadow-lg">
-          <h3 className="text-gray-800 text-base font-semibold mb-4">Evolução Anual por Tipos</h3>
-          <div className="h-[400px] w-full">
-            <Bar 
-              data={processMonthlyCategoriaData()} 
-              options={{
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                  y: {
-                    beginAtZero: true,
-                    ticks: {
-                      stepSize: 1,
-                      font: { size: 14 }
-                    },
-                    suggestedMax: Math.max(...processMonthlyCategoriaData().datasets.flatMap(d => d.data)) + 1
-                  },
-                  x: {
-                    grid: { display: false },
-                    ticks: {
-                      font: { size: 13 },
-                      maxRotation: 0,
-                      minRotation: 0
-                    }
-                  }
-                },
-                plugins: {
-                  legend: {
-                    position: 'bottom' as const,
-                    labels: {
-                      boxWidth: 15,
-                      padding: 10,
-                      font: { size: 13 }
-                    }
-                  }
-                },
-              }} 
-            />
-          </div>
-        </div>
-
-        {/* Evolução Anual */}
-        <div className="bg-white p-4 sm:p-6 rounded-lg shadow-lg">
-          <h3 className="text-gray-800 text-base font-semibold mb-4">
-            Evolução Mensal dos Tipos ({new Date().getFullYear()})
-          </h3>
-          <div className="h-[400px] w-full">
-            <Bar 
-              data={processYearlyCategoriaData()} 
-              options={{
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                  y: {
-                    beginAtZero: true,
-                    ticks: {
-                      stepSize: 1,
-                      font: { size: 14 }
-                    },
-                    suggestedMax: Math.max(...processYearlyCategoriaData().datasets.flatMap(d => d.data)) + 1
-                  },
-                  x: {
-                    grid: { display: false },
-                    ticks: {
-                      font: { size: 13 },
-                      maxRotation: 0,
-                      minRotation: 0
-                    }
-                  }
-                },
-                plugins: {
-                  legend: {
-                    position: 'bottom' as const,
-                    labels: {
-                      boxWidth: 15,
-                      padding: 10,
-                      font: { size: 13 }
-                    }
-                  }
-                },
-              }} 
-            />
-          </div>
-        </div>
+      {/* Indicador de conteúdo ativo */}
+      <div className="text-sm text-gray-500 mb-4 px-2">
+        <p>Visualizando: <span className="font-medium text-blue-600">{activeTab === 'dashboard' ? 'Soluções' : 'Demandas'}</span></p>
       </div>
 
-    
+      {activeTab === 'dashboard' ? (
+        <>
+          {/* Charts Grid - Single column on mobile */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
+            {/* <div className="bg-white p-4 sm:p-6 rounded-lg shadow-lg">
+              <h3 className="text-gray-800 text-base font-semibold mb-4">Alinhamento da Solução</h3>
+              <div className="h-[300px] w-full flex items-center justify-center">
+                <Pie
+                  data={processAlinhamentoData()}
+                  options={{
+                    ...chartOptions,
+                    maintainAspectRatio: false,
+                    plugins: {
+                      ...chartOptions.plugins,
+                      legend: {
+                        ...chartOptions.plugins.legend,
+                        position: 'bottom' as const,
+                        labels: {
+                          boxWidth: 12,
+                          padding: 8,
+                          font: {
+                            size: 12
+                          }
+                        }
+                      }
+                    }
+                  }}
+                />
+              </div>
+            </div> */}
 
-      {/* Tabela de Soluções por Desenvolvedor */}
-      <div className="mt-6 bg-white rounded-lg shadow-lg p-4 sm:p-6 mb-20">
-        <h3 className="text-gray-800 text-lg font-semibold mb-4">Distribuição de Soluções por Desenvolvedor</h3>
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Desenvolvedor
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Quantidade
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Detalhes
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {processSolucoesPorDesenvolvedor().map((item, index) => (
-                <tr key={index} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div className="flex-shrink-0 h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center">
-                        <span className="text-blue-600 font-medium">
-                          {item.desenvolvedor[0]}
-                        </span>
-                      </div>
-                      <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900">
-                          {item.desenvolvedor}
+            <div className="bg-white p-4 sm:p-6 rounded-lg shadow-lg">
+              <h3 className="text-gray-800 text-base font-semibold mb-4">Tipos de Soluções</h3>
+              <div className="h-[300px] w-full flex items-center justify-center">
+                <Pie
+                  data={processSolucaoData()}
+                  options={{
+                    ...chartOptions,
+                    maintainAspectRatio: false,
+                    plugins: {
+                      ...chartOptions.plugins,
+                      legend: {
+                        ...chartOptions.plugins.legend,
+                        position: 'bottom' as const,
+                        labels: {
+                          boxWidth: 12,
+                          padding: 8,
+                          font: {
+                            size: 12
+                          }
+                        }
+                      }
+                    }
+                  }}
+                />
+              </div>
+            </div>
+
+            <div className="bg-white p-4 sm:p-6 rounded-lg shadow-lg">
+              <h3 className="text-gray-800 text-base font-semibold mb-4">Status das Soluções</h3>
+              <div className="h-[300px] w-full flex items-center justify-center">
+                <Doughnut
+                  data={processStatusData()}
+                  options={{
+                    ...chartOptions,
+                    maintainAspectRatio: false,
+                    plugins: {
+                      ...chartOptions.plugins,
+                      legend: {
+                        ...chartOptions.plugins.legend,
+                        position: 'bottom' as const,
+                        labels: {
+                          boxWidth: 12,
+                          padding: 8,
+                          font: {
+                            size: 12
+                          }
+                        }
+                      }
+                    }
+                  }}
+                />
+              </div>
+            </div>
+
+            <div className="bg-white p-4 sm:p-6 rounded-lg shadow-lg">
+              <h3 className="text-gray-800 text-base font-semibold mb-4">Categorias das Soluções</h3>
+              <div className="h-[300px] w-full">
+                <Bar
+                  data={processCategoriaData()}
+                  options={{
+                    ...chartOptions,
+                    maintainAspectRatio: false,
+                    scales: {
+                      y: {
+                        beginAtZero: true,
+                        ticks: {
+                          stepSize: 1,
+                          font: {
+                            size: 12
+                          }
+                        }
+                      },
+                      x: {
+                        display: false
+                      }
+                    },
+                    plugins: {
+                      ...chartOptions.plugins,
+                      legend: {
+                        position: 'bottom' as const,
+                        labels: {
+                          boxWidth: 12,
+                          padding: 8,
+                          font: {
+                            size: 12
+                          }
+                        }
+                      }
+                    }
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Monthly Evolution Charts - Side by Side */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+            {/* Evolução Mensal */}
+            <div className="bg-white p-4 sm:p-6 rounded-lg shadow-lg">
+              <h3 className="text-gray-800 text-base font-semibold mb-4">Evolução Anual por Tipos</h3>
+              <div className="h-[400px] w-full">
+                <Bar
+                  data={processMonthlyCategoriaData()}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                      y: {
+                        beginAtZero: true,
+                        ticks: {
+                          stepSize: 1,
+                          font: { size: 14 }
+                        },
+                        suggestedMax: Math.max(...processMonthlyCategoriaData().datasets.flatMap(d => d.data)) + 1
+                      },
+                      x: {
+                        grid: { display: false },
+                        ticks: {
+                          font: { size: 13 },
+                          maxRotation: 0,
+                          minRotation: 0
+                        }
+                      }
+                    },
+                    plugins: {
+                      legend: {
+                        position: 'bottom' as const,
+                        labels: {
+                          boxWidth: 15,
+                          padding: 10,
+                          font: { size: 13 }
+                        }
+                      }
+                    },
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Evolução Anual */}
+            <div className="bg-white p-4 sm:p-6 rounded-lg shadow-lg">
+              <h3 className="text-gray-800 text-base font-semibold mb-4">
+                Evolução Mensal dos Tipos ({new Date().getFullYear()})
+              </h3>
+              <div className="h-[400px] w-full">
+                <Bar
+                  data={processYearlyCategoriaData()}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                      y: {
+                        beginAtZero: true,
+                        ticks: {
+                          stepSize: 1,
+                          font: { size: 14 }
+                        },
+                        suggestedMax: Math.max(...processYearlyCategoriaData().datasets.flatMap(d => d.data)) + 1
+                      },
+                      x: {
+                        grid: { display: false },
+                        ticks: {
+                          font: { size: 13 },
+                          maxRotation: 0,
+                          minRotation: 0
+                        }
+                      }
+                    },
+                    plugins: {
+                      legend: {
+                        position: 'bottom' as const,
+                        labels: {
+                          boxWidth: 15,
+                          padding: 10,
+                          font: { size: 13 }
+                        }
+                      }
+                    },
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Tabela de Soluções por Desenvolvedor */}
+          <div className="mt-6 bg-white rounded-lg shadow-lg p-4 sm:p-6 mb-20">
+            <h3 className="text-gray-800 text-lg font-semibold mb-4">Distribuição de Soluções por Desenvolvedor</h3>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Desenvolvedor
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Quantidade
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Detalhes
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {processSolucoesPorDesenvolvedor().map((item, index) => (
+                    <tr key={index} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <div className="flex-shrink-0 h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center">
+                            <span className="text-blue-600 font-medium">
+                              {item.desenvolvedor[0]}
+                            </span>
+                          </div>
+                          <div className="ml-4">
+                            <div className="text-sm font-medium text-gray-900">
+                              {item.desenvolvedor}
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="px-3 py-1 text-sm font-semibold text-blue-800 bg-blue-100 rounded-full">
-                      {item.solucoes.length}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-500">
-                    <div className="flex flex-wrap gap-2">
-                      {item.solucoes.map((solucao, idx) => (
-                        <span key={idx} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                          {solucao.nome}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="px-3 py-1 text-sm font-semibold text-blue-800 bg-blue-100 rounded-full">
+                          {item.solucoes.length}
                         </span>
-                      ))}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-500">
+                        <div className="flex flex-wrap gap-2">
+                          {item.solucoes.map((solucao, idx) => (
+                            <span key={idx} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                              {solucao.nome}
+                            </span>
+                          ))}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
+      ) : (
+        <DashboardDemandas key="dashboard-demandas" />
+      )}
+
+
     </div>
   );
 }

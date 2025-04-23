@@ -24,17 +24,17 @@ export async function getDemandas() {
     // Usa a nova rota específica para o dashboard
     const response = await axios.get(`${url}/proprietarios/${storedId}/dashboard/demandas`);
     const demandas = response.data;
-    
+
     // Get alinhamentos
     const alinhamentosResponse = await axios.get(`${url}/proprietarios/${storedId}/alinhamentos`);
     const alinhamentos = alinhamentosResponse.data;
-    
+
     // Merge alinhamentos into demandas
     const demandasWithAlinhamentos = demandas.map((demanda: any) => ({
       ...demanda,
       alinhamento: alinhamentos.find((a: any) => a.id === demanda.alinhamentoId)
     }));
-    
+
     return demandasWithAlinhamentos;
   } catch (error) {
     console.error('Error fetching demandas:', error);
@@ -51,30 +51,30 @@ export async function getSolucoes() {
   try {
     // Get soluções
     const response = await axios.get(`${url}/proprietarios/${storedId}/dashboard/todas-solucoes`);
-    
+
     // Get alinhamentos
     const alinhamentosResponse = await axios.get(`${url}/proprietarios/${storedId}/alinhamentos`);
-    
+
     // Get demandas
     const demandasResponse = await axios.get(`${url}/proprietarios/${storedId}/dashboard/demandas`);
-    
+
     // Merge relationships
     const solucoes = response.data.data || [];
     const alinhamentos = alinhamentosResponse.data || [];
     const demandas = demandasResponse.data || [];
-    
+
     // First merge alinhamentos into demandas
     const demandasWithAlinhamentos = demandas.map((demanda: any) => ({
       ...demanda,
       alinhamento: alinhamentos.find((a: any) => a.id === demanda.alinhamentoId)
     }));
-    
+
     // Then merge demandas with alinhamentos into solucoes
     const solucoesWithRelationships = solucoes.map((solucao: any) => ({
       ...solucao,
       demanda: demandasWithAlinhamentos.find((d: any) => d.id === solucao.demandaId)
     }));
-    
+
     return solucoesWithRelationships;
   } catch (error) {
     console.error('Erro ao buscar soluções:', error);
@@ -121,4 +121,18 @@ export async function getDesenvolvedores(){
   }
   const response = await axios.get(`${url}/proprietarios/${storedId}/desenvolvedores`);
   return response.data;
+}
+
+export async function getPrioridades() {
+  const storedId = localStorage.getItem('selectedProprietarioId');
+  if (!storedId) {
+      throw new Error("ProprietarioId not found in localStorage");
+  }
+  try {
+    const response = await axios.get(`${url}/proprietarios/${storedId}/prioridades`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching prioridades:', error);
+    throw error;
+  }
 }
