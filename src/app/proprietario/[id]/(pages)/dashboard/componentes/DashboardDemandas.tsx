@@ -128,6 +128,51 @@ export default function DashboardDemandas() {
     };
   };
 
+  // Função para processar dados de demandantes
+  const processDemandanteData = () => {
+    const counts: { [key: string]: number } = {};
+
+    ensureArray(demandas).forEach(demanda => {
+      const demandanteNome = demanda.demandante || 'Não definido';
+      counts[demandanteNome] = (counts[demandanteNome] || 0) + 1;
+    });
+
+    // Ordenar por quantidade (decrescente) e limitar a 10 demandantes para melhor visualização
+    const sortedEntries = Object.entries(counts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 10);
+
+    return {
+      labels: sortedEntries.map(([label]) => label),
+      datasets: [{
+        label: 'Quantidade',
+        data: sortedEntries.map(([, count]) => count),
+        backgroundColor: '#4285F4',
+        borderColor: '#4285F4',
+        borderWidth: 1,
+      }],
+    };
+  };
+
+  // Função para processar dados de propriedade das demandas
+  const processPropriedadeData = () => {
+    const counts: { [key: string]: number } = {};
+
+    ensureArray(demandas).forEach(demanda => {
+      const propriedade = demanda.propriedade || 'Não definido';
+      counts[propriedade] = (counts[propriedade] || 0) + 1;
+    });
+
+    return {
+      labels: Object.keys(counts),
+      datasets: [{
+        data: Object.values(counts),
+        backgroundColor: ['#4285F4', '#34A853', '#FBBC05', '#EA4335', '#673AB7', '#FF4081'],
+        borderWidth: 1,
+      }],
+    };
+  };
+
   // Função para agrupar demandas por responsável
   const getDemandasPorResponsavel = () => {
     // Criar um mapa de responsáveis para suas demandas
@@ -236,8 +281,8 @@ export default function DashboardDemandas() {
       ) : (
         <>
           {/* Charts Grid - Gráficos de pizza e rosca */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div className="bg-white p-4 sm:p-6 rounded-lg shadow-lg">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            <div className="bg-white p-4 sm:p-6 rounded-lg shadow-lg md:col-span-1 lg:col-span-1">
               <h3 className="text-gray-800 text-base font-semibold mb-4">Alinhamentos das Demandas</h3>
               <div className="h-[300px] w-full flex items-center justify-center">
                 <Pie
@@ -264,7 +309,7 @@ export default function DashboardDemandas() {
               </div>
             </div>
 
-            <div className="bg-white p-4 sm:p-6 rounded-lg shadow-lg">
+            <div className="bg-white p-4 sm:p-6 rounded-lg shadow-lg md:col-span-1 lg:col-span-1">
               <h3 className="text-gray-800 text-base font-semibold mb-4">Status das Demandas</h3>
               <div className="h-[300px] w-full flex items-center justify-center">
                 <Doughnut
@@ -291,9 +336,58 @@ export default function DashboardDemandas() {
               </div>
             </div>
 
+            <div className="bg-white p-4 sm:p-6 rounded-lg shadow-lg md:col-span-1 lg:col-span-1">
+              <h3 className="text-gray-800 text-base font-semibold mb-4">Demandantes</h3>
+              <div className="h-[300px] w-full">
+                <Bar
+                  data={processDemandanteData()}
+                  options={{
+                    ...barChartOptions,
+                    indexAxis: 'y' as const,
+                    maintainAspectRatio: false,
+                    scales: {
+                      y: {
+                        grid: { display: false },
+                        ticks: {
+                          font: { size: 11 }
+                        }
+                      },
+                      x: {
+                        beginAtZero: true,
+                        ticks: {
+                          stepSize: 1,
+                          font: { size: 11 }
+                        }
+                      }
+                    },
+                    plugins: {
+                      legend: {
+                        display: false
+                      }
+                    }
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Gráficos de Evolução Mensal e Prioridades - Side by Side */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            {/* Evolução Mensal */}
+            <div className="bg-white p-4 sm:p-6 rounded-lg shadow-lg">
+              <h3 className="text-gray-800 text-base font-semibold mb-4">Evolução Mensal de Demandas ({new Date().getFullYear()})</h3>
+              <div className="h-[400px] w-full">
+                <Bar
+                  data={processEvolucaoAnualData()}
+                  options={barChartOptions}
+                />
+              </div>
+            </div>
+
+            {/* Prioridades das Demandas */}
             <div className="bg-white p-4 sm:p-6 rounded-lg shadow-lg">
               <h3 className="text-gray-800 text-base font-semibold mb-4">Prioridades das Demandas</h3>
-              <div className="h-[300px] w-full flex items-center justify-center">
+              <div className="h-[400px] w-full flex items-center justify-center">
                 <Pie
                   data={processPrioridadeData()}
                   options={{
@@ -314,19 +408,6 @@ export default function DashboardDemandas() {
                       }
                     }
                   }}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Gráfico de Evolução Anual */}
-          <div className="mb-8">
-            <div className="bg-white p-4 sm:p-6 rounded-lg shadow-lg">
-              <h3 className="text-gray-800 text-base font-semibold mb-4">Evolução Mensal de Demandas ({new Date().getFullYear()})</h3>
-              <div className="h-[400px] w-full">
-                <Bar
-                  data={processEvolucaoAnualData()}
-                  options={barChartOptions}
                 />
               </div>
             </div>

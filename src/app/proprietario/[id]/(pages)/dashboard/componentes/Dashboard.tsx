@@ -77,7 +77,7 @@ export default function Dashboard() {
     tipos: []
   });
   const { isCollapsed } = useSidebar();
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'demandas'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'demandas'>('demandas');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -421,16 +421,6 @@ export default function Dashboard() {
         <div className="flex space-x-4 border-b border-gray-200">
           <button
             className={`py-3 px-6 focus:outline-none transition-colors ${
-              activeTab === 'dashboard'
-                ? 'border-b-2 border-blue-500 text-blue-600 font-medium'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-            onClick={() => setActiveTab('dashboard')}
-          >
-            Soluções
-          </button>
-          <button
-            className={`py-3 px-6 focus:outline-none transition-colors ${
               activeTab === 'demandas'
                 ? 'border-b-2 border-blue-500 text-blue-600 font-medium'
                 : 'text-gray-500 hover:text-gray-700'
@@ -438,6 +428,16 @@ export default function Dashboard() {
             onClick={() => setActiveTab('demandas')}
           >
             Demandas
+          </button>
+          <button
+            className={`py-3 px-6 focus:outline-none transition-colors ${
+              activeTab === 'dashboard'
+                ? 'border-b-2 border-blue-500 text-blue-600 font-medium'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+            onClick={() => setActiveTab('dashboard')}
+          >
+            Soluções
           </button>
         </div>
       </div>
@@ -447,7 +447,9 @@ export default function Dashboard() {
         <p>Visualizando: <span className="font-medium text-blue-600">{activeTab === 'dashboard' ? 'Soluções' : 'Demandas'}</span></p>
       </div>
 
-      {activeTab === 'dashboard' ? (
+      {activeTab === 'demandas' ? (
+        <DashboardDemandas key="dashboard-demandas" />
+      ) : (
         <>
           {/* Charts Grid - Single column on mobile */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
@@ -718,8 +720,6 @@ export default function Dashboard() {
             </div>
           </div>
         </>
-      ) : (
-        <DashboardDemandas key="dashboard-demandas" />
       )}
 
 
