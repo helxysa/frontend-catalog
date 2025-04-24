@@ -78,20 +78,48 @@ export async function getSolucoes() {
       // Verificar se já temos o objeto responsavel precarregado
       let responsavelObj = solucao.responsavel;
 
+      // Verificar todos os possíveis nomes de campo para o ID do responsável
+      // No backend é responsavel_id, no frontend é responsavelId
+      const responsavelId = solucao.responsavel_id || solucao.responsavelId;
+
+      // Log para depuração dos campos disponíveis
+      if (solucao.id === 34 || solucao.id === 44 || solucao.id === 27) {
+        console.log(`Campos da solução ${solucao.id}:`, Object.keys(solucao));
+        console.log(`Valores importantes: responsavel_id=${solucao.responsavel_id}, responsavelId=${solucao.responsavelId}, responsavel=`, solucao.responsavel);
+      }
+
       // Se não tiver o objeto responsavel precarregado, mas tiver o ID, buscar na lista de responsáveis
-      if (!responsavelObj && solucao.responsavel_id) {
-        responsavelObj = responsaveis.find((r: any) => r.id === solucao.responsavel_id) || null;
+      if (!responsavelObj && responsavelId) {
+        // Converter para número para garantir a comparação correta
+        const respId = Number(responsavelId);
+        responsavelObj = responsaveis.find((r: any) => r.id === respId || r.id === responsavelId) || null;
+
+        // Se não encontrou, tentar buscar por string
+        if (!responsavelObj) {
+          const respIdStr = String(responsavelId);
+          responsavelObj = responsaveis.find((r: any) => String(r.id) === respIdStr) || null;
+        }
       }
 
       // Log para depuração
-      console.log(`Solução ${solucao.id} - responsavel_id: ${solucao.responsavel_id}, responsavel:`,
+      console.log(`Solução ${solucao.id} - responsavelId: ${responsavelId}, responsavel:`,
         responsavelObj ? `${responsavelObj.id} - ${responsavelObj.nome}` : 'não encontrado');
+
+      // Verificar se temos o objeto responsável, mas não temos o nome
+      if (responsavelObj && !responsavelObj.nome && responsavelId) {
+        // Tentar buscar novamente pelo ID
+        const respById = responsaveis.find((r: any) => r.id === responsavelId);
+        if (respById) {
+          console.log(`Encontrado responsável pelo ID ${responsavelId}:`, respById.nome);
+          responsavelObj = respById;
+        }
+      }
 
       return {
         ...solucao,
         demanda: demandasWithAlinhamentos.find((d: any) => d.id === solucao.demanda_id),
         responsavel: responsavelObj,
-        responsavelId: solucao.responsavel_id
+        responsavelId: responsavelId
       };
     });
 
