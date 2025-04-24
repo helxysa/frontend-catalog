@@ -21,7 +21,7 @@ import {
   AlertCircle,
   UserCog,
   CircleDot,
-  FileType2
+  FileType2 
 } from 'lucide-react';
 import { getProprietario, baseURL } from '../../proprietario/actions/actions'
 import Image from 'next/image';

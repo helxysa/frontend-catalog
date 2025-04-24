@@ -72,7 +72,7 @@ export default function DashboardDemandas() {
     const counts: { [key: string]: number } = {};
 
     ensureArray(demandas).forEach(demanda => {
-      const alinhamentoNome = demanda.alinhamento?.nome || 'Não definido';
+      const alinhamentoNome = demanda.alinhamento?.nome || 'Não informado';
       counts[alinhamentoNome] = (counts[alinhamentoNome] || 0) + 1;
     });
 
@@ -95,7 +95,7 @@ export default function DashboardDemandas() {
     const counts: { [key: string]: number } = {};
 
     ensureArray(demandas).forEach(demanda => {
-      const statusNome = demanda.status?.nome || 'Não definido';
+      const statusNome = demanda.status?.nome || 'Não informado';
       counts[statusNome] = (counts[statusNome] || 0) + 1;
     });
 
@@ -114,7 +114,7 @@ export default function DashboardDemandas() {
     const counts: { [key: string]: number } = {};
 
     ensureArray(demandas).forEach(demanda => {
-      const prioridadeNome = demanda.prioridade?.nome || 'Não definido';
+      const prioridadeNome = demanda.prioridade?.nome || 'Não informado';
       counts[prioridadeNome] = (counts[prioridadeNome] || 0) + 1;
     });
 
@@ -133,22 +133,34 @@ export default function DashboardDemandas() {
     const counts: { [key: string]: number } = {};
 
     ensureArray(demandas).forEach(demanda => {
-      const demandanteNome = demanda.demandante || 'Não definido';
+      const demandanteNome = demanda.demandante || 'Não informado';
       counts[demandanteNome] = (counts[demandanteNome] || 0) + 1;
     });
 
-    // Ordenar por quantidade (decrescente) e limitar a 10 demandantes para melhor visualização
+    // Ordenar por quantidade (decrescente) e limitar a 5 demandantes para melhor visualização
     const sortedEntries = Object.entries(counts)
       .sort((a, b) => b[1] - a[1])
-      .slice(0, 10);
+      .slice(0, 5);
 
     return {
       labels: sortedEntries.map(([label]) => label),
       datasets: [{
-        label: 'Quantidade',
+        label: 'Quantidade de Demandas',
         data: sortedEntries.map(([, count]) => count),
-        backgroundColor: '#4285F4',
-        borderColor: '#4285F4',
+        backgroundColor: [
+          '#4285F4', // Azul
+          '#34A853', // Verde
+          '#FBBC05', // Amarelo
+          '#EA4335', // Vermelho
+          '#673AB7'  // Roxo
+        ],
+        borderColor: [
+          '#3b77db',
+          '#2d9249',
+          '#e3ab04',
+          '#d33c2f',
+          '#5b33a0'
+        ],
         borderWidth: 1,
       }],
     };
@@ -159,7 +171,7 @@ export default function DashboardDemandas() {
     const counts: { [key: string]: number } = {};
 
     ensureArray(demandas).forEach(demanda => {
-      const propriedade = demanda.propriedade || 'Não definido';
+      const propriedade = demanda.propriedade || 'Não informado';
       counts[propriedade] = (counts[propriedade] || 0) + 1;
     });
 
@@ -179,7 +191,7 @@ export default function DashboardDemandas() {
     const responsavelMap: { [key: string]: DemandaType[] } = {};
 
     ensureArray(demandas).forEach(demanda => {
-      const responsavelNome = demanda.responsavel?.nome || 'Não definido';
+      const responsavelNome = demanda.responsavel?.nome || 'Não informado';
       if (!responsavelMap[responsavelNome]) {
         responsavelMap[responsavelNome] = [];
       }
@@ -337,22 +349,23 @@ export default function DashboardDemandas() {
             </div>
 
             <div className="bg-white p-4 sm:p-6 rounded-lg shadow-lg md:col-span-1 lg:col-span-1">
-              <h3 className="text-gray-800 text-base font-semibold mb-4">Demandantes</h3>
+              <h3 className="text-gray-800 text-base font-semibold mb-4">Top 5 Demandantes</h3>
               <div className="h-[300px] w-full">
                 <Bar
                   data={processDemandanteData()}
                   options={{
                     ...barChartOptions,
-                    indexAxis: 'y' as const,
                     maintainAspectRatio: false,
                     scales: {
-                      y: {
+                      x: {
                         grid: { display: false },
                         ticks: {
-                          font: { size: 11 }
+                          font: { size: 11 },
+                          maxRotation: 0,
+                          minRotation: 0
                         }
                       },
-                      x: {
+                      y: {
                         beginAtZero: true,
                         ticks: {
                           stepSize: 1,
@@ -363,6 +376,16 @@ export default function DashboardDemandas() {
                     plugins: {
                       legend: {
                         display: false
+                      },
+                      tooltip: {
+                        callbacks: {
+                          title: (tooltipItems) => {
+                            return tooltipItems[0].label;
+                          },
+                          label: (context) => {
+                            return `Quantidade: ${context.parsed.y}`;
+                          }
+                        }
                       }
                     }
                   }}

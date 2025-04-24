@@ -12,7 +12,7 @@ import {
   Legend
 } from 'chart.js';
 import { Doughnut, Bar, Pie } from 'react-chartjs-2';
-import { getDemandas, getSolucoes, getAlinhamentos, getStatus, getCategorias, getDesenvolvedores, getTipos } from "../actions/actions";
+import { getDemandas, getSolucoes, getAlinhamentos, getStatus, getCategorias, getDesenvolvedores, getTipos, getResponsaveis } from "../actions/actions";
 import type { DemandaType } from '../../demandas/types/types';
 import type { SolucaoType } from '../../solucoes/types/types';
 import type { Desenvolvedor } from '../../configuracoes/(page)/desenvolvedores/types/types';
@@ -20,6 +20,7 @@ import type { Status } from '../../configuracoes/(page)/status/types/types';
 import { ClipboardList, Lightbulb, CheckCircle2, XCircle } from 'lucide-react';
 import { useSidebar } from '../../../../../componentes/Sidebar/SidebarContext';
 import DashboardDemandas from './DashboardDemandas';
+import React from 'react';
 
 ChartJS.register(
   ArcElement,
@@ -41,6 +42,8 @@ type MonthlyCategoriaData = {
   }[];
 };
 
+// Tipo não utilizado atualmente
+/*
 type MonthlyDemandasData = {
   labels: string[];
   datasets: {
@@ -50,6 +53,7 @@ type MonthlyDemandasData = {
     borderWidth: number;
   }[];
 };
+*/
 
 const ensureArray = <T,>(data: T | T[] | null | undefined): T[] => {
   if (Array.isArray(data)) {
@@ -67,6 +71,7 @@ export default function Dashboard() {
     categorias: any[];
     desenvolvedores: Desenvolvedor[];
     tipos: any[];
+    responsaveis: any[];
   }>({
     demandas: [],
     solucoes: [],
@@ -74,7 +79,8 @@ export default function Dashboard() {
     status: [],
     categorias: [],
     desenvolvedores: [],
-    tipos: []
+    tipos: [],
+    responsaveis: []
   });
   const { isCollapsed } = useSidebar();
   const [activeTab, setActiveTab] = useState<'dashboard' | 'demandas'>('demandas');
@@ -82,16 +88,16 @@ export default function Dashboard() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [demandas, solucoes, alinhamentos, status, categorias, desenvolvedores, tipos] = await Promise.all([
+        const [demandas, solucoes, alinhamentos, status, categorias, desenvolvedores, tipos, responsaveis] = await Promise.all([
           getDemandas(),
           getSolucoes(),
           getAlinhamentos(),
           getStatus(),
           getCategorias(),
           getDesenvolvedores(),
-          getTipos()
+          getTipos(),
+          getResponsaveis()
         ]);
-
 
         // Garantir que solucoes seja um array
         const solucoesArray = Array.isArray(solucoes) ? solucoes : [];
@@ -103,7 +109,8 @@ export default function Dashboard() {
           status,
           categorias,
           desenvolvedores,
-          tipos
+          tipos,
+          responsaveis
         });
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
@@ -113,6 +120,8 @@ export default function Dashboard() {
     fetchData();
   }, []);
 
+  // Função para processar dados de alinhamento - comentada pois não está sendo usada atualmente
+  /*
   const processAlinhamentoData = () => {
     const counts: { [key: string]: number } = {};
 
@@ -139,13 +148,14 @@ export default function Dashboard() {
       }],
     };
   };
+  */
 
   const processSolucaoData = () => {
     const counts: { [key: string]: number } = {};
     ensureArray(dashboardData.solucoes).forEach(solucao => {
       const tipoId = solucao.tipoId ? Number(solucao.tipoId) : null;
       const tipo = tipoId ? dashboardData.tipos?.find(t => t.id === tipoId) : null;
-      const tipoNome = tipo?.nome || 'Não definido';
+      const tipoNome = tipo?.nome || 'Não informado';
       counts[tipoNome] = (counts[tipoNome] || 0) + 1;
     });
 
@@ -164,7 +174,7 @@ export default function Dashboard() {
     ensureArray(dashboardData.solucoes).forEach(solucao => {
       const statusId = solucao.statusId ? solucao.statusId.toString() : null;
       const status = statusId ? dashboardData.status?.find(s => s.id.toString() === statusId) : null;
-      const statusNome = status?.nome || 'Não definido';
+      const statusNome = status?.nome || 'Não informado';
       counts[statusNome] = (counts[statusNome] || 0) + 1;
     });
 
@@ -183,7 +193,7 @@ export default function Dashboard() {
     ensureArray(dashboardData.solucoes).forEach(solucao => {
       const categoriaId = solucao.categoriaId ? Number(solucao.categoriaId) : null;
       const categoria = categoriaId ? dashboardData.categorias?.find(c => c.id === categoriaId) : null;
-      const categoriaNome = categoria?.nome || 'Não definido';
+      const categoriaNome = categoria?.nome || 'Não informado';
       counts[categoriaNome] = (counts[categoriaNome] || 0) + 1;
     });
 
@@ -219,7 +229,7 @@ export default function Dashboard() {
         const monthYear = `${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()}`;
         const tipoId = solucao.tipoId ? Number(solucao.tipoId) : null;
         const tipo = tipoId ? dashboardData.tipos?.find(t => t.id === tipoId) : null;
-        const tipoNome = tipo?.nome || 'Não definido';
+        const tipoNome = tipo?.nome || 'Não informado';
 
         if (!monthlyData[monthYear]) {
           monthlyData[monthYear] = {};
@@ -268,7 +278,7 @@ export default function Dashboard() {
       const monthName = date.toLocaleString('pt-BR', { month: 'short' });
       const tipoId = solucao.tipoId ? Number(solucao.tipoId) : null;
       const tipo = tipoId ? dashboardData.tipos?.find(t => t.id === tipoId) : null;
-      const tipoNome = tipo?.nome || 'Não definido';
+      const tipoNome = tipo?.nome || 'Não informado';
 
       if (!monthlyData[monthName]) {
         monthlyData[monthName] = {};
@@ -293,6 +303,8 @@ export default function Dashboard() {
     return { labels, datasets };
   };
 
+  // Função para processar dados mensais de demandas - comentada pois não está sendo usada atualmente
+  /*
   const processMonthlyDemandasData = (): MonthlyDemandasData => {
     const monthlyData: { [month: string]: number } = {};
 
@@ -320,32 +332,63 @@ export default function Dashboard() {
       }]
     };
   };
+  */
 
-  const processSolucoesPorDesenvolvedor = () => {
-    const solucoesPorDesenvolvedor: { [key: number]: SolucaoType[] } = {};
+  const processSolucoesPorResponsavel = () => {
+    // Agrupar soluções por responsável
+    const solucoesPorResponsavel: { [key: string]: SolucaoType[] } = {};
 
+    // Primeiro, vamos agrupar as soluções pelo responsável
     ensureArray(dashboardData.solucoes).forEach(solucao => {
-      const desenvolvedorId = solucao.desenvolvedorId ? Number(solucao.desenvolvedorId) : null;
-      if (desenvolvedorId) {
-        if (!solucoesPorDesenvolvedor[desenvolvedorId]) {
-          solucoesPorDesenvolvedor[desenvolvedorId] = [];
-        }
-        solucoesPorDesenvolvedor[desenvolvedorId].push(solucao);
+      // Chave para agrupar: usar o ID do responsável
+      let chave = 'desconhecido';
+
+      // Verificar se temos o objeto responsável com ID
+      if (solucao.responsavel && solucao.responsavel.id) {
+        chave = solucao.responsavel.id.toString();
       }
+      // Se não tiver o objeto, mas tiver o ID
+      else if (solucao.responsavelId) {
+        chave = solucao.responsavelId.toString();
+      }
+
+      // Inicializar o array se não existir
+      if (!solucoesPorResponsavel[chave]) {
+        solucoesPorResponsavel[chave] = [];
+      }
+
+      // Adicionar a solução ao grupo do responsável
+      solucoesPorResponsavel[chave].push(solucao);
     });
 
-    return Object.entries(solucoesPorDesenvolvedor).map(([desenvolvedorIdStr, solucoes]) => {
-      const desenvolvedorId = Number(desenvolvedorIdStr);
-      const desenvolvedor = dashboardData.desenvolvedores.find(d => d.id.toString() === desenvolvedorIdStr);
+    // Mapear os resultados para o formato esperado pela tabela
+    return Object.entries(solucoesPorResponsavel).map(([chave, solucoes]) => {
+      // Tentar obter o nome do responsável da primeira solução que tenha essa informação
+      let responsavelNome = 'Não informado';
+
+      // Procurar uma solução que tenha o objeto responsável com nome
+      for (const solucao of solucoes) {
+        if (solucao.responsavel && solucao.responsavel.nome) {
+          responsavelNome = solucao.responsavel.nome;
+          break;
+        }
+      }
+
+      // Se não encontrou o nome, mas temos o ID
+      if (responsavelNome === 'Não informado' && chave !== 'desconhecido') {
+        responsavelNome = `Responsável ID: ${chave}`;
+      }
+
       return {
-        desenvolvedor: desenvolvedor ? desenvolvedor.nome : 'Desenvolvedor não encontrado',
+        responsavel: responsavelNome,
         solucoes
       };
     });
   };
 
-  const ativos = ensureArray(dashboardData.solucoes).filter(s => s.status?.propriedade === 'ativo').length;
-  const inativos = ensureArray(dashboardData.solucoes).filter(s => s.status?.propriedade === 'inativo').length;
+  // Estatísticas que podem ser usadas em futuras implementações
+  // const ativos = ensureArray(dashboardData.solucoes).filter(s => s.status?.propriedade === 'ativo').length;
+  // const inativos = ensureArray(dashboardData.solucoes).filter(s => s.status?.propriedade === 'inativo').length;
 
   const chartOptions = {
     responsive: true,
@@ -664,15 +707,15 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Tabela de Soluções por Desenvolvedor */}
+          {/* Tabela de Soluções por Responsável */}
           <div className="mt-6 bg-white rounded-lg shadow-lg p-4 sm:p-6 mb-20">
-            <h3 className="text-gray-800 text-lg font-semibold mb-4">Distribuição de Soluções por Desenvolvedor</h3>
+            <h3 className="text-gray-800 text-lg font-semibold mb-4">Distribuição de Soluções por Responsável</h3>
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Desenvolvedor
+                      Responsável
                     </th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Quantidade
@@ -683,38 +726,48 @@ export default function Dashboard() {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {processSolucoesPorDesenvolvedor().map((item, index) => (
-                    <tr key={index} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div className="flex-shrink-0 h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center">
-                            <span className="text-blue-600 font-medium">
-                              {item.desenvolvedor[0]}
-                            </span>
-                          </div>
-                          <div className="ml-4">
-                            <div className="text-sm font-medium text-gray-900">
-                              {item.desenvolvedor}
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="px-3 py-1 text-sm font-semibold text-blue-800 bg-blue-100 rounded-full">
-                          {item.solucoes.length}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-500">
-                        <div className="flex flex-wrap gap-2">
-                          {item.solucoes.map((solucao, idx) => (
-                            <span key={idx} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                              {solucao.nome}
-                            </span>
+                  {processSolucoesPorResponsavel().length > 0 ? (
+                    processSolucoesPorResponsavel().map((item, index) => {
+                      // Gerar uma cor para cada responsável
+                      const hue = (index * 137.5) % 360;
+                      const color = `hsl(${hue}, 70%, 60%)`;
+
+                      return (
+                        <React.Fragment key={item.responsavel}>
+                          {item.solucoes.map((solucao, sIndex) => (
+                            <tr key={`${item.responsavel}-${solucao.id}-${sIndex}`} className="hover:bg-gray-50">
+                              {sIndex === 0 ? (
+                                <td className="px-4 py-2 whitespace-nowrap" rowSpan={item.solucoes.length}>
+                                  <div className="flex items-center">
+                                    <div className="flex-shrink-0 h-6 w-6 rounded-full" style={{ backgroundColor: color }}></div>
+                                    <div className="ml-3">
+                                      <div className="text-sm font-medium text-gray-900">{item.responsavel}</div>
+                                    </div>
+                                  </div>
+                                </td>
+                              ) : null}
+                              {sIndex === 0 ? (
+                                <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500" rowSpan={item.solucoes.length}>
+                                  <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                                    {item.solucoes.length}
+                                  </span>
+                                </td>
+                              ) : null}
+                              <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">
+                                {solucao.nome || '-'}
+                              </td>
+                            </tr>
                           ))}
-                        </div>
+                        </React.Fragment>
+                      );
+                    })
+                  ) : (
+                    <tr>
+                      <td colSpan={3} className="px-4 py-2 text-center text-sm text-gray-500">
+                        Nenhuma solução encontrada.
                       </td>
                     </tr>
-                  ))}
+                  )}
                 </tbody>
               </table>
             </div>
