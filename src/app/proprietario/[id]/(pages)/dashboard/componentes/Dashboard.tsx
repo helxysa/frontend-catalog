@@ -338,9 +338,55 @@ export default function Dashboard() {
     // Criar um mapa de responsáveis para suas soluções
     const responsavelMap: { [key: string]: SolucaoType[] } = {};
 
+    // Primeiro, vamos criar um mapa de IDs para nomes de responsáveis
+    const responsaveisMap: Record<string, string> = {};
+
+    // Preencher o mapa com os responsáveis do dashboardData
+    ensureArray(dashboardData.responsaveis).forEach(resp => {
+      if (resp && resp.id && resp.nome) {
+        responsaveisMap[resp.id.toString()] = resp.nome;
+      }
+    });
+
+    // Log para depuração
+    console.log('Mapa de responsáveis:', responsaveisMap);
+
     ensureArray(dashboardData.solucoes).forEach(solucao => {
-      // Usar o nome do responsável como chave, exatamente como no DashboardDemandas
-      const responsavelNome = solucao.responsavel?.nome || 'Não informado';
+      // Tentar obter o nome do responsável de várias formas
+      let responsavelNome = 'Não informado';
+
+      // 1. Verificar se a solução tem o objeto responsável com nome
+      if (solucao.responsavel && solucao.responsavel.nome) {
+        responsavelNome = solucao.responsavel.nome;
+      }
+      // 2. Verificar se temos o ID do responsável e ele existe no mapa
+      else if (solucao.responsavelId && responsaveisMap[solucao.responsavelId.toString()]) {
+        responsavelNome = responsaveisMap[solucao.responsavelId.toString()];
+      }
+      // 3. Verificar manualmente cada responsável para ver se algum corresponde
+      else {
+        // Log para depuração
+        console.log(`Solução ${solucao.id} sem responsável associado, verificando manualmente...`);
+
+        // Verificar se a solução tem algum ID de responsável
+        if (solucao.responsavelId) {
+          // Converter para número para garantir a comparação correta
+          const respId = Number(solucao.responsavelId);
+
+          // Verificar cada responsável
+          for (const resp of ensureArray(dashboardData.responsaveis)) {
+            // Tentar comparar como número e como string
+            if (resp.id === respId || String(resp.id) === String(solucao.responsavelId)) {
+              responsavelNome = resp.nome;
+              console.log(`Encontrado responsável manualmente: ${resp.nome} (ID: ${resp.id})`);
+              break;
+            }
+          }
+        }
+      }
+
+      // Log para depuração
+      console.log(`Solução ${solucao.id} - responsável: ${responsavelNome}`);
 
       // Inicializar o array se não existir
       if (!responsavelMap[responsavelNome]) {
