@@ -24,17 +24,17 @@ export async function getDemandas() {
     // Usa a nova rota específica para o dashboard
     const response = await axios.get(`${url}/proprietarios/${storedId}/dashboard/demandas`);
     const demandas = response.data;
-    
+
     // Get alinhamentos
     const alinhamentosResponse = await axios.get(`${url}/proprietarios/${storedId}/alinhamentos`);
     const alinhamentos = alinhamentosResponse.data;
-    
+
     // Merge alinhamentos into demandas
     const demandasWithAlinhamentos = demandas.map((demanda: any) => ({
       ...demanda,
       alinhamento: alinhamentos.find((a: any) => a.id === demanda.alinhamentoId)
     }));
-    
+
     return demandasWithAlinhamentos;
   } catch (error) {
     console.error('Error fetching demandas:', error);
@@ -51,30 +51,50 @@ export async function getSolucoes() {
   try {
     // Get soluções
     const response = await axios.get(`${url}/proprietarios/${storedId}/dashboard/todas-solucoes`);
-    
+
     // Get alinhamentos
     const alinhamentosResponse = await axios.get(`${url}/proprietarios/${storedId}/alinhamentos`);
-    
+
     // Get demandas
     const demandasResponse = await axios.get(`${url}/proprietarios/${storedId}/dashboard/demandas`);
-    
+
+    // Get responsáveis
+    const responsaveisResponse = await axios.get(`${url}/proprietarios/${storedId}/responsaveis`);
+
     // Merge relationships
     const solucoes = response.data.data || [];
     const alinhamentos = alinhamentosResponse.data || [];
     const demandas = demandasResponse.data || [];
-    
+    const responsaveis = responsaveisResponse.data || [];
+
     // First merge alinhamentos into demandas
     const demandasWithAlinhamentos = demandas.map((demanda: any) => ({
       ...demanda,
       alinhamento: alinhamentos.find((a: any) => a.id === demanda.alinhamentoId)
     }));
-    
-    // Then merge demandas with alinhamentos into solucoes
-    const solucoesWithRelationships = solucoes.map((solucao: any) => ({
-      ...solucao,
-      demanda: demandasWithAlinhamentos.find((d: any) => d.id === solucao.demandaId)
-    }));
-    
+
+    // Then merge demandas with alinhamentos into solucoes and add responsaveis
+    const solucoesWithRelationships = solucoes.map((solucao: any) => {
+      // Verificar se já temos o objeto responsavel precarregado
+      let responsavelObj = solucao.responsavel;
+
+      // Se não tiver o objeto responsavel precarregado, mas tiver o ID, buscar na lista de responsáveis
+      if (!responsavelObj && solucao.responsavel_id) {
+        responsavelObj = responsaveis.find((r: any) => r.id === solucao.responsavel_id) || null;
+      }
+
+      // Log para depuração
+      console.log(`Solução ${solucao.id} - responsavel_id: ${solucao.responsavel_id}, responsavel:`,
+        responsavelObj ? `${responsavelObj.id} - ${responsavelObj.nome}` : 'não encontrado');
+
+      return {
+        ...solucao,
+        demanda: demandasWithAlinhamentos.find((d: any) => d.id === solucao.demanda_id),
+        responsavel: responsavelObj,
+        responsavelId: solucao.responsavel_id
+      };
+    });
+
     return solucoesWithRelationships;
   } catch (error) {
     console.error('Erro ao buscar soluções:', error);
@@ -121,4 +141,45 @@ export async function getDesenvolvedores(){
   }
   const response = await axios.get(`${url}/proprietarios/${storedId}/desenvolvedores`);
   return response.data;
+}
+
+export async function getPrioridades() {
+  const storedId = localStorage.getItem('selectedProprietarioId');
+  if (!storedId) {
+      throw new Error("ProprietarioId not found in localStorage");
+  }
+  try {
+    const response = await axios.get(`${url}/proprietarios/${storedId}/prioridades`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching prioridades:', error);
+    throw error;
+  }
+}
+
+export async function getResponsaveis() {
+  const storedId = localStorage.getItem('selectedProprietarioId');
+  if (!storedId) {
+      throw new Error("ProprietarioId not found in localStorage");
+  }
+  try {
+    console.log(`Buscando responsáveis para proprietário ID: ${storedId}`);
+    const response = await axios.get(`${url}/proprietarios/${storedId}/responsaveis`);
+    console.log('Resposta da API de responsáveis:', response.data);
+
+    // Garantir que os dados estão no formato esperado
+    const responsaveis = Array.isArray(response.data) ? response.data : [];
+
+    // Verificar se cada responsável tem um nome
+    responsaveis.forEach((resp, index) => {
+      if (!resp.nome) {
+        console.warn(`Responsável ${index} (ID: ${resp.id}) não tem nome:`, resp);
+      }
+    });
+
+    return responsaveis;
+  } catch (error) {
+    console.error('Error fetching responsaveis:', error);
+    throw error;
+  }
 }

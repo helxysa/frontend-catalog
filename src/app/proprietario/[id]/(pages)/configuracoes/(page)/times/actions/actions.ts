@@ -4,11 +4,11 @@ const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
 if (!baseUrl) {
   throw new Error("NEXT_PUBLIC_BASE_URL is not defined in the environment variables.");
 }
-const url = `${baseUrl}/responsaveis`;
+const url = `${baseUrl}/times`;
 
 
 export async function getResponsaveis(proprietarioId: string) {
-  const response = await axios.get(`${baseUrl}/proprietarios/${proprietarioId}/responsaveis`);
+  const response = await axios.get(`${baseUrl}/proprietarios/${proprietarioId}/times`);
   return response.data;
 }
 
