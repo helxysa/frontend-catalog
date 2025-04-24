@@ -334,56 +334,29 @@ export default function Dashboard() {
   };
   */
 
-  const processSolucoesPorResponsavel = () => {
-    // Agrupar soluções por responsável
-    const solucoesPorResponsavel: { [key: string]: SolucaoType[] } = {};
+  const getSolucoesPorResponsavel = () => {
+    // Criar um mapa de responsáveis para suas soluções
+    const responsavelMap: { [key: string]: SolucaoType[] } = {};
 
-    // Primeiro, vamos agrupar as soluções pelo responsável
     ensureArray(dashboardData.solucoes).forEach(solucao => {
-      // Chave para agrupar: usar o ID do responsável
-      let chave = 'desconhecido';
-
-      // Verificar se temos o objeto responsável com ID
-      if (solucao.responsavel && solucao.responsavel.id) {
-        chave = solucao.responsavel.id.toString();
-      }
-      // Se não tiver o objeto, mas tiver o ID
-      else if (solucao.responsavelId) {
-        chave = solucao.responsavelId.toString();
-      }
+      // Usar o nome do responsável como chave, exatamente como no DashboardDemandas
+      const responsavelNome = solucao.responsavel?.nome || 'Não informado';
 
       // Inicializar o array se não existir
-      if (!solucoesPorResponsavel[chave]) {
-        solucoesPorResponsavel[chave] = [];
+      if (!responsavelMap[responsavelNome]) {
+        responsavelMap[responsavelNome] = [];
       }
 
       // Adicionar a solução ao grupo do responsável
-      solucoesPorResponsavel[chave].push(solucao);
+      responsavelMap[responsavelNome].push(solucao);
     });
 
-    // Mapear os resultados para o formato esperado pela tabela
-    return Object.entries(solucoesPorResponsavel).map(([chave, solucoes]) => {
-      // Tentar obter o nome do responsável da primeira solução que tenha essa informação
-      let responsavelNome = 'Não informado';
+    // Converter para array e ordenar por quantidade de soluções (decrescente)
+    const responsavelArray = Object.entries(responsavelMap)
+      .map(([nome, solucoes]) => ({ nome, solucoes }))
+      .sort((a, b) => b.solucoes.length - a.solucoes.length);
 
-      // Procurar uma solução que tenha o objeto responsável com nome
-      for (const solucao of solucoes) {
-        if (solucao.responsavel && solucao.responsavel.nome) {
-          responsavelNome = solucao.responsavel.nome;
-          break;
-        }
-      }
-
-      // Se não encontrou o nome, mas temos o ID
-      if (responsavelNome === 'Não informado' && chave !== 'desconhecido') {
-        responsavelNome = `Responsável ID: ${chave}`;
-      }
-
-      return {
-        responsavel: responsavelNome,
-        solucoes
-      };
-    });
+    return responsavelArray;
   };
 
   // Estatísticas que podem ser usadas em futuras implementações
@@ -726,22 +699,22 @@ export default function Dashboard() {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {processSolucoesPorResponsavel().length > 0 ? (
-                    processSolucoesPorResponsavel().map((item, index) => {
+                  {getSolucoesPorResponsavel().length > 0 ? (
+                    getSolucoesPorResponsavel().map((item, index) => {
                       // Gerar uma cor para cada responsável
                       const hue = (index * 137.5) % 360;
                       const color = `hsl(${hue}, 70%, 60%)`;
 
                       return (
-                        <React.Fragment key={item.responsavel}>
+                        <React.Fragment key={item.nome}>
                           {item.solucoes.map((solucao, sIndex) => (
-                            <tr key={`${item.responsavel}-${solucao.id}-${sIndex}`} className="hover:bg-gray-50">
+                            <tr key={`${item.nome}-${solucao.id}-${sIndex}`} className="hover:bg-gray-50">
                               {sIndex === 0 ? (
                                 <td className="px-4 py-2 whitespace-nowrap" rowSpan={item.solucoes.length}>
                                   <div className="flex items-center">
                                     <div className="flex-shrink-0 h-6 w-6 rounded-full" style={{ backgroundColor: color }}></div>
                                     <div className="ml-3">
-                                      <div className="text-sm font-medium text-gray-900">{item.responsavel}</div>
+                                      <div className="text-sm font-medium text-gray-900">{item.nome}</div>
                                     </div>
                                   </div>
                                 </td>
