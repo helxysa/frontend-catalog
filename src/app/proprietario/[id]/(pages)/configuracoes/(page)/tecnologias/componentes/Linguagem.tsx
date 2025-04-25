@@ -46,9 +46,7 @@ export default function Linguagem({ proprietarioId }: { proprietarioId?: string 
       const storedId = proprietarioId || localStorage.getItem('selectedProprietarioId');
       if (storedId) {
         try {
-          console.log('Fetching linguagens for proprietarioId:', storedId);
           const data = await getLinguagens(storedId);
-          console.log('Received data:', data);
           
           // Use data directly since getCategorias already filters by proprietario_id
           setLinguagens(data);
@@ -105,7 +103,6 @@ export default function Linguagem({ proprietarioId }: { proprietarioId?: string 
       };
 
       try {
-        console.log('Dados sendo enviados:', linguagemToSave); // Debug
         const created = await createLinguagem(linguagemToSave);
         setLinguagens([...linguagens, created]);
         setIsModalOpen(false);

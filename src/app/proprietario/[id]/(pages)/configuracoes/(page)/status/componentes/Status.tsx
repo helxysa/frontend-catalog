@@ -88,9 +88,7 @@ export default function Status({ proprietarioId }: { proprietarioId?: string }) 
       const storedId = proprietarioId || localStorage.getItem('selectedProprietarioId');
       if (storedId) {
         try {
-          console.log('Fetching categories for proprietarioId:', storedId);
           const data = await getStatus(storedId);
-          console.log('Received data:', data);
           
           setStatus(data);
         } catch (error) {
@@ -145,7 +143,6 @@ export default function Status({ proprietarioId }: { proprietarioId?: string }) 
       };
 
       try {
-        console.log('Dados sendo enviados:', statusToSave); // Debug
         const created = await createStatus(statusToSave);
         setStatus([...status, created]);
         setIsModalOpen(false);

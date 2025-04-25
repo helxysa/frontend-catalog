@@ -83,10 +83,7 @@ export async function getSolucoes() {
       const responsavelId = solucao.responsavel_id || solucao.responsavelId;
 
       // Log para depuração dos campos disponíveis
-      if (solucao.id === 34 || solucao.id === 44 || solucao.id === 27) {
-        console.log(`Campos da solução ${solucao.id}:`, Object.keys(solucao));
-        console.log(`Valores importantes: responsavel_id=${solucao.responsavel_id}, responsavelId=${solucao.responsavelId}, responsavel=`, solucao.responsavel);
-      }
+    
 
       // Se não tiver o objeto responsavel precarregado, mas tiver o ID, buscar na lista de responsáveis
       if (!responsavelObj && responsavelId) {
@@ -102,15 +99,12 @@ export async function getSolucoes() {
       }
 
       // Log para depuração
-      console.log(`Solução ${solucao.id} - responsavelId: ${responsavelId}, responsavel:`,
-        responsavelObj ? `${responsavelObj.id} - ${responsavelObj.nome}` : 'não encontrado');
 
       // Verificar se temos o objeto responsável, mas não temos o nome
       if (responsavelObj && !responsavelObj.nome && responsavelId) {
         // Tentar buscar novamente pelo ID
         const respById = responsaveis.find((r: any) => r.id === responsavelId);
         if (respById) {
-          console.log(`Encontrado responsável pelo ID ${responsavelId}:`, respById.nome);
           responsavelObj = respById;
         }
       }
@@ -191,9 +185,7 @@ export async function getResponsaveis() {
       throw new Error("ProprietarioId not found in localStorage");
   }
   try {
-    console.log(`Buscando responsáveis para proprietário ID: ${storedId}`);
     const response = await axios.get(`${url}/proprietarios/${storedId}/responsaveis`);
-    console.log('Resposta da API de responsáveis:', response.data);
 
     // Garantir que os dados estão no formato esperado
     const responsaveis = Array.isArray(response.data) ? response.data : [];

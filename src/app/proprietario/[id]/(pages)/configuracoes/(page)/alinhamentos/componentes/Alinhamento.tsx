@@ -45,9 +45,7 @@ export default function Alinhamento({ proprietarioId }: { proprietarioId?: strin
       const storedId = proprietarioId || localStorage.getItem('selectedProprietarioId');
       if (storedId) {
         try {
-          console.log('Fetching alinhamentos for proprietarioId:', storedId);
           const data = await getAlinhamentos(storedId);
-          console.log('Received data:', data);
           
           setAlinhamentos(data);
         } catch (error) {
@@ -103,7 +101,6 @@ export default function Alinhamento({ proprietarioId }: { proprietarioId?: strin
       };
 
       try {
-        console.log('Dados sendo enviados:', alinhamentoToSave); // Debug
         const created = await createAlinhamento(alinhamentoToSave);
         setAlinhamentos([...alinhamentos, created]);
         setIsModalOpen(false);

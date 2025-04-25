@@ -48,9 +48,7 @@ export default function Categoria({ proprietarioId }: { proprietarioId?: string 
       const storedId = proprietarioId || localStorage.getItem('selectedProprietarioId');
       if (storedId) {
         try {
-          console.log('Fetching categories for proprietarioId:', storedId);
           const data = await getCategorias(storedId);
-          console.log('Received data:', data);
           setCategorias(data);
         } catch (error) {
           console.error('Error loading categorias:', error);
@@ -104,7 +102,6 @@ export default function Categoria({ proprietarioId }: { proprietarioId?: string 
       };
 
       try {
-        console.log('Dados sendo enviados:', categoriaToSave);
         const created = await createCategoria(categoriaToSave);
         setCategorias([...categorias, created]);
         setIsModalOpen(false);

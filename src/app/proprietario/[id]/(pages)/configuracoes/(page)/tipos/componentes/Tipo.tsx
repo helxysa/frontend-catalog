@@ -44,9 +44,7 @@ export default function Tipo({ proprietarioId }: { proprietarioId?: string }) {
       const storedId = proprietarioId || localStorage.getItem('selectedProprietarioId');
       if (storedId) {
         try {
-          console.log('Fetching tipos for proprietarioId:', storedId);
             const data = await getTipos(storedId);
-          console.log('Received data:', data);
           
           // Use data directly since getCategorias already filters by proprietario_id
           setTipos(data);
@@ -103,7 +101,6 @@ export default function Tipo({ proprietarioId }: { proprietarioId?: string }) {
       };
 
       try {
-        console.log('Dados sendo enviados:', tipoToSave); // Debug
         const created = await createTipo(tipoToSave);
         setTipos([...tipos, created]);
         setIsModalOpen(false);

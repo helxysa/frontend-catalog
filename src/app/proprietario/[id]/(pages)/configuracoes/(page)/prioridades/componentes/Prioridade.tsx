@@ -44,9 +44,7 @@ export default function Prioridade({ proprietarioId }: { proprietarioId?: string
       const storedId = proprietarioId || localStorage.getItem('selectedProprietarioId');
       if (storedId) {
         try {
-          console.log('Fetching prioridades for proprietarioId:', storedId);
           const data = await getPrioridades(storedId);
-          console.log('Received data:', data);
           
           // Use data directly since getCategorias already filters by proprietario_id
           setPrioridades(data);
@@ -103,7 +101,6 @@ export default function Prioridade({ proprietarioId }: { proprietarioId?: string
       };
 
       try {
-        console.log('Dados sendo enviados:', prioridadeToSave); // Debug
         const created = await createPrioridade(prioridadeToSave);
         setPrioridades([...prioridades, created]);
         setIsModalOpen(false);

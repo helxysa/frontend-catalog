@@ -220,7 +220,6 @@ export default function Dashboard() {
       const statusDate = solucao.data_status || solucao.dataStatus;
 
       if (!statusDate) {
-        console.log('Solução sem data de status:', solucao);
         return;
       }
 
@@ -349,7 +348,6 @@ export default function Dashboard() {
     });
 
     // Log para depuração
-    console.log('Mapa de responsáveis:', responsaveisMap);
 
     ensureArray(dashboardData.solucoes).forEach(solucao => {
       // Tentar obter o nome do responsável de várias formas
@@ -366,7 +364,6 @@ export default function Dashboard() {
       // 3. Verificar manualmente cada responsável para ver se algum corresponde
       else {
         // Log para depuração
-        console.log(`Solução ${solucao.id} sem responsável associado, verificando manualmente...`);
 
         // Verificar se a solução tem algum ID de responsável
         if (solucao.responsavelId) {
@@ -378,7 +375,6 @@ export default function Dashboard() {
             // Tentar comparar como número e como string
             if (resp.id === respId || String(resp.id) === String(solucao.responsavelId)) {
               responsavelNome = resp.nome;
-              console.log(`Encontrado responsável manualmente: ${resp.nome} (ID: ${resp.id})`);
               break;
             }
           }
@@ -386,7 +382,6 @@ export default function Dashboard() {
       }
 
       // Log para depuração
-      console.log(`Solução ${solucao.id} - responsável: ${responsavelNome}`);
 
       // Inicializar o array se não existir
       if (!responsavelMap[responsavelNome]) {

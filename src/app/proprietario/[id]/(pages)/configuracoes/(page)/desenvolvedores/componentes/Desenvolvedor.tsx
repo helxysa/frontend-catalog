@@ -47,9 +47,7 @@ export default function Desenvolvedor({ proprietarioId }: { proprietarioId?: str
       const storedId = proprietarioId || localStorage.getItem('selectedProprietarioId');
       if (storedId) {
         try {
-          console.log('Fetching desenvolvedores for proprietarioId:', storedId);
           const data = await getDesenvolvedores(storedId);
-          console.log('Received data:', data);
           
           // Use data directly since getCategorias already filters by proprietario_id
           setDesenvolvedores(data);
@@ -106,7 +104,6 @@ export default function Desenvolvedor({ proprietarioId }: { proprietarioId?: str
       };
 
       try {
-        console.log('Dados sendo enviados:', desenvolvedorToSave); // Debug
         const created = await createDesenvolvedor(desenvolvedorToSave);
         setDesenvolvedores([...desenvolvedores, created]);
         setIsModalOpen(false);

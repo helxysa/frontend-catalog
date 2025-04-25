@@ -44,9 +44,7 @@ export default function Responsavel({ proprietarioId }: { proprietarioId?: strin
       const storedId = proprietarioId || localStorage.getItem('selectedProprietarioId');
       if (storedId) {
         try {
-          console.log('Fetching responsaveis for proprietarioId:', storedId);
           const data = await getResponsaveis(storedId);
-          console.log('Received data:', data);
           
           // Use data directly since getCategorias already filters by proprietario_id
           setResponsaveis(data);
@@ -103,7 +101,6 @@ export default function Responsavel({ proprietarioId }: { proprietarioId?: strin
       };
 
       try {
-        console.log('Dados sendo enviados:', responsavelToSave); // Debug
         const created = await createResponsavel(responsavelToSave);
         setResponsaveis([...responsaveis, created]);
         setIsModalOpen(false);
