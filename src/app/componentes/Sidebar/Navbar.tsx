@@ -1,11 +1,12 @@
 "use client"
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { Menu, X, Building2 } from 'lucide-react';
+import { usePathname, useRouter } from 'next/navigation';
+import { Menu, X, Building2, LogOut } from 'lucide-react';
 import UnitSwitcher from '../../proprietario/componentes/UnitSwitcher';
 import { getProprietario, baseURL } from '../../proprietario/actions/actions';
-import { useSidebar } from './SidebarContext'
+import { useSidebar } from './SidebarContext';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface Proprietario {
   id: number;
@@ -20,28 +21,30 @@ export default function Navbar() {
   const [proprietario, setProprietario] = useState<Proprietario | null>(null);
   const pathname = usePathname();
   const { isCollapsed } = useSidebar();
+  const { logout } = useAuth();
+  const router = useRouter();
 
   const getPageTitle = () => {
     if (pathname === '/proprietario') {
       return 'Proprietários';
     }
-    
+
     if (pathname.includes('/dashboard')) {
       return 'Dashboard';
     }
-    
+
     if (pathname.includes('/demandas')) {
       return 'Demandas';
     }
-    
+
     if (pathname.includes('/solucoes')) {
       return 'Soluções';
     }
-    
+
     if (pathname.includes('/relatorios')) {
       return 'Relatórios';
     }
-    
+
     if (pathname.includes('/configuracoes')) {
       const configPath = pathname.split('/').pop();
       if (configPath && configPath !== 'configuracoes') {
@@ -49,7 +52,7 @@ export default function Navbar() {
       }
       return 'Configurações';
     }
-    
+
     return '';
   };
 
@@ -93,12 +96,24 @@ export default function Navbar() {
           {getPageTitle()}
         </h1>
 
-        {/* Unit Switcher and Mobile Menu */}
-        <div className={`flex items-center  ${isCollapsed ? '' : 'mr-9'}`}>
+        {/* Unit Switcher, Logout and Mobile Menu */}
+        <div className={`flex items-center gap-4 ${isCollapsed ? '' : 'mr-9'}`}>
           <div className="relative z-20">
             <UnitSwitcher />
           </div>
-          
+
+          {/* Logout Button */}
+          <button
+            onClick={async () => {
+              await logout();
+              router.push('/login');
+            }}
+            className="inline-flex items-center justify-center p-2 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+            title="Sair"
+          >
+            <LogOut className="h-5 w-5" />
+          </button>
+
           {/* Mobile menu button - Only show on mobile */}
           {isMobileView && (
             <button

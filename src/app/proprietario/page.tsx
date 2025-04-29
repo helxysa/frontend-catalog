@@ -1,12 +1,16 @@
+'use client'
+
 import Proprietario from "./componentes/Proprietario";
 import Navbar from "../componentes/Sidebar/Navbar";
-export default function ProprietarioPage() {
+import ProtectedRoute from "../componentes/ProtectedRoute/ProtectedRoute";
 
+export default function ProprietarioPage() {
   return (
-  <div>
-    <Proprietario />;
-  </div> 
+    <ProtectedRoute>
+      <div>
+        <Proprietario />
+      </div>
+    </ProtectedRoute>
   )
-  
 }
 

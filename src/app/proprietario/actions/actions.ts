@@ -1,7 +1,8 @@
-import axios from 'axios';
+import api from '../../lib/api';
+import axios, { AxiosError } from 'axios';
 
 export const baseURL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3333';
-const url = `${baseURL}/proprietarios`;
+const url = '/proprietarios';
 
 // Define interface for proprietario data
 interface CreateProprietarioData {
@@ -13,7 +14,7 @@ interface CreateProprietarioData {
 
 export async function getProprietario() {
   try {
-    const response = await axios.get(url);
+    const response = await api.get(url);
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error)) {
@@ -47,7 +48,7 @@ export async function getProprietario() {
         };
       }
     }
-    
+
     // Erro genérico
     return {
       error: true,
@@ -58,7 +59,7 @@ export async function getProprietario() {
 
 export async function getProprietarioById(id: string) {
   try {
-    const response = await axios.get(`${url}/${id}`);
+    const response = await api.get(`${url}/${id}`);
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error)) {
@@ -82,21 +83,21 @@ export async function createProprietario(proprietario: CreateProprietarioData) {
     const formData = new FormData();
     formData.append('nome', proprietario.nome.trim());
     formData.append('sigla', proprietario.sigla.trim());
-    
+
     if (proprietario.descricao) {
       formData.append('descricao', proprietario.descricao.trim());
     }
-    
+
     if (proprietario.logo) {
       formData.append('logo', proprietario.logo);
     }
 
-    console.log('Creating proprietario with data:', Object.fromEntries(formData)); // Debug log
 
-    const response = await axios.post(url, formData, {
+    const response = await api.post(url, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
+      withCredentials: true,
     });
     return response.data;
   } catch (error) {
@@ -117,7 +118,7 @@ export async function createProprietario(proprietario: CreateProprietarioData) {
         throw new Error('Já existe um proprietário com este nome ou sigla.');
       }
     }
-    
+
     throw new Error('Não foi possível criar o proprietário. Por favor, tente novamente.');
   }
 }
@@ -126,7 +127,7 @@ export async function updateProprietario(id: string, proprietario: Partial<Creat
   try {
     // Create FormData instance
     const formData = new FormData();
-    
+
     if (proprietario.nome) {
       formData.append('nome', proprietario.nome.trim());
     }
@@ -140,7 +141,7 @@ export async function updateProprietario(id: string, proprietario: Partial<Creat
       formData.append('logo', proprietario.logo);
     }
 
-    const response = await axios.put(`${url}/${id}`, formData, {
+    const response = await api.put(`${url}/${id}`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
@@ -162,7 +163,7 @@ export async function updateProprietario(id: string, proprietario: Partial<Creat
 
 export async function deleteProprietario(id: string) {
   try {
-    const response = await axios.delete(`${url}/${id}`);
+    const response = await api.delete(`${url}/${id}`);
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error)) {
@@ -177,7 +178,7 @@ export async function deleteProprietario(id: string) {
 
 export async function cloneProprietario(id: string) {
   try {
-    const response = await axios.post(`${url}/${id}/clone`);
+    const response = await api.post(`${url}/${id}/clone`);
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error)) {

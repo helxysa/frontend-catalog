@@ -7,7 +7,7 @@ const nextConfig: NextConfig = {
     return [
       {
         source: '/',
-        destination: '/proprietario',
+        destination: '/login',
         permanent: false,
         basePath: false
       },

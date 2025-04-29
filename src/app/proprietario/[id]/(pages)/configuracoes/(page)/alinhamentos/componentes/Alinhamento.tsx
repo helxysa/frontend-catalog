@@ -1,21 +1,19 @@
 'use client'
 
 import { useEffect, useState } from 'react';
-import { 
-  getAlinhamentos, 
-  createAlinhamento, 
-  updateAlinhamento, 
-  deleteAlinhamento 
+import {
+  getAlinhamentos,
+  createAlinhamento,
+  updateAlinhamento,
+  deleteAlinhamento
 } from '../actions/actions';
-import { 
-  Plus, 
-  Filter, 
-  Edit2, 
-  Trash2, 
-  X, 
+import {
+  Plus,
+  Edit2,
+  Trash2,
+  X,
   Info,
-  ChevronRight,
-  Menu 
+  ChevronRight
 } from 'lucide-react';
 import type { Alinhamento } from '../types/types';
 import { useSidebar } from '../../../../../../../componentes/Sidebar/SidebarContext';
@@ -29,24 +27,23 @@ export default function Alinhamento({ proprietarioId }: { proprietarioId?: strin
   const [alinhamentos, setAlinhamentos] = useState<Alinhamento[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentAlinhamento, setCurrentAlinhamento] = useState<Partial<Alinhamento>>(() => ({
-    proprietario_id: proprietarioId ? proprietarioId : 
+    proprietario_id: proprietarioId ? proprietarioId :
                     localStorage.getItem('selectedProprietarioId') || ''
   }));
   const [isEditMode, setIsEditMode] = useState(false);
   const [selectedAlinhamentoDetails, setSelectedAlinhamentoDetails] = useState<Alinhamento | null>(null);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [proprietarios, setProprietarios] = useState<Proprietario[]>([]);
   const { isCollapsed } = useSidebar();
 
   useEffect(() => {
     const loadAlinhamentos = async () => {
-      setAlinhamentos([]); 
-      
+      setAlinhamentos([]);
+
       const storedId = proprietarioId || localStorage.getItem('selectedProprietarioId');
       if (storedId) {
         try {
           const data = await getAlinhamentos(storedId);
-          
+
           setAlinhamentos(data);
         } catch (error) {
           console.error('Error loading alinhamentos:', error);
@@ -54,18 +51,43 @@ export default function Alinhamento({ proprietarioId }: { proprietarioId?: strin
         }
       }
     };
-    
+
     loadAlinhamentos();
-    
-    // Only load proprietários if we're in the main alinhamentos view
-    if (!proprietarioId) {
-      const loadProprietarios = async () => {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/proprietarios`);
+
+    // Carregar proprietários com logs de depuração
+    const loadProprietarios = async () => {
+      try {
+        
+
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3333'}/proprietarios`, {
+          method: 'GET',
+          credentials: 'include', // Importante para enviar cookies de autenticação
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+        });
+
+
+        if (!response.ok) {
+          throw new Error(`Erro ao carregar proprietários: ${response.status}`);
+        }
+
         const data = await response.json();
-        setProprietarios(data);
-      };
-      loadProprietarios();
-    }
+
+        if (Array.isArray(data)) {
+          setProprietarios(data);
+        } else {
+          console.error('Dados de proprietários não são um array:', data);
+          setProprietarios([]);
+        }
+      } catch (error) {
+        console.error('Erro ao carregar proprietários:', error);
+        setProprietarios([]);
+      }
+    };
+
+    loadProprietarios();
   }, [proprietarioId]);
 
   // When modal is opened, ensure proprietarioId is set
@@ -139,8 +161,8 @@ export default function Alinhamento({ proprietarioId }: { proprietarioId?: strin
     <div className={`
       w-full bg-gray-50
       transition-all duration-300 ease-in-out
-      ${isCollapsed 
-        ? 'ml-10 w-[calc(100%-2rem)] fixed left-1 top-13 h-screen overflow-y-auto' 
+      ${isCollapsed
+        ? 'ml-10 w-[calc(100%-2rem)] fixed left-1 top-13 h-screen overflow-y-auto'
         : 'w-full'
       }
       py-6 px-6
@@ -155,7 +177,7 @@ export default function Alinhamento({ proprietarioId }: { proprietarioId?: strin
             Adicione um alinhamento
           </h1>
           <div className="flex gap-2">
-            <button 
+            <button
               onClick={() => openModal()}
               className="bg-blue-600 text-white px-3 py-2 sm:px-4 sm:py-2 rounded-md flex items-center gap-2 hover:bg-blue-700 transition-colors text-sm sm:text-base"
             >
@@ -186,21 +208,21 @@ export default function Alinhamento({ proprietarioId }: { proprietarioId?: strin
                   </td>
                   <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
                     <div className="flex justify-end space-x-2">
-                      <button 
+                      <button
                         onClick={() => showAlinhamentoDetails(alinhamento)}
                         className="text-blue-500 hover:text-blue-700 p-1 rounded-full hover:bg-blue-50 transition-colors"
                         title="Detalhes"
                       >
                         <Info className="w-5 h-5" />
                       </button>
-                      <button 
+                      <button
                         onClick={() => openModal(alinhamento)}
                         className="text-green-500 hover:text-green-700 p-1 rounded-full hover:bg-green-50 transition-colors"
                         title="Editar"
                       >
                         <Edit2 className="w-5 h-5" />
                       </button>
-                      <button 
+                      <button
                         onClick={() => handleDelete(alinhamento.id)}
                         className="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50 transition-colors"
                         title="Excluir"
@@ -223,7 +245,7 @@ export default function Alinhamento({ proprietarioId }: { proprietarioId?: strin
                 <h2 className="text-xl sm:text-2xl font-bold text-gray-800">
                   {isEditMode ? 'Editar Alinhamento' : 'Novo Alinhamento'}
                 </h2>
-                <button 
+                <button
                   onClick={() => setIsModalOpen(false)}
                   className="text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full p-2"
                 >
@@ -233,44 +255,56 @@ export default function Alinhamento({ proprietarioId }: { proprietarioId?: strin
               <div className="space-y-4 sm:space-y-6">
                 <div className="text-gray-700">
                   <label className="block text-sm font-medium text-gray-700 mb-2">Proprietário</label>
-                  <select
-                    value={currentAlinhamento.proprietario_id || ''}
-                    disabled={true}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
-                  >
-                    <option value={currentAlinhamento.proprietario_id}>
-                      {proprietarios.find(p => p.id === Number(currentAlinhamento.proprietario_id))?.nome || 'Carregando...'}
-                    </option>
-                  </select>
+                  {/* Adicionando logs para depuração */}
+                  
+
+                  {/* Substituindo o dropdown por um campo de texto estático */}
+                  <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700">
+                    {(() => {
+                      // Função para buscar o nome do proprietário com logs detalhados
+                      if (!Array.isArray(proprietarios)) {
+                        return `Proprietário #${currentAlinhamento.proprietario_id}`;
+                      }
+
+                      if (proprietarios.length === 0) {
+                        return `Proprietário #${currentAlinhamento.proprietario_id}`;
+                      }
+
+                      const prop = proprietarios.find(p => p.id === Number(currentAlinhamento.proprietario_id));
+
+                      return prop?.nome || `Proprietário #${currentAlinhamento.proprietario_id}`;
+                    })()}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">ID: {currentAlinhamento.proprietario_id}</p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Nome</label>
-                  <input 
-                    type="text" 
-                    placeholder="Digite o nome do alinhamento" 
-                    value={currentAlinhamento.nome || ''} 
+                  <input
+                    type="text"
+                    placeholder="Digite o nome do alinhamento"
+                    value={currentAlinhamento.nome || ''}
                     onChange={(e) => setCurrentAlinhamento({ ...currentAlinhamento, nome: e.target.value })}
                     className="w-full px-3 py-2 sm:px-4 sm:py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800 placeholder-gray-500 text-sm sm:text-base"
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Descrição</label>
-                  <textarea 
-                    placeholder="Descreva os detalhes do alinhamento" 
-                    value={currentAlinhamento.descricao || ''} 
+                  <textarea
+                    placeholder="Descreva os detalhes do alinhamento"
+                    value={currentAlinhamento.descricao || ''}
                     onChange={(e) => setCurrentAlinhamento({ ...currentAlinhamento, descricao: e.target.value })}
                     className="w-full px-3 py-2 sm:px-4 sm:py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800 placeholder-gray-500 text-sm sm:text-base"
                     rows={4}
                   />
                 </div>
                 <div className="flex justify-end space-x-4">
-                  <button 
+                  <button
                     onClick={() => setIsModalOpen(false)}
                     className="px-3 py-2 sm:px-4 sm:py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors text-sm sm:text-base"
                   >
                     Cancelar
                   </button>
-                  <button 
+                  <button
                     onClick={isEditMode ? handleUpdate : handleCreate}
                     className="px-3 py-2 sm:px-4 sm:py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm sm:text-base"
                   >
@@ -288,7 +322,7 @@ export default function Alinhamento({ proprietarioId }: { proprietarioId?: strin
             <div className="bg-white rounded-lg shadow-2xl p-6 w-full max-w-xl">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-xl sm:text-2xl font-bold text-gray-800">Detalhes do Alinhamento</h2>
-                <button 
+                <button
                   onClick={() => setSelectedAlinhamentoDetails(null)}
                   className="text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full p-2"
                 >
@@ -316,7 +350,7 @@ export default function Alinhamento({ proprietarioId }: { proprietarioId?: strin
                   </p>
                 </div>
                 <div className="flex justify-end">
-                  <button 
+                  <button
                     onClick={() => setSelectedAlinhamentoDetails(null)}
                     className="px-3 py-2 sm:px-4 sm:py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center gap-2 text-sm sm:text-base"
                   >

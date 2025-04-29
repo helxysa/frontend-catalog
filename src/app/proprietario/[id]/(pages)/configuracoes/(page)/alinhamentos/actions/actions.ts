@@ -1,4 +1,5 @@
-import axios from 'axios';
+import api from '../../../../actions/api';
+
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
 if (!baseUrl) {
@@ -7,12 +8,12 @@ if (!baseUrl) {
 const url = `${baseUrl}/alinhamentos`;
 
 export async function getAlinhamentos(proprietarioId: string) {
-  const response = await axios.get(`${baseUrl}/proprietarios/${proprietarioId}/alinhamentos`);
+  const response = await api.get(`${baseUrl}/proprietarios/${proprietarioId}/alinhamentos`);
   return response.data;
 }
 
 export async function getAlinhamentosById(id: string) {
-  const response = await axios.get(`${url}/${id}`);
+  const response = await api.get(`${url}/${id}`);
   return response.data;
 }
 
@@ -23,7 +24,7 @@ interface AlinhamentoCreate {
 }
 
 export async function createAlinhamento(alinhamento: AlinhamentoCreate) {
-  const response = await axios.post(`${url}`, {
+  const response = await api.post(`${url}`, {
     nome: alinhamento.nome,
     descricao: alinhamento.descricao,
     proprietario_id: alinhamento.proprietario_id
@@ -32,12 +33,12 @@ export async function createAlinhamento(alinhamento: AlinhamentoCreate) {
 }
 
 export async function updateAlinhamento(id: string, alinhamento: any) {
-  const response = await axios.put(`${url}/${id}`, alinhamento);
+  const response = await api.put(`${url}/${id}`, alinhamento);
   return response.data;
 }
 
 export async function deleteAlinhamento(id: string) {
-  const response = await axios.delete(`${url}/${id}`);
+  const response = await api.delete(`${url}/${id}`);
   return response.data;
 }
 

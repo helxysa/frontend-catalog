@@ -3,6 +3,7 @@ import { Montserrat } from "next/font/google";
 import "./globals.css";
 import { AppWrapper } from './componentes/Sidebar/AppWrapper'
 import { SidebarProvider } from './componentes/Sidebar/SidebarContext';
+import { AuthProvider } from './contexts/AuthContext';
 
 const montserrat = Montserrat({
   subsets: ["latin"],
@@ -21,11 +22,13 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" suppressHydrationWarning>
       <body className={`${montserrat.className}  antialiased vsc-initialized`}>
-        <SidebarProvider>
-          <AppWrapper>
-            {children}
-          </AppWrapper>
-        </SidebarProvider>
+        <AuthProvider>
+          <SidebarProvider>
+            <AppWrapper>
+              {children}
+            </AppWrapper>
+          </SidebarProvider>
+        </AuthProvider>
       </body>
     </html>
   )

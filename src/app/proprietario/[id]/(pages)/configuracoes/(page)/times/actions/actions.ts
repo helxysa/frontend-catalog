@@ -1,4 +1,4 @@
-import axios from 'axios';
+import api from '../../../../actions/api';
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
 if (!baseUrl) {
@@ -8,27 +8,27 @@ const url = `${baseUrl}/times`;
 
 
 export async function getResponsaveis(proprietarioId: string) {
-  const response = await axios.get(`${baseUrl}/proprietarios/${proprietarioId}/times`);
+  const response = await api.get(`${baseUrl}/proprietarios/${proprietarioId}/times`);
   return response.data;
 }
 
 export async function getResponsaveisById(id: string) {
-  const response = await axios.get(`${url}/${id}`);
+  const response = await api.get(`${url}/${id}`);
   return response.data;
 }
 
 export async function createResponsavel(responsavel: any) {
-  const response = await axios.post(`${url}`, responsavel);
+  const response = await api.post(`${url}`, responsavel);
   return response.data;
 }
 
 export async function updateResponsavel(id: string, responsavel: any) {
-  const response = await axios.put(`${url}/${id}`, responsavel);
+  const response = await api.put(`${url}/${id}`, responsavel);
   return response.data;
 }
 
 export async function deleteResponsavel(id: string) {
-  const response = await axios.delete(`${url}/${id}`);
+  const response = await api.delete(`${url}/${id}`);
   return response.data;
 }
 
