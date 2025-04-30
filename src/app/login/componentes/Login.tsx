@@ -53,7 +53,7 @@ export default function Login() {
             </div>
             <div>
               <div className="bg-[#1a73e8] text-white px-8 py-2.5 rounded-md font-bold text-xl tracking-wide inline-block mt-6 shadow-sm hover:bg-[#1557b0] transition-colors">
-                Catalog
+                Catalog 1.0
               </div>
             </div>
           </div>

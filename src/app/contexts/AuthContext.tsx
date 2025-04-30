@@ -94,7 +94,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return false
       }
     } catch (error) {
-      console.error('Erro ao verificar autenticação:', error)
       setUser(null)
       setInitialCheckDone(true);
       return false
@@ -118,7 +117,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // Fazer uma verificação inicial com o servidor
           const result = await checkAuth();
         } catch (error) {
-          console.error('AuthContext: Erro na verificação inicial:', error)
         }
       }
     };
@@ -171,15 +169,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setInitialCheckDone(true)
           return true
         } else {
-          console.error('Erro ao obter dados do usuário após login')
           return false
         }
       } else {
-        console.error('Erro de login:', data)
         return false
       }
     } catch (error) {
-      console.error('Erro ao fazer login:', error)
       return false
     } finally {
       setLoading(false)
@@ -205,7 +200,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Redirecionar para a página de login
       router.push('/login')
     } catch (error) {
-      console.error('Erro ao fazer logout:', error)
     } finally {
       setLoading(false)
     }
