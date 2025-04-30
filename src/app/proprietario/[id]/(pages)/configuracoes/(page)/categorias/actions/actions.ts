@@ -1,4 +1,5 @@
 import axios from 'axios';
+import api from '../../../../actions/api';
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
 if (!baseUrl) {
@@ -6,27 +7,27 @@ if (!baseUrl) {
 }
 
 export async function getCategorias(proprietarioId: string) {
-  const response = await axios.get(`${baseUrl}/proprietarios/${proprietarioId}/categorias`);
+  const response = await api.get(`${baseUrl}/proprietarios/${proprietarioId}/categorias`);
   return response.data;
 }
 
 export async function getCategoriaById(id: string) {
-  const response = await axios.get(`${baseUrl}/categorias/${id}`);
+  const response = await api.get(`${baseUrl}/categorias/${id}`);
   return response.data;
 }
 
 export async function createCategoria(categoria: any) {
-  const response = await axios.post(`${baseUrl}/categorias`, categoria);
+  const response = await api.post(`${baseUrl}/categorias`, categoria);
   return response.data;
 }
 
 export async function updateCategoria(id: string, categoria: any) {
-  const response = await axios.put(`${baseUrl}/categorias/${id}`, categoria);
+  const response = await api.put(`${baseUrl}/categorias/${id}`, categoria);
   return response.data;
 }
 
 export async function deleteCategoria(id: string) {
-  const response = await axios.delete(`${baseUrl}/categorias/${id}`);
+  const response = await api.delete(`${baseUrl}/categorias/${id}`);
   return response.data;
 }
 

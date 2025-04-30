@@ -1,14 +1,11 @@
-import axios from 'axios';
+import api from '../../actions/api';
 
-const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
-if (!baseUrl) {
-  throw new Error("NEXT_PUBLIC_BASE_URL is not defined in the environment variables.");
-}
-const url = `${baseUrl}/demandas`;
+const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3333';
+const url = '/demandas';
 
 export async function getDemandas(page: number = 1, limit: number = 8) {
   try {
-    const response = await axios.get(`${url}?page=${page}&limit=${limit}`);
+    const response = await api.get(`${url}?page=${page}&limit=${limit}`);
     return response.data;
   } catch (error) {
     console.error("Error fetching demands:", error);
@@ -18,7 +15,7 @@ export async function getDemandas(page: number = 1, limit: number = 8) {
 
 export async function getDemandasById(id: string) {
   try {
-    const response = await axios.get(`${url}/${id}`);
+    const response = await api.get(`${url}/${id}`);
     return response.data;
   } catch (error) {
     console.error("Error fetching demanda by ID:", error);
@@ -28,7 +25,7 @@ export async function getDemandasById(id: string) {
 
 export async function createDemanda(demanda: any) {
   try {
-    const response = await axios.post(`${url}`, demanda);
+    const response = await api.post(`${url}`, demanda);
     return response.data;
   } catch (error) {
     console.error("Error creating demanda:", error);
@@ -38,7 +35,7 @@ export async function createDemanda(demanda: any) {
 
 export async function updateDemanda(id: string, demanda: any) {
   try {
-    const response = await axios.put(`${url}/${id}`, demanda);
+    const response = await api.put(`${url}/${id}`, demanda);
     return response.data;
   } catch (error) {
     console.error("Error updating demanda:", error);
@@ -48,7 +45,7 @@ export async function updateDemanda(id: string, demanda: any) {
 
 export async function deleteDemanda(id: string) {
   try {
-    const response = await axios.delete(`${url}/${id}`);
+    const response = await api.delete(`${url}/${id}`);
     return response.data;
   } catch (error) {
     console.error("Error deleting demanda:", error);
@@ -64,7 +61,7 @@ const urlSelect = `${baseUrl}`;
 
 export async function getProprietarios() {
   try {
-    const response = await axios.get(`${urlSelect}/proprietarios`);
+    const response = await api.get('/proprietarios');
     return response.data;
   } catch (error) {
     console.error("Error fetching proprietarios:", error);
@@ -78,7 +75,7 @@ export async function getAlinhamentos() {
     if (!storedId) {
       throw new Error("ProprietarioId not found in localStorage");
     }
-    const response = await axios.get(`${urlSelect}/proprietarios/${storedId}/alinhamentos`);
+    const response = await api.get(`${urlSelect}/proprietarios/${storedId}/alinhamentos`);
     return response.data;
   } catch (error) {
     console.error("Error fetching alinhamentos:", error);
@@ -93,7 +90,7 @@ export async function getPrioridades() {
     if (!storedId) {
       throw new Error("ProprietarioId not found in localStorage");
     }
-    const response = await axios.get(`${urlSelect}/proprietarios/${storedId}/prioridades`);
+    const response = await api.get(`${urlSelect}/proprietarios/${storedId}/prioridades`);
     return response.data;
   } catch (error) {
     console.error("Error fetching prioridades:", error);
@@ -103,7 +100,7 @@ export async function getPrioridades() {
 
 export async function getSolucoesByDemandaId(demandaId: string) {
   try {
-    const response = await axios.get(`${baseUrl}/solucoes?demanda_id=${demandaId}`);
+    const response = await api.get(`${baseUrl}/solucoes?demanda_id=${demandaId}`);
     return response.data;
   } catch (error) {
     console.error("Error fetching solutions:", error);
@@ -118,7 +115,7 @@ export async function getResponsaveis() {
     if (!storedId) {
       throw new Error("ProprietarioId not found in localStorage");
     }
-    const response = await axios.get(`${urlSelect}/proprietarios/${storedId}/responsaveis`);
+    const response = await api.get(`${urlSelect}/proprietarios/${storedId}/responsaveis`);
     return response.data;
   } catch (error) {
     console.error("Error fetching responsaveis:", error);
@@ -133,7 +130,7 @@ export async function getStatus() {
     if (!storedId) {
       throw new Error("ProprietarioId not found in localStorage");
     }
-    const response = await axios.get(`${urlSelect}/proprietarios/${storedId}/status`);
+    const response = await api.get(`${urlSelect}/proprietarios/${storedId}/status`);
     return response.data;
   } catch (error) {
     console.error("Error fetching status:", error);
@@ -144,7 +141,7 @@ export async function getStatus() {
 
 export async function getHistoricoDemandas() {
   try {
-    const response = await axios.get(`${urlSelect}/historico_demandas`);
+    const response = await api.get(`${urlSelect}/historico_demandas`);
     return response.data;
   } catch (error) {
     console.error("Error fetching historico demandas:", error);

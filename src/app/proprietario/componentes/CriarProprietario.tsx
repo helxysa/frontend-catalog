@@ -45,7 +45,7 @@ export default function CriarProprietario({ onClose, onSuccess, proprietario }: 
     const file = e.target.files?.[0];
     if (file) {
       setLogoFile(file);
-      if (previewUrl && !previewUrl.startsWith(baseURL)) {
+      if (previewUrl && typeof previewUrl === 'string' && baseURL && !previewUrl.startsWith(baseURL)) {
         URL.revokeObjectURL(previewUrl);
       }
       const url = URL.createObjectURL(file);
@@ -55,14 +55,14 @@ export default function CriarProprietario({ onClose, onSuccess, proprietario }: 
 
   useEffect(() => {
     return () => {
-      if (previewUrl && !previewUrl.startsWith(baseURL)) {
+      if (previewUrl && typeof previewUrl === 'string' && baseURL && !previewUrl.startsWith(baseURL)) {
         URL.revokeObjectURL(previewUrl);
       }
     };
   }, [previewUrl]);
 
   const handleRemoveLogo = () => {
-    if (previewUrl && !previewUrl.startsWith(baseURL)) {
+    if (previewUrl && typeof previewUrl === 'string' && baseURL && !previewUrl.startsWith(baseURL)) {
       URL.revokeObjectURL(previewUrl);
     }
     setLogoFile(null);

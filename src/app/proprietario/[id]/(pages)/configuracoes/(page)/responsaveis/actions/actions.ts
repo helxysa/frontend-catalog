@@ -1,4 +1,4 @@
-import axios from 'axios';
+import api from '../../../../actions/api';
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
 if (!baseUrl) {
@@ -8,27 +8,27 @@ const url = `${baseUrl}/responsaveis`;
 
 
 export async function getDesenvolvedores(proprietarioId: string) {
-  const response = await axios.get(`${baseUrl}/proprietarios/${proprietarioId}/responsaveis`);
+  const response = await api.get(`${baseUrl}/proprietarios/${proprietarioId}/responsaveis`);
   return response.data;
 }
 
 export async function getDesenvolvedoresById(id: string) {
-  const response = await axios.get(`${url}/${id}`);
+  const response = await api.get(`${url}/${id}`);
   return response.data;
 }
 
 export async function createDesenvolvedor(desenvolvedor: any) {
-  const response = await axios.post(`${url}`, desenvolvedor);
+  const response = await api.post(`${url}`, desenvolvedor);
   return response.data;
 }
 
 export async function updateDesenvolvedor(id: string, desenvolvedor: any) {
-  const response = await axios.put(`${url}/${id}`, desenvolvedor);
+  const response = await api.put(`${url}/${id}`, desenvolvedor);
   return response.data;
 }
 
 export async function deleteDesenvolvedor(id: string) {
-  const response = await axios.delete(`${url}/${id}`);
+  const response = await api.delete(`${url}/${id}`);
   return response.data;
 }
 

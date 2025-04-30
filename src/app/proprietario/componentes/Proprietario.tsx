@@ -1,10 +1,12 @@
 "use client"
 import { useState, useEffect } from "react";
-import { getProprietario, baseURL, cloneProprietario } from "../actions/actions";
+import { getProprietario, baseURL, cloneProprietario, deleteProprietario } from "../actions/actions";
 import CriarProprietario from "./CriarProprietario";
 import { useRouter } from 'next/navigation';
-import { Building2 } from 'lucide-react';
+import { Building2, Trash2 } from 'lucide-react';
 import Navbar from './Navbar';
+import { DeleteAuthModal } from "./DeleteAuthModal";
+import { useAuth } from "../../contexts/AuthContext";
 
 interface Proprietario {
   id: number;
@@ -67,14 +69,17 @@ export default function Proprietario() {
   const [selectedProprietario, setSelectedProprietario] = useState<Proprietario | null>(null);
   const [showCloneModal, setShowCloneModal] = useState(false);
   const [cloneProprietarioData, setCloneProprietarioData] = useState<{ id: number; nome: string } | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [proprietarioToDelete, setProprietarioToDelete] = useState<{ id: number; nome: string; error?: string } | null>(null);
   const router = useRouter();
+  const { login } = useAuth();
 
   const fetchEscritorios = async () => {
     try {
       setLoading(true);
       setError(null);
       const result = await getProprietario();
-      
+
       // Verifica se o resultado é um objeto de erro
       if (result && 'error' in result) {
         setError(result.message);
@@ -115,7 +120,7 @@ export default function Proprietario() {
 
   const handleClone = async () => {
     if (!cloneProprietarioData) return;
-    
+
     try {
       await cloneProprietario(cloneProprietarioData.id.toString());
       fetchEscritorios();
@@ -124,6 +129,45 @@ export default function Proprietario() {
     } finally {
       setShowCloneModal(false);
       setCloneProprietarioData(null);
+    }
+  };
+
+  const handleDelete = async (email: string, password: string): Promise<boolean> => {
+    if (!proprietarioToDelete) return false;
+
+    try {
+      // Primeiro, verificar se as credenciais são válidas usando o login do contexto de autenticação
+      const isAuthenticated = await login(email, password);
+
+      if (!isAuthenticated) {
+        // Apenas atualizar o estado com a mensagem de erro
+        if (proprietarioToDelete) {
+          setProprietarioToDelete({
+            ...proprietarioToDelete,
+            error: 'Credencial inválida'
+          });
+        }
+        return false;
+      }
+
+      // Se as credenciais forem válidas, prosseguir com a exclusão
+      await deleteProprietario(proprietarioToDelete.id.toString(), { email, password });
+      setShowDeleteModal(false);
+      setProprietarioToDelete(null);
+      fetchEscritorios();
+      return true;
+    } catch (error) {
+      console.error('Error deleting:', error);
+
+      // Apenas atualizar o estado com a mensagem de erro
+      if (proprietarioToDelete) {
+        setProprietarioToDelete({
+          ...proprietarioToDelete,
+          error: 'Credencial inválida'
+        });
+      }
+
+      return false;
     }
   };
 
@@ -155,7 +199,7 @@ export default function Proprietario() {
               <p className="text-red-500 mb-6">{error}</p>
               <button
                 onClick={handleRetry}
-                className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transform transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transform transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
               >
                 Tentar novamente
               </button>
@@ -176,7 +220,7 @@ export default function Proprietario() {
               <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Unidades</h1>
               <p className="mt-2 text-gray-600">Gerencie as unidades</p>
             </div>
-            <button 
+            <button
               onClick={() => setShowModal(true)}
               className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transform transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
             >
@@ -230,6 +274,17 @@ export default function Proprietario() {
                         <path d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" strokeLinecap="round" strokeLinejoin="round"/>
                       </svg>
                     </button>
+                    {/* <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setProprietarioToDelete({ id: escritorio.id, nome: escritorio.nome });
+                        setShowDeleteModal(true);
+                      }}
+                      className="p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors"
+                      aria-label="Excluir"
+                    >
+                      <Trash2 className="w-4 h-4 text-red-600" />
+                    </button> */}
                   </div>
                   <div className="flex items-start space-x-4">
                     <div className="relative h-16 w-16 flex-shrink-0 rounded-lg overflow-hidden">
@@ -300,6 +355,18 @@ export default function Proprietario() {
               }}
               onConfirm={handleClone}
               proprietarioName={cloneProprietarioData.nome}
+            />
+          )}
+
+          {showDeleteModal && proprietarioToDelete && (
+            <DeleteAuthModal
+              isOpen={showDeleteModal}
+              onClose={() => {
+                setShowDeleteModal(false);
+                setProprietarioToDelete(null);
+              }}
+              onConfirm={handleDelete}
+              proprietarioName={proprietarioToDelete.nome}
             />
           )}
         </div>

@@ -1,7 +1,8 @@
-import axios from 'axios';
+import api from '../../lib/api';
+import axios, { AxiosError } from 'axios';
 
-export const baseURL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3333';
-const url = `${baseURL}/proprietarios`;
+export const baseURL = process.env.NEXT_PUBLIC_BASE_URL
+const url = '/proprietarios';
 
 // Define interface for proprietario data
 interface CreateProprietarioData {
@@ -13,25 +14,21 @@ interface CreateProprietarioData {
 
 export async function getProprietario() {
   try {
-    const response = await axios.get(url);
+    const response = await api.get(url);
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error)) {
-      // Erro de conexão
       if (!error.response) {
-        // Em vez de throw new Error, retorne um objeto de erro
         return {
           error: true,
           message: 'Não foi possível conectar ao servidor. Verifique sua conexão com a internet.'
         };
       }
 
-      // Erro 500 - Database não existe
       if (error.response.status === 500 && error.response.data?.message?.includes('não existe')) {
         return [];
       }
 
-      // Outros erros do servidor
       if (error.response.status >= 500) {
         return {
           error: true,
@@ -39,7 +36,7 @@ export async function getProprietario() {
         };
       }
 
-      // Erros específicos da API
+
       if (error.response.data?.message) {
         return {
           error: true,
@@ -47,8 +44,8 @@ export async function getProprietario() {
         };
       }
     }
-    
-    // Erro genérico
+
+
     return {
       error: true,
       message: 'Ocorreu um erro inesperado. Por favor, tente novamente.'
@@ -58,7 +55,7 @@ export async function getProprietario() {
 
 export async function getProprietarioById(id: string) {
   try {
-    const response = await axios.get(`${url}/${id}`);
+    const response = await api.get(`${url}/${id}`);
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error)) {
@@ -73,30 +70,29 @@ export async function getProprietarioById(id: string) {
 
 export async function createProprietario(proprietario: CreateProprietarioData) {
   try {
-    // Validate required fields
+
     if (!proprietario.nome || !proprietario.sigla) {
       throw new Error('Nome e sigla são campos obrigatórios');
     }
 
-    // Create FormData instance
     const formData = new FormData();
     formData.append('nome', proprietario.nome.trim());
     formData.append('sigla', proprietario.sigla.trim());
-    
+
     if (proprietario.descricao) {
       formData.append('descricao', proprietario.descricao.trim());
     }
-    
+
     if (proprietario.logo) {
       formData.append('logo', proprietario.logo);
     }
 
-    console.log('Creating proprietario with data:', Object.fromEntries(formData)); // Debug log
 
-    const response = await axios.post(url, formData, {
+    const response = await api.post(url, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
+      withCredentials: true,
     });
     return response.data;
   } catch (error) {
@@ -107,7 +103,6 @@ export async function createProprietario(proprietario: CreateProprietarioData) {
         message: error.message
       });
 
-      // Handle specific error cases
       if (error.response?.status === 400) {
         const errorMessage = error.response.data?.message || 'Dados inválidos. Verifique os campos e tente novamente.';
         throw new Error(errorMessage);
@@ -117,16 +112,16 @@ export async function createProprietario(proprietario: CreateProprietarioData) {
         throw new Error('Já existe um proprietário com este nome ou sigla.');
       }
     }
-    
+
     throw new Error('Não foi possível criar o proprietário. Por favor, tente novamente.');
   }
 }
 
 export async function updateProprietario(id: string, proprietario: Partial<CreateProprietarioData>) {
   try {
-    // Create FormData instance
+
     const formData = new FormData();
-    
+
     if (proprietario.nome) {
       formData.append('nome', proprietario.nome.trim());
     }
@@ -140,7 +135,7 @@ export async function updateProprietario(id: string, proprietario: Partial<Creat
       formData.append('logo', proprietario.logo);
     }
 
-    const response = await axios.put(`${url}/${id}`, formData, {
+    const response = await api.put(`${url}/${id}`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
@@ -160,15 +155,22 @@ export async function updateProprietario(id: string, proprietario: Partial<Creat
   }
 }
 
-export async function deleteProprietario(id: string) {
+export async function deleteProprietario(id: string, _credentials: { email: string; password: string; }) {
   try {
-    const response = await axios.delete(`${url}/${id}`);
+    // Não precisamos mais enviar as credenciais aqui, pois já foram verificadas pelo contexto de autenticação
+    const response = await api.delete(`${url}/${id}`);
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error)) {
       console.error('Error deleting proprietario:', error.response?.data);
       if (error.response?.status === 404) {
         throw new Error('Proprietário não encontrado');
+      }
+      if (error.response?.status === 401) {
+        throw new Error('Sessão expirada. Por favor, faça login novamente.');
+      }
+      if (error.response?.status === 403) {
+        throw new Error('Você não tem permissão para excluir esta unidade.');
       }
     }
     throw new Error('Erro ao excluir proprietário');
@@ -177,7 +179,7 @@ export async function deleteProprietario(id: string) {
 
 export async function cloneProprietario(id: string) {
   try {
-    const response = await axios.post(`${url}/${id}/clone`);
+    const response = await api.post(`${url}/${id}/clone`);
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error)) {

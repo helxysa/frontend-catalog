@@ -46,9 +46,7 @@ export default function Times({ proprietarioId }: { proprietarioId?: string }) {
       const storedId = proprietarioId || localStorage.getItem('selectedProprietarioId');
       if (storedId) {
         try {
-          console.log('Fetching times for proprietarioId:', storedId);
           const data = await getTimes(storedId);
-          console.log('Received data:', data);
           
           // Use data directly since getCategorias already filters by proprietario_id
           setTimes(data);
@@ -105,7 +103,6 @@ export default function Times({ proprietarioId }: { proprietarioId?: string }) {
       };
 
       try {
-        console.log('Dados sendo enviados:', timeToSave); // Debug
         const created = await createTimes(timeToSave);
         setTimes([...times, created]);
         setIsModalOpen(false);

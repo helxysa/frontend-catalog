@@ -31,7 +31,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { id } = await params;
   const proprietario = await getProprietario(id);
   return {
-    title: proprietario ? `Escritório: ${proprietario.nome}` : 'Escritório não encontrado',
+    title: proprietario ? `Unidade: ${proprietario.nome}` : 'Unidade não encontrado',
   };
 }
 
@@ -42,7 +42,7 @@ export default async function ProprietarioDetails({ params }: PageProps) {
   if (!proprietario) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-red-600">Escritório não encontrado</div>
+        <div className="text-red-600">Unidade não encontrado</div>
       </div>
     );
   }
@@ -50,7 +50,6 @@ export default async function ProprietarioDetails({ params }: PageProps) {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto p-4 sm:p-6">
-        {/* Proprietário Header */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
           <div className="flex items-start justify-between">
             <div>
@@ -70,7 +69,6 @@ export default async function ProprietarioDetails({ params }: PageProps) {
           </div>
         </div>
 
-        {/* Categories Section */}
         <Suspense fallback={<div>Carregando categorias...</div>}>
           <Categoria proprietarioId={id} />
         </Suspense>

@@ -2,12 +2,15 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { usePathname } from 'next/navigation';
-import { Menu, X } from 'lucide-react';
+import { usePathname, useRouter } from 'next/navigation';
+import { Menu, X, LogOut } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
 
 export default function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMobileView, setIsMobileView] = useState(false);
+  const { logout } = useAuth();
+  const router = useRouter();
 
   useEffect(() => {
     const handleResize = () => {
@@ -24,8 +27,8 @@ export default function Navbar() {
       <div className="h-20 flex items-center justify-between px-6 lg:px-8 w-full max-w-[2000px] mx-auto">
         {/* Left side - Catalog */}
         <div className="flex items-center">
-          <Link 
-            href="/proprietario" 
+          <Link
+            href="/proprietario"
             className="flex items-center gap-3 hover:opacity-80 transition-opacity group"
           >
             <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-4 py-2 rounded-md font-bold text-base group-hover:from-blue-700 group-hover:to-blue-800 transition-all">
@@ -35,9 +38,22 @@ export default function Navbar() {
           </Link>
         </div>
 
-        {/* Right side - Ministry Info and Logo */}
+        {/* Right side - Ministry Info, Logo and Logout */}
         <div className="flex items-center gap-8">
           <div className="hidden md:flex items-center gap-8">
+            {/* Logout Button */}
+            <button
+              onClick={async () => {
+                await logout();
+                router.push('/login');
+              }}
+              className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 rounded-md hover:bg-red-100 transition-colors"
+              title="Sair"
+            >
+              <LogOut className="h-4 w-4" />
+              <span>Sair</span>
+            </button>
+
             <div>
               <h2 className="text-lg font-medium text-gray-900">Ministério Público</h2>
               <p className="text-sm text-gray-600">do Estado do Amapá</p>
@@ -56,7 +72,7 @@ export default function Navbar() {
           </div>
 
           {/* Mobile menu button */}
-          {/* <button
+          <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             className="md:hidden inline-flex items-center justify-center p-3 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-all"
             title={isMobileMenuOpen ? "Fechar menu" : "Abrir menu"}
@@ -66,13 +82,13 @@ export default function Navbar() {
             ) : (
               <Menu className="h-7 w-7" />
             )}
-          </button> */}
+          </button>
         </div>
       </div>
 
       {/* Mobile menu overlay */}
       {isMobileMenuOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black bg-opacity-25 z-40 md:hidden"
           onClick={() => setIsMobileMenuOpen(false)}
         />
@@ -99,10 +115,20 @@ export default function Navbar() {
                 <p className="text-sm text-gray-600">do Estado do Amapá</p>
               </div>
             </div>
-            
+
             {/* Mobile Navigation Links */}
             <div className="space-y-2">
-             
+              {/* Logout Button for Mobile */}
+              <button
+                onClick={async () => {
+                  await logout();
+                  router.push('/login');
+                }}
+                className="flex items-center gap-2 w-full px-4 py-3 bg-red-50 text-red-600 rounded-md hover:bg-red-100 transition-colors"
+              >
+                <LogOut className="h-5 w-5" />
+                <span className="font-medium">Sair</span>
+              </button>
             </div>
           </div>
         </div>

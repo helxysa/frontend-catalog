@@ -1,4 +1,4 @@
-import axios from 'axios';
+import api from '../../../../actions/api';
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
 if (!baseUrl) {
@@ -7,27 +7,27 @@ if (!baseUrl) {
 const url = `${baseUrl}/status`;
 
 export async function getStatus(proprietarioId: string) {
-  const response = await axios.get(`${baseUrl}/proprietarios/${proprietarioId}/status`);
+  const response = await api.get(`${baseUrl}/proprietarios/${proprietarioId}/status`);
   return response.data;
 }
 
 export async function getStatusById(id: string) {
-  const response = await axios.get(`${url}/${id}`);
+  const response = await api.get(`${url}/${id}`);
   return response.data;
 }
 
 export async function createStatus(status: any) {
-  const response = await axios.post(`${url}`, status);
+  const response = await api.post(`${url}`, status);
   return response.data;
 }
 
 export async function updateStatus(id: string, status: any) {
-  const response = await axios.put(`${url}/${id}`, status);
+  const response = await api.put(`${url}/${id}`, status);
   return response.data;
 }
 
 export async function deleteStatus(id: string) {
-  const response = await axios.delete(`${url}/${id}`);
+  const response = await api.delete(`${url}/${id}`);
   return response.data;
 }
 

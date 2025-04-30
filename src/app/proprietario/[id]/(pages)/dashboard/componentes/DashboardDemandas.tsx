@@ -56,7 +56,6 @@ export default function DashboardDemandas() {
         setAlinhamentos(alinhamentosData);
         setStatusList(statusData);
         setPrioridades(prioridadesData);
-        console.log('Dados carregados:', { demandasData, alinhamentosData, statusData, prioridadesData });
       } catch (error) {
         console.error('Error fetching data:', error);
       } finally {
