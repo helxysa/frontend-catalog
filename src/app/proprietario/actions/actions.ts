@@ -1,21 +1,15 @@
 import api from '../../lib/api';
 import axios, { AxiosError } from 'axios';
-
+import { RegisterUserData, CreateProprietarioData } from '../types/type';
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3333';
 
-// Define interface for proprietario data
-interface CreateProprietarioData {
-  nome: string;
-  sigla: string;
-  descricao?: string;
-  logo?: File;
-}
-
-// Define interface for user registration data
-interface RegisterUserData {
-  fullName: string;
-  email: string;
-  password: string;
+function VerifyRole(role: number){
+  if (role === 2) {
+    return 'admin'
+  } 
+  else {
+    return 'user'
+  }
 }
 
 // Função para obter proprietários com base no tipo de usuário
@@ -24,9 +18,10 @@ export async function getProprietarios() {
     // Obter informações do usuário atual
     const userResponse = await api.get(`${baseUrl}/auth/me`);
     const user = userResponse.data.user;
-    
-    // Se for admin (ID 1), buscar todos os proprietários
-    if (user.id === 1) {
+    console.log(user.roleId)
+
+    // Se for admin (roleId 2), buscar todos os proprietários
+    if (VerifyRole(user.roleId) === 'admin') {
       const response = await api.get(`${baseUrl}/proprietarios`);
       return response.data;
     } 
@@ -37,7 +32,6 @@ export async function getProprietarios() {
     }
   } catch (error) {
     console.error('Erro ao buscar proprietários:', error);
-    // Retornar um objeto com propriedade error para identificar falhas
     return { error: true, message: 'Falha ao carregar proprietários' };
   }
 }

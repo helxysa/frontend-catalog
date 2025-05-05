@@ -2,17 +2,13 @@
 import { useState, useEffect } from "react";
 import { registerUser } from "../../actions/actions";
 import { UserPlus, Mail, User, Lock, Eye, EyeOff, Users, Calendar, X } from 'lucide-react';
+import { UserRegister } from "../types/type";
 import api from "../../../lib/api";
 
-interface User {
-  id: number;
-  fullName: string;
-  email: string;
-  createdAt: string;
-}
+
 
 export default function RegistrarUsuario() {
-  const [users, setUsers] = useState<User[]>([]);
+  const [users, setUsers] = useState<UserRegister[]>([]);
   const [loading, setLoading] = useState(false); // Iniciar como false
   const [loadingUsers, setLoadingUsers] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -21,6 +17,7 @@ export default function RegistrarUsuario() {
     fullName: '',
     email: '',
     password: '',
+    roleId: 2, // Default to admin (2)
   });
   const [showPassword, setShowPassword] = useState(false);
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3333';
@@ -62,11 +59,12 @@ export default function RegistrarUsuario() {
     fetchUsers();
   }, []);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Função para lidar com mudanças em inputs e selects
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: name === 'roleId' ? parseInt(value) : value
     }));
   };
 
@@ -84,12 +82,13 @@ export default function RegistrarUsuario() {
         throw new Error('Nome completo, email e senha são campos obrigatórios');
       }
 
-      await registerUser(formData);
+      await registerUser({...formData, roleId: formData.roleId || 2});
       setShowModal(false);
       setFormData({
         fullName: '',
         email: '',
         password: '',
+        roleId: Number(formData.roleId),
       });
       fetchUsers(); // Recarregar a lista após registrar um novo usuário
     } catch (err: any) {
@@ -283,6 +282,22 @@ export default function RegistrarUsuario() {
                   >
                     {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Papel do Usuário</label>
+                <div className="relative">
+                  <Users className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <select
+                    name="roleId"
+                    value={formData.roleId}
+                    onChange={handleChange}
+                    className="pl-10 pr-3 py-2.5 block w-full rounded-lg border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all text-gray-900 bg-gray-50 hover:bg-gray-50/80"
+                  >
+                    <option value={1}>Usuário</option>
+                    <option value={2}>Administrador</option>
+                  </select>
                 </div>
               </div>
 
