@@ -1,12 +1,13 @@
 "use client"
 import { useState, useEffect } from "react";
-import { getProprietario, baseURL, cloneProprietario, deleteProprietario } from "../actions/actions";
+import { getProprietarios, cloneProprietario, deleteProprietario } from "../actions/actions";
 import CriarProprietario from "./CriarProprietario";
 import { useRouter } from 'next/navigation';
 import { Building2, Trash2 } from 'lucide-react';
 import Navbar from './Navbar';
 import { DeleteAuthModal } from "./DeleteAuthModal";
 import { useAuth } from "../../contexts/AuthContext";
+import Link from "next/link";
 
 interface Proprietario {
   id: number;
@@ -16,6 +17,12 @@ interface Proprietario {
   logo: string | null;
   createdAt: string;
   updatedAt: string;
+  user_id?: number | null;
+  user?: {
+    id: number;
+    email: string;
+    fullName?: string;
+  } | null;
 }
 
 interface ConfirmModalProps {
@@ -72,13 +79,13 @@ export default function Proprietario() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [proprietarioToDelete, setProprietarioToDelete] = useState<{ id: number; nome: string; error?: string } | null>(null);
   const router = useRouter();
-  const { login } = useAuth();
+  const { login, user } = useAuth();
 
   const fetchEscritorios = async () => {
     try {
       setLoading(true);
       setError(null);
-      const result = await getProprietario();
+      const result = await getProprietarios();
 
       // Verifica se o resultado é um objeto de erro
       if (result && 'error' in result) {
@@ -220,12 +227,22 @@ export default function Proprietario() {
               <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Unidades</h1>
               <p className="mt-2 text-gray-600">Gerencie as unidades</p>
             </div>
-            <button
-              onClick={() => setShowModal(true)}
-              className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transform transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-            >
-              + CRIAR UNIDADE
-            </button>
+            <div className="flex flex-row gap-2">
+              {user?.isAdmin && (
+                <Link
+                  href="/proprietario/usuarios"
+                  className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transform transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                >
+                  USUÁRIOS
+                </Link>
+              )}
+              <button
+                onClick={() => setShowModal(true)}
+                className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transform transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              >
+                + CRIAR UNIDADE
+              </button>
+            </div>
           </div>
 
           {escritorios.length === 0 ? (
@@ -287,10 +304,10 @@ export default function Proprietario() {
                     </button> */}
                   </div>
                   <div className="flex items-start space-x-4">
-                    <div className="relative h-16 w-16 flex-shrink-0 rounded-lg overflow-hidden">
+                    <div className="relative h-20 w-20 flex-shrink-0 rounded-lg overflow-hidden">
                       {escritorio.logo ? (
                         <img
-                          src={`${baseURL}${escritorio.logo}`}
+                          src={`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3333'}${escritorio.logo}`}
                           alt={`Logo ${escritorio.nome}`}
                           className="object-cover h-full w-full transform transition-transform group-hover:scale-110"
                           onError={(e) => {
@@ -306,14 +323,19 @@ export default function Proprietario() {
                         />
                       ) : null}
                       <div className={`fallback-icon ${escritorio.logo ? 'hidden' : ''} absolute inset-0 bg-blue-50 flex items-center justify-center`}>
-                        <Building2 className="h-8 w-8 text-blue-500" />
+                        <Building2 className="h-10 w-10 text-blue-500" />
                       </div>
                     </div>
                     <div className="flex-1">
-                      <h2 className="text-xl font-semibold text-gray-900 break-words group-hover:text-blue-600 transition-colors">
+                      <h2 className="text-2xl font-semibold text-gray-900 break-words group-hover:text-blue-600 transition-colors">
                         {escritorio.nome}
                       </h2>
-                      <p className="text-sm text-gray-500 mt-1">{escritorio.sigla}</p>
+                      <p className="text-sm font-medium text-gray-500 mt-1">{escritorio.sigla}</p>
+                      {escritorio.user && (
+                        <p className="text-xs text-gray-500 mt-2">
+                          <span className="font-medium">Proprietário:</span> {escritorio.user.fullName || escritorio.user.email}
+                        </p>
+                      )}
                     </div>
                   </div>
                   {escritorio.descricao && (
@@ -321,10 +343,21 @@ export default function Proprietario() {
                       {escritorio.descricao}
                     </p>
                   )}
-                  <div className="mt-4 pt-4 border-t border-gray-100">
+                  <div className="mt-4 pt-4 border-t border-gray-100 flex justify-between items-center">
                     <p className="text-xs text-gray-400">
                       Criado em: {new Date(escritorio.createdAt).toLocaleDateString('pt-BR')}
                     </p>
+                    {user?.isAdmin && (
+                      escritorio.user ? (
+                        <p className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded-full font-medium">
+                          Proprietário: {escritorio.user.fullName || escritorio.user.email}
+                        </p>
+                      ) : (
+                        <p className="text-xs bg-amber-50 text-amber-700 px-2 py-1 rounded-full font-medium">
+                          Não possui proprietário
+                        </p>
+                      )
+                    )}
                   </div>
                 </div>
               ))}

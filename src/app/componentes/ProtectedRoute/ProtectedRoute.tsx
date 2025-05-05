@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, ReactNode, useState } from 'react'
+import { useEffect, ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '../../contexts/AuthContext'
 
@@ -9,37 +9,30 @@ interface ProtectedRouteProps {
 }
 
 export default function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { user, loading } = useAuth()
+  const { user, loading, checkAuth } = useAuth()
   const router = useRouter()
 
   useEffect(() => {
-    // Variável para controlar se o componente está montado
-    let isMounted = true;
+    let isMounted = true
 
     const verifyAuth = async () => {
-      if (isMounted) {
-        if (loading) {
-          return;
-        }
-        if (user) {
-        } else {
-          router.push('/login')
+      if (!isMounted) return
+
+      if (!loading) {
+        const isAuthenticated = await checkAuth()
+        if (!isAuthenticated) {
+          router.replace('/login')
         }
       }
     }
 
-    // Executar a verificação apenas quando o loading mudar para false
-    if (!loading) {
-      verifyAuth()
-    }
+    verifyAuth()
 
-    // Função de limpeza para evitar atualizações de estado após desmontagem
     return () => {
-      isMounted = false;
+      isMounted = false
     }
-  }, [user, loading, router])
+  }, [loading, router, checkAuth])
 
-  // Mostrar um indicador de carregamento enquanto verifica a autenticação
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -48,11 +41,10 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
     )
   }
 
-  // Se o usuário não estiver autenticado, não renderiza nada (será redirecionado)
-  if (!user && !loading) {
+  if (!user) {
     return null
   }
 
-  // Se o usuário estiver autenticado, renderiza os filhos
   return <>{children}</>
 }
+

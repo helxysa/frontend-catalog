@@ -1,6 +1,11 @@
 "use client"
 import { useState, useEffect } from "react";
-import { baseURL, createProprietario, updateProprietario } from "../actions/actions";
+import api from "../../lib/api";
+import { createProprietario, updateProprietario } from "../actions/actions";
+import { useAuth } from "../../contexts/AuthContext";
+
+// Fix the baseURL issue
+const baseURL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3333';
 
 interface CriarProprietarioProps {
   onClose: () => void;
@@ -11,14 +16,16 @@ interface CriarProprietarioProps {
     sigla: string;
     descricao: string | null;
     logo: string | null;
+    user_id?: number | null;
   };
 }
 
 export default function CriarProprietario({ onClose, onSuccess, proprietario }: CriarProprietarioProps) {
   const [formData, setFormData] = useState({
-    nome: proprietario?.nome || "",
-    sigla: proprietario?.sigla || "",
-    descricao: proprietario?.descricao || "",
+    nome: proprietario?.nome || '',
+    sigla: proprietario?.sigla || '',
+    descricao: proprietario?.descricao || '',
+    user_id: proprietario?.user_id || ''
   });
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(
@@ -26,6 +33,12 @@ export default function CriarProprietario({ onClose, onSuccess, proprietario }: 
   );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Dentro do componente, adicione um estado para armazenar os usuários
+  const [users, setUsers] = useState<Array<{id: number, email: string, fullName?: string}>>([]);
+
+  const { user } = useAuth();
+  const isAdmin = user?.isAdmin;
 
   useEffect(() => {
     if (proprietario?.logo) {
@@ -81,22 +94,46 @@ export default function CriarProprietario({ onClose, onSuccess, proprietario }: 
 
       const submitData = {
         ...formData,
-        logo: logoFile || undefined
+        logo: logoFile || undefined,
+        // Incluir user_id apenas se o usuário for administrador
+        ...(isAdmin ? { user_id: formData.user_id ? Number(formData.user_id) : null } : {})
       };
 
       if (proprietario) {
+        console.log('Updating proprietario with ID:', proprietario.id.toString());
         await updateProprietario(proprietario.id.toString(), submitData);
       } else {
         await createProprietario(submitData);
       }
       onSuccess();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : `Erro ao ${proprietario ? 'atualizar' : 'criar'} proprietário`);
-      console.error('Error:', err);
+    } catch (err: any) {
+      console.error('Error details:', err);
+      setError(
+        err instanceof Error 
+          ? err.message 
+          : err.response?.data?.message || `Erro ao ${proprietario ? 'atualizar' : 'criar'} proprietário`
+      );
     } finally {
       setLoading(false);
     }
   };
+
+  // Adicione um useEffect para buscar os usuários
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        // Apenas administradores podem ver a lista de usuários
+        if (isAdmin) {
+          const response = await api.get(`${baseURL}/auth/list-users`);
+          setUsers(response.data || []);
+        }
+      } catch (err) {
+        console.error('Erro ao buscar usuários:', err);
+      }
+    };
+    
+    fetchUsers();
+  }, [isAdmin]);
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fadeIn">
@@ -219,6 +256,29 @@ export default function CriarProprietario({ onClose, onSuccess, proprietario }: 
               )}
             </div>
           </div>
+
+          {/* Campo de seleção de usuário apenas para administradores */}
+          {isAdmin && (
+            <div className="mb-4">
+              <label htmlFor="user_id" className="block text-sm font-medium text-gray-700 mb-1">
+                Proprietário
+              </label>
+              <select
+                id="user_id"
+                name="user_id"
+                value={formData.user_id}
+                onChange={(e) => setFormData({ ...formData, user_id: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="">Selecione um proprietário</option>
+                {users.map((user) => (
+                  <option key={user.id} value={user.id}>
+                    {user.fullName || user.email}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           <div className="flex justify-end space-x-3 pt-4">
             <button

@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Menu, X, Building2, LogOut } from 'lucide-react';
 import UnitSwitcher from '../../proprietario/componentes/UnitSwitcher';
-import { getProprietario, baseURL } from '../../proprietario/actions/actions';
+import { getProprietarios } from '../../proprietario/actions/actions';
 import { useSidebar } from './SidebarContext';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -69,7 +69,7 @@ export default function Navbar() {
       const storedId = localStorage.getItem('selectedProprietarioId');
       if (storedId) {
         try {
-          const data = await getProprietario();
+          const data = await getProprietarios();
           const selected = data.find((p: Proprietario) => p.id === parseInt(storedId));
           if (selected) {
             setProprietario(selected);

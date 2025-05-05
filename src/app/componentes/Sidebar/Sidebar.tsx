@@ -23,7 +23,8 @@ import {
   CircleDot,
   FileType2 
 } from 'lucide-react';
-import { getProprietario, baseURL } from '../../proprietario/actions/actions'
+import { getProprietarios } from '../../proprietario/actions/actions';
+const baseURL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3333';
 import Image from 'next/image';
 import { useSidebar } from './SidebarContext';
 
@@ -53,7 +54,7 @@ export function Sidebar() {
 
   const fetchProprietarioDetails = async (id: string) => {
     try {
-      const data = await getProprietario();
+      const data = await getProprietarios();
       const selected = data.find((p: Proprietario) => p.id === parseInt(id));
       if (selected) {
         setProprietario(selected);
