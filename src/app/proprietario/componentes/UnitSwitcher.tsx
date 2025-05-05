@@ -1,9 +1,12 @@
-"use client"
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { ChevronDown, Building2 } from 'lucide-react';
-import { getProprietario, baseURL } from '../actions/actions';
+'use client'
+import { useEffect, useState } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
+import { getProprietarios } from '../actions/actions';
+const baseURL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3333';
+import { useAuth } from '../../contexts/AuthContext';
+import { Building2, ChevronDown } from 'lucide-react';
 
+// Definir a interface Proprietario
 interface Proprietario {
   id: number;
   nome: string;
@@ -12,34 +15,78 @@ interface Proprietario {
 }
 
 export default function UnitSwitcher() {
-  const [isOpen, setIsOpen] = useState(false);
   const [proprietarios, setProprietarios] = useState<Proprietario[]>([]);
+  const [selectedId, setSelectedId] = useState('');
   const [selectedProprietario, setSelectedProprietario] = useState<Proprietario | null>(null);
+  const [isOpen, setIsOpen] = useState(false);
   const router = useRouter();
+  const pathname = usePathname();
+  const { user } = useAuth();
+
+  // Função para lidar com a mudança de proprietário
+  const handleProprietarioChange = (id: string) => {
+    setSelectedId(id);
+    const proprietario = proprietarios.find(p => p.id.toString() === id);
+    if (proprietario) {
+      setSelectedProprietario(proprietario);
+      localStorage.setItem('selectedProprietarioId', id);
+    }
+  };
 
   useEffect(() => {
-    const fetchProprietarios = async () => {
+    const loadProprietarios = async () => {
       try {
-        const data = await getProprietario();
-        setProprietarios(data || []);
+        const data = await getProprietarios();
+        setProprietarios(data);
         
+        // Se não houver proprietários, não fazer nada
+        if (!data || data.length === 0) return;
+        
+        // Se houver apenas um proprietário, selecionar automaticamente
+        if (data.length === 1) {
+          handleProprietarioChange(data[0].id.toString());
+          return;
+        }
+        
+        // Verificar se há um proprietário selecionado no localStorage
         const storedId = localStorage.getItem('selectedProprietarioId');
+        
+        // Se houver um ID armazenado e ele pertencer ao usuário atual, usá-lo
         if (storedId) {
-          const selected = data.find((p: Proprietario) => p.id === parseInt(storedId));
-          if (selected) {
-            setSelectedProprietario(selected);
+          const proprietarioExists = data.some(p => p.id.toString() === storedId);
+          if (proprietarioExists) {
+            handleProprietarioChange(storedId);
+            return;
           }
         }
+        
+        // Caso contrário, selecionar o primeiro proprietário
+        handleProprietarioChange(data[0].id.toString());
       } catch (error) {
-        console.error('Error fetching proprietarios:', error);
+        console.error('Erro ao carregar proprietários:', error);
       }
     };
 
-    fetchProprietarios();
-  }, []);
+    if (user) {
+      loadProprietarios();
+    }
+  }, [user]);
+
+  // Adicionar um useEffect para atualizar o selectedProprietario quando mudar de página
+  useEffect(() => {
+    const storedId = localStorage.getItem('selectedProprietarioId');
+    if (storedId && proprietarios.length > 0) {
+      const proprietario = proprietarios.find(p => p.id.toString() === storedId);
+      if (proprietario) {
+        setSelectedProprietario(proprietario);
+        setSelectedId(storedId);
+      }
+    }
+  }, [pathname, proprietarios]);
 
   const handleSelect = (proprietario: Proprietario) => {
     setSelectedProprietario(proprietario);
+    setSelectedId(proprietario.id.toString());
     localStorage.setItem('selectedProprietarioId', proprietario.id.toString());
     setIsOpen(false);
     router.push(`/proprietario/${proprietario.id}/dashboard`);
@@ -136,4 +183,4 @@ export default function UnitSwitcher() {
       )}
     </div>
   );
-}
+} 

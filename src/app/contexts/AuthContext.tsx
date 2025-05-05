@@ -8,6 +8,7 @@ interface User {
   id: number
   email: string
   fullName: string | null
+  isAdmin?: boolean // Novo campo para identificar admin
 }
 
 // Tipo para o contexto de autenticação
@@ -83,16 +84,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       const data = await response.json()
-
-      if (response.ok && data.user) {
-        setUser(data.user)
-        setInitialCheckDone(true);
-        return true
-      } else {
-        setUser(null)
-        setInitialCheckDone(true);
-        return false
+      
+      // Adicionar flag isAdmin baseado no ID do usuário
+      const userData = {
+        ...data.user,
+        isAdmin: data.user.id === 1 // ID 1 é considerado admin
       }
+      
+      setUser(userData)
+      setInitialCheckDone(true);
+      return true
     } catch (error) {
       setUser(null)
       setInitialCheckDone(true);
@@ -162,10 +163,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         if (userResponse.ok) {
           const userData = await userResponse.json()
-
-          // Atualizar o estado do usuário com os dados recebidos
-          setUser(userData.user)
-          // Marcar a verificação inicial como concluída
+          
+          // Adicionar flag isAdmin baseado no ID do usuário
+          const userWithAdminFlag = {
+            ...userData.user,
+            isAdmin: userData.user.id === 1 // ID 1 é considerado admin
+          }
+          
+          setUser(userWithAdminFlag)
           setInitialCheckDone(true)
           return true
         } else {
@@ -211,3 +216,4 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     </AuthContext.Provider>
   )
 }
+
