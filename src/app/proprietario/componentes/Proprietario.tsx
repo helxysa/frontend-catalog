@@ -5,9 +5,9 @@ import CriarProprietario from "./CriarProprietario";
 import { useRouter } from 'next/navigation';
 import { Building2, Trash2 } from 'lucide-react';
 import Navbar from './Navbar';
-import { DeleteAuthModal } from "./DeleteAuthModal";
 import { useAuth } from "../../contexts/AuthContext";
 import Link from "next/link";
+import DeleteConfirmationModal from "../[id]/(pages)/demandas/componentes/ModalConfirmacao/DeleteConfirmationModal";
 
 interface Proprietario {
   id: number;
@@ -77,7 +77,7 @@ export default function Proprietario() {
   const [showCloneModal, setShowCloneModal] = useState(false);
   const [cloneProprietarioData, setCloneProprietarioData] = useState<{ id: number; nome: string } | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [proprietarioToDelete, setProprietarioToDelete] = useState<{ id: number; nome: string; error?: string } | null>(null);
+  const [proprietarioToDelete, setProprietarioToDelete] = useState<{ id: number; nome: string } | null>(null);
   const router = useRouter();
   const { login, user } = useAuth();
 
@@ -139,42 +139,23 @@ export default function Proprietario() {
     }
   };
 
-  const handleDelete = async (email: string, password: string): Promise<boolean> => {
-    if (!proprietarioToDelete) return false;
+  const handleDeleteClick = (proprietario: Proprietario, e: React.MouseEvent) => {
+    e.stopPropagation(); // Impede que o card seja clicado
+    setProprietarioToDelete({ id: proprietario.id, nome: proprietario.nome });
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!proprietarioToDelete) return;
 
     try {
-      // Primeiro, verificar se as credenciais são válidas usando o login do contexto de autenticação
-      const isAuthenticated = await login(email, password);
-
-      if (!isAuthenticated) {
-        // Apenas atualizar o estado com a mensagem de erro
-        if (proprietarioToDelete) {
-          setProprietarioToDelete({
-            ...proprietarioToDelete,
-            error: 'Credencial inválida'
-          });
-        }
-        return false;
-      }
-
-      // Se as credenciais forem válidas, prosseguir com a exclusão
-      await deleteProprietario(proprietarioToDelete.id.toString(), { email, password });
+      await deleteProprietario(proprietarioToDelete.id.toString());
+      fetchEscritorios(); // Recarrega a lista após excluir
       setShowDeleteModal(false);
       setProprietarioToDelete(null);
-      fetchEscritorios();
-      return true;
     } catch (error) {
-      console.error('Error deleting:', error);
-
-      // Apenas atualizar o estado com a mensagem de erro
-      if (proprietarioToDelete) {
-        setProprietarioToDelete({
-          ...proprietarioToDelete,
-          error: 'Credencial inválida'
-        });
-      }
-
-      return false;
+      console.error('Erro ao excluir proprietário:', error);
+      // Aqui você pode adicionar um toast ou alerta para mostrar o erro
     }
   };
 
@@ -291,17 +272,17 @@ export default function Proprietario() {
                         <path d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" strokeLinecap="round" strokeLinejoin="round"/>
                       </svg>
                     </button>
-                    {/* <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setProprietarioToDelete({ id: escritorio.id, nome: escritorio.nome });
-                        setShowDeleteModal(true);
-                      }}
+                    <button
+                      onClick={(e) => handleDeleteClick(escritorio, e)}
                       className="p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors"
                       aria-label="Excluir"
                     >
-                      <Trash2 className="w-4 h-4 text-red-600" />
-                    </button> */}
+                      <svg className="w-4 h-4 text-red-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" strokeLinecap="round" strokeLinejoin="round"/>
+                        <line x1="10" y1="11" x2="10" y2="17" strokeLinecap="round" strokeLinejoin="round"/>
+                        <line x1="14" y1="11" x2="14" y2="17" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </button>
                   </div>
                   <div className="flex items-start space-x-4">
                     <div className="relative h-20 w-20 flex-shrink-0 rounded-lg overflow-hidden">
@@ -311,6 +292,7 @@ export default function Proprietario() {
                           alt={`Logo ${escritorio.nome}`}
                           className="object-cover h-full w-full transform transition-transform group-hover:scale-110"
                           onError={(e) => {
+                            console.log('Erro ao carregar imagem:', escritorio.logo);
                             (e.target as HTMLImageElement).style.display = 'none';
                             const parent = (e.target as HTMLImageElement).parentElement;
                             if (parent) {
@@ -392,14 +374,14 @@ export default function Proprietario() {
           )}
 
           {showDeleteModal && proprietarioToDelete && (
-            <DeleteAuthModal
+            <DeleteConfirmationModal
               isOpen={showDeleteModal}
               onClose={() => {
                 setShowDeleteModal(false);
                 setProprietarioToDelete(null);
               }}
-              onConfirm={handleDelete}
-              proprietarioName={proprietarioToDelete.nome}
+              onConfirm={confirmDelete}
+              itemName={proprietarioToDelete.nome}
             />
           )}
         </div>

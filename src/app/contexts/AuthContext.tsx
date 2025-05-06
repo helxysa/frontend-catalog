@@ -3,12 +3,11 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
 
-// Tipo para o usuário
 interface User {
   id: number
   email: string
   fullName: string | null
-  isAdmin?: boolean // Novo campo para identificar admin
+  isAdmin?: boolean 
 }
 
 // Tipo para o contexto de autenticação
@@ -41,29 +40,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Variável para controlar se uma verificação já está em andamento
   const [isCheckingAuth, setIsCheckingAuth] = useState(false);
 
-  // Variável para controlar se a verificação inicial já foi feita
   const [initialCheckDone, setInitialCheckDone] = useState(false);
 
   // Função para verificar se o usuário está autenticado
   const checkAuth = async (): Promise<boolean> => {
-    // Se já tiver um usuário autenticado, retorna true imediatamente
     if (user) {
       return true;
     }
 
-    // Se já estiver verificando, não faz nada
     if (isCheckingAuth) {
       return false;
     }
 
-    // Se a verificação inicial já foi feita e não há usuário, retorna false
     if (initialCheckDone && !user) {
       return false;
     }
 
     try {
       setIsCheckingAuth(true);
-      // Usar a API do frontend em vez de fetch diretamente
       const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3333'}/auth/me`, {
         method: 'GET',
         credentials: 'include', // Importante para enviar cookies
@@ -71,13 +65,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
         },
-        // Adicionar um parâmetro de cache-busting para evitar cache
         cache: 'no-store',
       })
 
 
       if (response.status === 401) {
-        // Se não estiver autenticado, não precisamos processar o JSON
         setUser(null)
         setInitialCheckDone(true);
         return false
@@ -85,10 +77,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       const data = await response.json()
       
-      // Adicionar flag isAdmin baseado no ID do usuário
+      const verifyRole = (roleId: number) => roleId === 2;
+      
       const userData = {
         ...data.user,
-        isAdmin: data.user.id === 1 // ID 1 é considerado admin
+        isAdmin: verifyRole(data.user.roleId) 
       }
       
       setUser(userData)
@@ -104,18 +97,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  // Verificar autenticação ao carregar o componente apenas uma vez
   useEffect(() => {
-    // Variável para controlar se o componente está montado e se a verificação já foi feita
     let isMounted = true;
     let initialCheckDone = false;
 
     const initialCheck = async () => {
-      // Verificar se o componente ainda está montado e se a verificação ainda não foi feita
       if (isMounted && !initialCheckDone) {
         initialCheckDone = true;
         try {
-          // Fazer uma verificação inicial com o servidor
           const result = await checkAuth();
         } catch (error) {
         }
@@ -124,7 +113,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     initialCheck();
 
-    // Função de limpeza para evitar atualizações de estado após desmontagem
     return () => {
       isMounted = false;
     };
