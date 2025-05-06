@@ -5,7 +5,7 @@ import { createProprietario, updateProprietario } from "../actions/actions";
 import { useAuth } from "../../contexts/AuthContext";
 
 // Fix the baseURL issue
-const baseURL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3333';
+const baseURL = process.env.NEXT_PUBLIC_BASE_URL
 
 interface CriarProprietarioProps {
   onClose: () => void;
@@ -25,7 +25,7 @@ export default function CriarProprietario({ onClose, onSuccess, proprietario }: 
     nome: proprietario?.nome || '',
     sigla: proprietario?.sigla || '',
     descricao: proprietario?.descricao || '',
-    user_id: proprietario?.user_id || ''
+    user_id: proprietario?.user_id ? proprietario.user_id.toString() : ''
   });
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(
@@ -57,6 +57,7 @@ export default function CriarProprietario({ onClose, onSuccess, proprietario }: 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      console.log('File selected:', file.name, file.type, file.size);
       setLogoFile(file);
       if (previewUrl && typeof previewUrl === 'string' && baseURL && !previewUrl.startsWith(baseURL)) {
         URL.revokeObjectURL(previewUrl);
@@ -92,6 +93,8 @@ export default function CriarProprietario({ onClose, onSuccess, proprietario }: 
         throw new Error('Nome e sigla são campos obrigatórios');
       }
 
+      console.log('Logo file before submit:', logoFile);
+
       const submitData = {
         ...formData,
         logo: logoFile || undefined,
@@ -99,18 +102,21 @@ export default function CriarProprietario({ onClose, onSuccess, proprietario }: 
         ...(isAdmin ? { user_id: formData.user_id ? Number(formData.user_id) : null } : {})
       };
 
+      console.log('Submit data:', submitData);
+
       if (proprietario) {
         console.log('Updating proprietario with ID:', proprietario.id.toString());
         await updateProprietario(proprietario.id.toString(), submitData);
       } else {
+        console.log('Creating new proprietario');
         await createProprietario(submitData);
       }
       onSuccess();
     } catch (err: any) {
       console.error('Error details:', err);
       setError(
-        err instanceof Error 
-          ? err.message 
+        err instanceof Error
+          ? err.message
           : err.response?.data?.message || `Erro ao ${proprietario ? 'atualizar' : 'criar'} proprietário`
       );
     } finally {
@@ -131,7 +137,7 @@ export default function CriarProprietario({ onClose, onSuccess, proprietario }: 
         console.error('Erro ao buscar usuários:', err);
       }
     };
-    
+
     fetchUsers();
   }, [isAdmin]);
 
@@ -218,7 +224,8 @@ export default function CriarProprietario({ onClose, onSuccess, proprietario }: 
                     src={previewUrl}
                     alt="Preview"
                     className="w-full h-full object-cover"
-                    onError={(e) => {
+                    onError={() => {
+                      console.log('Image failed to load, removing logo');
                       handleRemoveLogo();
                     }}
                   />

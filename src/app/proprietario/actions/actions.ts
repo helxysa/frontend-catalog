@@ -1,21 +1,15 @@
 import api from '../../lib/api';
 import axios, { AxiosError } from 'axios';
-
+import { RegisterUserData, CreateProprietarioData } from '../types/type';
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3333';
 
-// Define interface for proprietario data
-interface CreateProprietarioData {
-  nome: string;
-  sigla: string;
-  descricao?: string;
-  logo?: File;
-}
-
-// Define interface for user registration data
-interface RegisterUserData {
-  fullName: string;
-  email: string;
-  password: string;
+function VerifyRole(role: number){
+  if (role === 2) {
+    return 'admin'
+  }
+  else {
+    return 'user'
+  }
 }
 
 // Função para obter proprietários com base no tipo de usuário
@@ -24,12 +18,13 @@ export async function getProprietarios() {
     // Obter informações do usuário atual
     const userResponse = await api.get(`${baseUrl}/auth/me`);
     const user = userResponse.data.user;
-    
-    // Se for admin (ID 1), buscar todos os proprietários
-    if (user.id === 1) {
+    console.log(user.roleId)
+
+    // Se for admin (roleId 2), buscar todos os proprietários
+    if (VerifyRole(user.roleId) === 'admin') {
       const response = await api.get(`${baseUrl}/proprietarios`);
       return response.data;
-    } 
+    }
     // Se não for admin, buscar apenas os proprietários do usuário
     else {
       const response = await api.get(`${baseUrl}/users/${user.id}/proprietarios`);
@@ -37,7 +32,6 @@ export async function getProprietarios() {
     }
   } catch (error) {
     console.error('Erro ao buscar proprietários:', error);
-    // Retornar um objeto com propriedade error para identificar falhas
     return { error: true, message: 'Falha ao carregar proprietários' };
   }
 }
@@ -49,21 +43,21 @@ export async function getProprietarioById(id: string) {
     // Obter informações do usuário atual
     const userResponse = await api.get(`${baseUrl}/auth/me`);
     const user = userResponse.data.user;
-    
+
     // Se for admin, pode acessar qualquer proprietário
-    if (user.id === 1) {
+    if (VerifyRole(user.roleId) === 'admin') {
       const response = await api.get(`${baseUrl}/proprietarios/${id}`);
       return response.data;
-    } 
+    }
     // Se não for admin, verificar se o proprietário pertence ao usuário
     else {
       const response = await api.get(`${baseUrl}/proprietarios/${id}`);
       const proprietario = response.data;
-      
+
       if (proprietario.user_id === user.id) {
         return proprietario;
       } else {
-        throw new Error('Acesso não autorizado a este proprietário');
+        // throw new Error('Acesso não autorizado a este proprietário');
       }
     }
   } catch (error) {
@@ -79,20 +73,37 @@ export async function createProprietario(proprietario: CreateProprietarioData) {
     const userId = userResponse.data.user.id;
 
     if (!proprietario.nome || !proprietario.sigla) {
-      throw new Error('Nome e sigla são campos obrigatórios');
+      // throw new Error('Nome e sigla são campos obrigatórios');
     }
 
     const formData = new FormData();
     formData.append('nome', proprietario.nome.trim());
     formData.append('sigla', proprietario.sigla.trim());
-    formData.append('user_id', userId.toString());
+
+    // Se o proprietário já tiver um user_id definido, use-o; caso contrário, use o ID do usuário atual
+    if (proprietario.user_id !== undefined && proprietario.user_id !== null && proprietario.user_id !== '') {
+      console.log('Using provided user_id:', proprietario.user_id);
+      formData.append('user_id', proprietario.user_id.toString());
+    } else {
+      console.log('Using current user ID:', userId);
+      formData.append('user_id', userId.toString());
+    }
 
     if (proprietario.descricao) {
       formData.append('descricao', proprietario.descricao.trim());
     }
 
     if (proprietario.logo) {
+      console.log('Logo file being appended:', proprietario.logo);
       formData.append('logo', proprietario.logo);
+    } else {
+      console.log('No logo file to append');
+    }
+
+    // Log FormData entries for debugging
+    console.log('FormData entries:');
+    for (let pair of formData.entries()) {
+      console.log(pair[0], pair[1]);
     }
 
     // Fix the URL - it should include the endpoint path
@@ -128,6 +139,7 @@ export async function createProprietario(proprietario: CreateProprietarioData) {
 export async function updateProprietario(id: string, proprietario: Partial<CreateProprietarioData & { user_id: string | number | null }>) {
   try {
     console.log('Updating proprietario with ID:', id); // Debug log
+    console.log('Update data:', proprietario);
 
     const formData = new FormData();
 
@@ -141,12 +153,27 @@ export async function updateProprietario(id: string, proprietario: Partial<Creat
       formData.append('descricao', proprietario.descricao.trim());
     }
     if (proprietario.logo) {
+      console.log('Logo file being appended for update:', proprietario.logo);
       formData.append('logo', proprietario.logo);
+    } else {
+      console.log('No logo file to append for update');
     }
-    
+
     // Adicionar user_id ao formData
-    if (proprietario.user_id !== undefined) {
-      formData.append('user_id', proprietario.user_id ? proprietario.user_id.toString() : '');
+    if (proprietario.user_id !== undefined && proprietario.user_id !== null) {
+      console.log('user_id being appended:', proprietario.user_id);
+      formData.append('user_id', proprietario.user_id.toString());
+    } else if (proprietario.user_id === null) {
+      console.log('user_id is null, appending empty string');
+      formData.append('user_id', '');
+    } else {
+      console.log('user_id is undefined, not appending');
+    }
+
+    // Log FormData entries for debugging
+    console.log('FormData entries for update:');
+    for (let pair of formData.entries()) {
+      console.log(pair[0], pair[1]);
     }
 
     const response = await api.put(`${baseUrl}/proprietarios/${id}`, formData, {
@@ -155,7 +182,7 @@ export async function updateProprietario(id: string, proprietario: Partial<Creat
       },
       withCredentials: true,
     });
-    
+
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error)) {
@@ -164,7 +191,7 @@ export async function updateProprietario(id: string, proprietario: Partial<Creat
         data: error.response?.data,
         message: error.message
       });
-      
+
       if (error.response?.status === 404) {
         throw new Error('Proprietário não encontrado');
       }
@@ -177,9 +204,8 @@ export async function updateProprietario(id: string, proprietario: Partial<Creat
   }
 }
 
-export async function deleteProprietario(id: string, _credentials: { email: string; password: string; }) {
+export async function deleteProprietario(id: string) {
   try {
-    // Não precisamos mais enviar as credenciais aqui, pois já foram verificadas pelo contexto de autenticação
     const response = await api.delete(`${baseUrl}/proprietarios/${id}`);
     return response.data;
   } catch (error) {
@@ -188,16 +214,15 @@ export async function deleteProprietario(id: string, _credentials: { email: stri
       if (error.response?.status === 404) {
         throw new Error('Proprietário não encontrado');
       }
-      if (error.response?.status === 401) {
-        throw new Error('Sessão expirada. Por favor, faça login novamente.');
-      }
       if (error.response?.status === 403) {
-        throw new Error('Você não tem permissão para excluir esta unidade.');
+        throw new Error('Você não tem permissão para excluir este proprietário.');
       }
     }
     throw new Error('Erro ao excluir proprietário');
   }
 }
+
+
 
 export async function cloneProprietario(id: string) {
   try {
@@ -222,11 +247,14 @@ export async function registerUser(userData: RegisterUserData) {
       throw new Error('Nome completo, email e senha são campos obrigatórios');
     }
 
+    console.log('Dados sendo enviados para o backend:', userData);
+
     // Fazer a requisição para registrar o usuário
     const response = await api.post(`${baseUrl}/auth/register`, userData, {
       withCredentials: true,
     });
-    
+
+    console.log('Resposta do backend:', response.data);
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error)) {
