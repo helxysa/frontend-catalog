@@ -8,6 +8,18 @@ import Navbar from './Navbar';
 import { useAuth } from "../../contexts/AuthContext";
 import Link from "next/link";
 import DeleteConfirmationModal from "../[id]/(pages)/demandas/componentes/ModalConfirmacao/DeleteConfirmationModal";
+import dynamic from 'next/dynamic';
+import Image from 'next/image';
+
+// Componente de imagem otimizado com lazy loading
+const OptimizedImage = dynamic(() => import('next/image'), { 
+  loading: () => (
+    <div className="bg-blue-50 h-full w-full flex items-center justify-center rounded-lg">
+      <Building2 className="h-10 w-10 text-blue-500" />
+    </div>
+  ),
+  ssr: false
+});
 
 interface Proprietario {
   id: number;
@@ -78,8 +90,10 @@ export default function Proprietario() {
   const [cloneProprietarioData, setCloneProprietarioData] = useState<{ id: number; nome: string } | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [proprietarioToDelete, setProprietarioToDelete] = useState<{ id: number; nome: string } | null>(null);
+  const [imageError, setImageError] = useState<Record<number, boolean>>({});
   const router = useRouter();
   const { login, user } = useAuth();
+  const baseURL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3333';
 
   const fetchEscritorios = async () => {
     try {
@@ -159,6 +173,35 @@ export default function Proprietario() {
     }
   };
 
+  const handleImageError = (id: number) => {
+    setImageError(prev => ({ ...prev, [id]: true }));
+  };
+
+  const renderLogo = (escritorio: Proprietario) => {
+    if (escritorio.logo && !imageError[escritorio.id]) {
+      return (
+        <div className="relative h-20 w-20 flex-shrink-0 rounded-lg overflow-hidden">
+          <Image
+            src={`${baseURL}${escritorio.logo}`}
+            alt={`Logo ${escritorio.nome}`}
+            fill
+            sizes="(max-width: 768px) 100vw, 80px"
+            className="object-cover"
+            loading="lazy"
+            onError={() => handleImageError(escritorio.id)}
+            unoptimized
+          />
+        </div>
+      );
+    }
+    
+    return (
+      <div className="h-20 w-20 flex-shrink-0 rounded-lg bg-blue-50 flex items-center justify-center">
+        <Building2 className="h-10 w-10 text-blue-500" />
+      </div>
+    );
+  };
+
   if (loading) {
     return (
       <div className="flex flex-col min-h-screen">
@@ -209,7 +252,7 @@ export default function Proprietario() {
               <p className="mt-2 text-gray-600">Gerencie as unidades</p>
             </div>
             <div className="flex flex-row gap-2">
-              {user?.isAdmin && (
+              {user?.isAdmin &&  (
                 <Link
                   href="/proprietario/usuarios"
                   className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transform transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
@@ -249,65 +292,47 @@ export default function Proprietario() {
                   className="group bg-white rounded-xl shadow-md hover:shadow-xl border border-gray-200 p-6 transition-all duration-200 transform hover:-translate-y-1 cursor-pointer relative"
                 >
                   <div className="absolute top-4 right-4 flex gap-2">
-                    <button
-                      onClick={(e) => handleEdit(escritorio, e)}
-                      className="p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors"
-                      aria-label="Editar"
-                    >
-                      <svg className="w-4 h-4 text-gray-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" strokeLinecap="round" strokeLinejoin="round"/>
-                        <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setCloneProprietarioData({ id: escritorio.id, nome: escritorio.nome });
-                        setShowCloneModal(true);
-                      }}
-                      className="p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors"
-                      aria-label="Clonar"
-                    >
-                      <svg className="w-4 h-4 text-gray-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                    </button>
-                    <button
-                      onClick={(e) => handleDeleteClick(escritorio, e)}
-                      className="p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors"
-                      aria-label="Excluir"
-                    >
-                      <svg className="w-4 h-4 text-red-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" strokeLinecap="round" strokeLinejoin="round"/>
-                        <line x1="10" y1="11" x2="10" y2="17" strokeLinecap="round" strokeLinejoin="round"/>
-                        <line x1="14" y1="11" x2="14" y2="17" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                    </button>
+                    {!user?.isManager && (
+                      <>
+                        <button
+                          onClick={(e) => handleEdit(escritorio, e)}
+                          className="p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors"
+                          aria-label="Editar"
+                        >
+                          <svg className="w-4 h-4 text-gray-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" strokeLinecap="round" strokeLinejoin="round"/>
+                            <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setCloneProprietarioData({ id: escritorio.id, nome: escritorio.nome });
+                            setShowCloneModal(true);
+                          }}
+                          className="p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors"
+                          aria-label="Clonar"
+                        >
+                          <svg className="w-4 h-4 text-gray-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                        </button>
+                        <button
+                          onClick={(e) => handleDeleteClick(escritorio, e)}
+                          className="p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors"
+                          aria-label="Excluir"
+                        >
+                          <svg className="w-4 h-4 text-red-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" strokeLinecap="round" strokeLinejoin="round"/>
+                            <line x1="10" y1="11" x2="10" y2="17" strokeLinecap="round" strokeLinejoin="round"/>
+                            <line x1="14" y1="11" x2="14" y2="17" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                        </button>
+                      </>
+                    )}
                   </div>
                   <div className="flex items-start space-x-4">
-                    <div className="relative h-20 w-20 flex-shrink-0 rounded-lg overflow-hidden">
-                      {escritorio.logo ? (
-                        <img
-                          src={`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3333'}${escritorio.logo}`}
-                          alt={`Logo ${escritorio.nome}`}
-                          className="object-cover h-full w-full transform transition-transform group-hover:scale-110"
-                          onError={(e) => {
-                            console.log('Erro ao carregar imagem:', escritorio.logo);
-                            (e.target as HTMLImageElement).style.display = 'none';
-                            const parent = (e.target as HTMLImageElement).parentElement;
-                            if (parent) {
-                              const fallback = parent.querySelector('.fallback-icon');
-                              if (fallback) {
-                                fallback.classList.remove('hidden');
-                              }
-                            }
-                          }}
-                        />
-                      ) : null}
-                      <div className={`fallback-icon ${escritorio.logo ? 'hidden' : ''} absolute inset-0 bg-blue-50 flex items-center justify-center`}>
-                        <Building2 className="h-10 w-10 text-blue-500" />
-                      </div>
-                    </div>
+                    {renderLogo(escritorio)}
                     <div className="flex-1">
                       <h2 className="text-2xl font-semibold text-gray-900 break-words group-hover:text-blue-600 transition-colors">
                         {escritorio.nome}

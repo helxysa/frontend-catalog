@@ -1,6 +1,6 @@
 "use client"
 import { useState, useEffect } from "react";
-import { registerUser, updateUser, deleteUser, checkIsAdmin, listUsers } from "../actions/actions";
+import { registerUser, updateUser, deleteUser, checkIsAdmin, listUsers, getCurrentUser } from "../actions/actions";
 import { UserPlus, Mail, User, Lock, Eye, EyeOff, Users, Calendar, X, Shield, ShieldCheck, Trash2, Edit2, ChevronLeft } from 'lucide-react';
 import { UserRegister } from "../types/type";
 import api from "../../../lib/api";
@@ -27,20 +27,27 @@ export default function RegistrarUsuario() {
     fullName: string;
     email: string;
     password: string;
+    confirmPassword: string;
     roleId: number;
   }>({
     fullName: '',
     email: '',
     password: '',
+    confirmPassword: '',
     roleId: 1,
   });
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL 
 
   const Roles = {
     USER: 1,
-    ADMIN: 2
+    ADMIN: 2,
+    MANAGER: 3
   };
+
+  // Adicione um estado para armazenar o usuário atual
+  const [currentUser, setCurrentUser] = useState<{roleId?: number} | null>(null);
 
   const fetchUsers = async () => {
     try {
@@ -71,7 +78,17 @@ export default function RegistrarUsuario() {
   };
 
   useEffect(() => {
+    const fetchCurrentUser = async () => {
+      try {
+        const user = await getCurrentUser();
+        setCurrentUser(user);
+      } catch (err) {
+        console.error('Erro ao buscar usuário atual:', err);
+      }
+    };
+
     fetchUsers();
+    fetchCurrentUser();
   }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -84,6 +101,10 @@ export default function RegistrarUsuario() {
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
+  };
+
+  const toggleConfirmPasswordVisibility = () => {
+    setShowConfirmPassword(!showConfirmPassword);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -101,11 +122,35 @@ export default function RegistrarUsuario() {
           throw new Error('ID do usuário é necessário para edição');
         }
         
+        // Verificar se a senha foi preenchida e validar
+        if (formData.password.trim()) {
+          // Validar senha especial se preenchida
+          const specialCharRegex = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]+/;
+          if (!specialCharRegex.test(formData.password)) {
+            throw new Error('A senha deve conter pelo menos um caractere especial');
+          }
+
+          // Verificar se senhas coincidem
+          if (formData.password !== formData.confirmPassword) {
+          }
+        }
+        
         await updateUser({...formData, id: formData.id!});
       } else {
         if (!formData.password.trim()) {
           throw new Error('Senha é obrigatória para novos usuários');
         }
+
+        // Validar caractere especial na senha
+        const specialCharRegex = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]+/;
+        if (!specialCharRegex.test(formData.password)) {
+        }
+
+        // Verificar se senhas coincidem
+        if (formData.password !== formData.confirmPassword) {
+          throw new Error('As senhas não coincidem');
+        }
+
         await registerUser(formData);
       }
       
@@ -114,6 +159,7 @@ export default function RegistrarUsuario() {
         fullName: '',
         email: '',
         password: '',
+        confirmPassword: '',
         roleId: 1,
       });
       setIsEditing(false);
@@ -132,14 +178,18 @@ export default function RegistrarUsuario() {
 
   // Função para obter o nome do papel do usuário
   const getRoleName = (roleId: number | undefined) => {
-    return roleId === Roles.ADMIN ? 'Administrador' : 'Usuário';
+    if (roleId === Roles.ADMIN) return 'Administrador';
+    if (roleId === Roles.MANAGER) return 'Gerente';
+    return 'Usuário';
   };
 
   // Função para obter o ícone do papel do usuário
   const getRoleIcon = (roleId: number | undefined) => {
-    return roleId === Roles.ADMIN ? 
-      <ShieldCheck className="w-4 h-4 text-blue-600" /> : 
-      <Shield className="w-4 h-4 text-gray-500" />;
+    if (roleId === Roles.ADMIN) 
+      return <ShieldCheck className="w-4 h-4 text-blue-600" />;
+    if (roleId === Roles.MANAGER)
+      return <Shield className="w-4 h-4 text-green-600" />;
+    return <Shield className="w-4 h-4 text-gray-500" />;
   };
 
   // Nova função para excluir usuário
@@ -172,6 +222,7 @@ export default function RegistrarUsuario() {
       fullName: user.fullName || '',
       email: user.email || '',
       password: '', // Não preencher senha por segurança
+      confirmPassword: '',
       roleId: user.roleId || 1,
     });
     setIsEditing(true);
@@ -196,22 +247,25 @@ export default function RegistrarUsuario() {
           <h1 className="text-2xl font-bold text-gray-900">Gerenciamento de Usuários</h1>
           <p className="text-gray-600">Administre os usuários do sistema</p>
         </div>
-        <button
-          onClick={() => {
-            setIsEditing(false);
-            setFormData({
-              fullName: '',
-              email: '',
-              password: '',
-              roleId: 1,
-            });
-            setShowModal(true);
-          }}
-          className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm hover:shadow-md"
-        >
-          <UserPlus className="w-5 h-5 mr-2" />
-          Novo Usuário
-        </button>
+        {currentUser?.roleId === Roles.ADMIN && (
+          <button
+            onClick={() => {
+              setIsEditing(false);
+              setFormData({
+                fullName: '',
+                email: '',
+                password: '',
+                confirmPassword: '',
+                roleId: 1,
+              });
+              setShowModal(true);
+            }}
+            className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm hover:shadow-md"
+          >
+            <UserPlus className="w-5 h-5 mr-2" />
+            Novo Usuário
+          </button>
+        )}
       </div>
 
       {error && error.includes('desenvolvimento') ? (
@@ -304,20 +358,24 @@ export default function RegistrarUsuario() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex justify-end space-x-2">
-                        <button
-                          onClick={() => handleEditClick(user)}
-                          className="text-green-500 hover:text-green-700 p-1 rounded-full hover:bg-green-50 transition-colors"
-                          title="Editar"
-                        >
-                          <Edit2 className="w-5 h-5" />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteClick(user)}
-                          className="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50 transition-colors"
-                          title="Excluir"
-                        >
-                          <Trash2 className="w-5 h-5" />
-                        </button>
+                        {currentUser?.roleId === Roles.ADMIN && (
+                          <>
+                            <button
+                              onClick={() => handleEditClick(user)}
+                              className="text-green-500 hover:text-green-700 p-1 rounded-full hover:bg-green-50 transition-colors"
+                              title="Editar"
+                            >
+                              <Edit2 className="w-5 h-5" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteClick(user)}
+                              className="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50 transition-colors"
+                              title="Excluir"
+                            >
+                              <Trash2 className="w-5 h-5" />
+                            </button>
+                          </>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -423,6 +481,34 @@ export default function RegistrarUsuario() {
                     {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
                 </div>
+                <p className="mt-1 text-xs text-gray-500">
+                  A senha deve conter pelo menos um caractere especial (!@#$%&*...)
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Confirmar Senha
+                </label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    type={showConfirmPassword ? "text" : "password"}
+                    name="confirmPassword"
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
+                    required={!isEditing || formData.password.trim() !== ''}
+                    placeholder="Confirme a senha"
+                    className="pl-10 pr-10 py-2.5 block w-full rounded-lg border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all text-gray-900 placeholder:text-gray-500 bg-gray-50 hover:bg-gray-50/80"
+                  />
+                  <button
+                    type="button"
+                    onClick={toggleConfirmPasswordVisibility}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
               </div>
 
               <div>
@@ -437,11 +523,14 @@ export default function RegistrarUsuario() {
                   >
                     <option value={Roles.USER}>Usuário</option>
                     <option value={Roles.ADMIN}>Administrador</option>
+                    <option value={Roles.MANAGER}>Gerente</option>
                   </select>
                 </div>
                 <p className="mt-1 text-xs text-gray-500">
                   {formData.roleId === Roles.ADMIN ? 
                     "Administradores têm acesso a todas as funcionalidades do sistema." : 
+                    formData.roleId === Roles.MANAGER ?
+                    "Gerentes têm acesso para visualizar todas as informações, mas não podem modificar registros." :
                     "Usuários têm acesso limitado às suas próprias unidades."}
                 </p>
               </div>

@@ -8,6 +8,7 @@ interface User {
   email: string
   fullName: string | null
   isAdmin?: boolean 
+  isManager?: boolean
 }
 
 // Tipo para o contexto de autenticação
@@ -60,7 +61,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsCheckingAuth(true);
       const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3333'}/auth/me`, {
         method: 'GET',
-        credentials: 'include', // Importante para enviar cookies
+        credentials: 'include', 
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
@@ -78,10 +79,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const data = await response.json()
       
       const verifyRole = (roleId: number) => roleId === 2;
+      const verifyManager = (roleId: number) => roleId === 3;
       
       const userData = {
         ...data.user,
-        isAdmin: verifyRole(data.user.roleId) 
+        isAdmin: verifyRole(data.user.roleId),
+        isManager: verifyManager(data.user.roleId)
       }
       
       setUser(userData)
@@ -125,7 +128,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3333'}/auth/login`, {
         method: 'POST',
-        credentials: 'include', // Importante para receber cookies
+        credentials: 'include', 
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
@@ -152,7 +155,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (userResponse.ok) {
           const userData = await userResponse.json()
           
-          // Adicionar flag isAdmin baseado no ID do usuário
           const userWithAdminFlag = {
             ...userData.user,
             isAdmin: userData.user.id === 1 // ID 1 é considerado admin
@@ -187,10 +189,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         cache: 'no-store',
       })
 
-      // Limpar o estado do usuário
       setUser(null)
-
-      // Redirecionar para a página de login
       router.push('/login')
     } catch (error) {
     } finally {

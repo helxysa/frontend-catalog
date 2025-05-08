@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import { 
   getSolucoes, 
@@ -23,12 +23,13 @@ import {
 } from "../actions/actions";
 import { Plus, Edit2, Trash2, X, Info, ChevronRight, ExternalLink, ChevronDown } from 'lucide-react';
 import Link from 'next/link';
-import { SolucaoType, BaseType, HistoricoType, TimeFormData } from '../types/types';
-import DeleteConfirmationModal from './ModalConfirmacao/DeleteConfirmationModal';
+import { SolucaoType, BaseType, HistoricoType, TimeFormData, Times } from '../types/types';
 import { useSidebar } from '../../../../../componentes/Sidebar/SidebarContext';
-import { Times } from '../types/types';
+import dynamic from 'next/dynamic';
 
-import Table from './Table/Table';
+const DynamicTable = dynamic(() => import('./Table/Table'), {
+  loading: () => <p>Carregando tabela...</p>,
+});
 
 interface SolucaoFormData {
   nome: string;
@@ -55,6 +56,8 @@ type CustomChangeEvent = {
     value: string;
   };
 };
+
+const DeleteConfirmationModal = dynamic(() => import('./ModalConfirmacao/DeleteConfirmationModal'));
 
 export default function Solucao() {
   const params = useParams();
@@ -397,10 +400,10 @@ export default function Solucao() {
     }
   };
 
-  const handleDeleteClick = (id: string) => {
+  const handleDeleteClick = useCallback((id: string) => {
     setItemToDeleteId(id);
     setIsDeleteModalOpen(true);
-  };
+  }, [setItemToDeleteId, setIsDeleteModalOpen]);
   
   const confirmDelete = async () => {
     if (itemToDeleteId) {
@@ -414,7 +417,7 @@ export default function Solucao() {
     }
   };
 
-  const handleInfoClick = async (solucao: SolucaoType) => {
+  const handleInfoClick = useCallback(async (solucao: SolucaoType) => {
     setSelectedDemandDetails(solucao);
     setIsInfoModalOpen(true);
     setActiveTab('details');
@@ -429,7 +432,7 @@ export default function Solucao() {
     } catch (error) {
       console.error('Error fetching histórico:', error);
     }
-  };
+  }, [setSelectedDemandDetails, setIsInfoModalOpen, setActiveTab, getHistoricoSolucoes]);
 
   const formatHistoricoDescricao = (descricao: string, evento: HistoricoType) => {
     // Função para formatar valores nulos
@@ -551,8 +554,7 @@ export default function Solucao() {
     return formattedDesc;
   };
 
-  const handleEditClick = (solucao: SolucaoType) => {
-    
+  const handleEditClick = useCallback((solucao: SolucaoType) => {
     const formDataToSet = {
       nome: solucao.nome || '',
       sigla: solucao.sigla || '',
@@ -572,14 +574,10 @@ export default function Solucao() {
       data_status: solucao.data_status || solucao.dataStatus || ''
     } as SolucaoFormData;
 
-
     setFormData(formDataToSet);
     setIsEditing(solucao.id.toString());
     setIsModalOpen(true);
-  };
-
- 
-
+  }, [setFormData, setIsEditing, setIsModalOpen]);
 
   const handleLanguageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const value = Number(e.target.value);
@@ -606,9 +604,6 @@ export default function Solucao() {
     });
   };
 
-  // Função auxiliar para renderizar as linguagens
- 
-
   useEffect(() => {
     if (search) {
       const searchLower = search.toLowerCase();
@@ -633,9 +628,7 @@ export default function Solucao() {
     }
   }, [search, solucoes, linguagens]);
 
-  // Função auxiliar para renderizar as linguagens na tabela
   const renderTableLinguagens = (solucao: any) => {
-    // Verifica se temos o array de linguagens da nova estrutura
     if (solucao.linguagens && Array.isArray(solucao.linguagens)) {
       return (
         <div className="flex flex-wrap gap-1">
@@ -651,7 +644,6 @@ export default function Solucao() {
       );
     }
 
-    // Fallback para o formato antigo (string de IDs)
     if (solucao.linguagemId) {
       const ids = String(solucao.linguagemId).split(',').map(id => Number(id.trim()));
       
@@ -701,8 +693,6 @@ export default function Solucao() {
     return '-';
   };
 
-
-  // Add this helper function to format repository links
   const formatRepositoryLink = (repo: string) => {
     if (!repo || repo === '') return '';
     if (repo.includes('github.com')) {
@@ -743,7 +733,6 @@ export default function Solucao() {
     return 'bg-green-500';
   };
   
-  // Componente da barra de progresso
   const ProgressBar = ({ progress }: { progress: number }) => {
     const progressColor = getProgressColor(progress);
     
@@ -789,7 +778,7 @@ export default function Solucao() {
         
 
         {/* Substitua a seção da tabela pelo componente Table */}
-        <Table 
+        <DynamicTable 
           solucoes={solucoes}
           linguagens={linguagens}
           isCollapsed={isCollapsed}
@@ -975,13 +964,13 @@ export default function Solucao() {
                            <div
                              key={langId}
                              className="flex items-center gap-1 px-2 py-0.5 bg-blue-100 text-blue-700  text-sm"
-                             onClick={(e) => e.stopPropagation()} // Previne que o click no item feche o dropdown
+                             onClick={(e) => e.stopPropagation()}
                            >
                              <span>{language?.nome}</span>
                              <button
                                type="button"
                                onClick={(e) => {
-                                 e.stopPropagation(); // Previne que o click no X feche o dropdown
+                                 e.stopPropagation();
                                  removeLanguage(langId);
                                }}
                                className="w-4 h-4 flex items-center justify-center rounded hover:bg-blue-200 transition-colors"

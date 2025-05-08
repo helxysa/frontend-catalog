@@ -1,10 +1,12 @@
 'use client'
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
+import Image from 'next/image';
 import { getProprietarios } from '../actions/actions';
 const baseURL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3333';
 import { useAuth } from '../../contexts/AuthContext';
 import { Building2, ChevronDown } from 'lucide-react';
+import dynamic from 'next/dynamic';
 
 // Definir a interface Proprietario
 interface Proprietario {
@@ -14,11 +16,22 @@ interface Proprietario {
   logo: string | null;
 }
 
+// Componente de imagem otimizado com lazy loading
+const OptimizedImage = dynamic(() => import('next/image'), { 
+  loading: () => (
+    <div className="rounded-full bg-gray-200 h-full w-full flex items-center justify-center">
+      <Building2 className="h-4 w-4 text-gray-400" />
+    </div>
+  ),
+  ssr: false
+});
+
 export default function UnitSwitcher() {
   const [proprietarios, setProprietarios] = useState<Proprietario[]>([]);
   const [selectedId, setSelectedId] = useState('');
   const [selectedProprietario, setSelectedProprietario] = useState<Proprietario | null>(null);
   const [isOpen, setIsOpen] = useState(false);
+  const [imageError, setImageError] = useState<Record<string, boolean>>({});
   const router = useRouter();
   const pathname = usePathname();
   const { user } = useAuth();
@@ -53,7 +66,7 @@ export default function UnitSwitcher() {
         
         // Se houver um ID armazenado e ele pertencer ao usuário atual, usá-lo
         if (storedId) {
-          const proprietarioExists = data.some(p => p.id.toString() === storedId);
+          const proprietarioExists = data.some((p: Proprietario) => p.id.toString() === storedId);
           if (proprietarioExists) {
             handleProprietarioChange(storedId);
             return;
@@ -92,6 +105,34 @@ export default function UnitSwitcher() {
     router.push(`/proprietario/${proprietario.id}/dashboard`);
   };
 
+  const handleImageError = (id: number) => {
+    setImageError(prev => ({ ...prev, [id]: true }));
+  };
+
+  const renderLogo = (proprietario: Proprietario, size = 8) => {
+    if (proprietario?.logo && !imageError[proprietario.id]) {
+      return (
+        <div className={`relative h-${size} w-${size} overflow-hidden rounded-full`}>
+          <Image
+            src={`${baseURL}${proprietario.logo}`}
+            alt={`Logo ${proprietario.nome}`}
+            fill
+            sizes="(max-width: 768px) 100vw, 33vw"
+            className="object-cover"
+            loading="lazy"
+            onError={() => handleImageError(proprietario.id)}
+          />
+        </div>
+      );
+    }
+    
+    return (
+      <div className={`h-${size} w-${size} rounded-full bg-gray-200 flex items-center justify-center`}>
+        <Building2 className={`h-${size/2} w-${size/2} text-gray-400`} />
+      </div>
+    );
+  };
+
   return (
     <div className="relative">
       <button
@@ -99,26 +140,7 @@ export default function UnitSwitcher() {
         className="flex items-center space-x-3 w-[250px] px-3 py-2 text-left bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
       >
         <div className="relative h-8 w-8 flex-shrink-0">
-          {selectedProprietario?.logo ? (
-            <img
-              src={`${baseURL}${selectedProprietario.logo}`}
-              alt={`Logo ${selectedProprietario.nome}`}
-              className="rounded-full object-cover h-full w-full"
-              onError={(e) => {
-                (e.target as HTMLImageElement).style.display = 'none';
-                const parent = (e.target as HTMLImageElement).parentElement;
-                if (parent) {
-                  const fallback = parent.querySelector('.fallback-icon');
-                  if (fallback) {
-                    fallback.classList.remove('hidden');
-                  }
-                }
-              }}
-            />
-          ) : null}
-          <div className={`fallback-icon ${selectedProprietario?.logo ? 'hidden' : ''} absolute inset-0 rounded-full bg-gray-200 flex items-center justify-center`}>
-            <Building2 className="h-4 w-4 text-gray-400" />
-          </div>
+          {selectedProprietario && renderLogo(selectedProprietario)}
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium text-gray-900 truncate">
@@ -146,26 +168,7 @@ export default function UnitSwitcher() {
                   className="flex items-center space-x-3 w-full px-4 py-2 text-left hover:bg-gray-50"
                 >
                   <div className="relative h-8 w-8 flex-shrink-0">
-                    {proprietario.logo ? (
-                      <img
-                        src={`${baseURL}${proprietario.logo}`}
-                        alt={`Logo ${proprietario.nome}`}
-                        className="rounded-full object-cover h-full w-full"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).style.display = 'none';
-                          const parent = (e.target as HTMLImageElement).parentElement;
-                          if (parent) {
-                            const fallback = parent.querySelector('.fallback-icon');
-                            if (fallback) {
-                              fallback.classList.remove('hidden');
-                            }
-                          }
-                        }}
-                      />
-                    ) : null}
-                    <div className={`fallback-icon ${proprietario.logo ? 'hidden' : ''} absolute inset-0 rounded-full bg-gray-200 flex items-center justify-center`}>
-                      <Building2 className="h-4 w-4 text-gray-400" />
-                    </div>
+                    {renderLogo(proprietario)}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-gray-900 truncate">

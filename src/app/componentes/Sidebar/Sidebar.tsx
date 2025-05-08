@@ -27,6 +27,7 @@ import { getProprietarios } from '../../proprietario/actions/actions';
 const baseURL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3333';
 import Image from 'next/image';
 import { useSidebar } from './SidebarContext';
+import dynamic from 'next/dynamic';
 
 interface Proprietario {
   id: number;
@@ -35,12 +36,23 @@ interface Proprietario {
   logo: string;
 }
 
+// Componente de imagem otimizado com lazy loading
+const OptimizedImage = dynamic(() => import('next/image'), { 
+  loading: () => (
+    <div className="rounded-full bg-gray-100 h-full w-full flex items-center justify-center">
+      <Building2 className="h-6 w-6 text-gray-400" />
+    </div>
+  ),
+  ssr: false
+});
+
 export function Sidebar() {
   const [isReportMenuOpen, setIsReportMenuOpen] = useState(false);
   const [isConfigMenuOpen, setIsConfigMenuOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [proprietarioId, setProprietarioId] = useState<string>('');
   const [proprietario, setProprietario] = useState<Proprietario | null>(null);
+  const [imageError, setImageError] = useState<Record<string, boolean>>({});
   const pathname = usePathname();
   const { isCollapsed, toggleSidebar } = useSidebar();
 
@@ -80,6 +92,34 @@ export function Sidebar() {
     }
   };
 
+  const handleImageError = (id: number) => {
+    setImageError(prev => ({ ...prev, [id]: true }));
+  };
+
+  const renderLogo = (size: string, className: string = "") => {
+    if (proprietario?.logo && !imageError[proprietario.id]) {
+      return (
+        <div className={`relative ${size} ${className}`}>
+          <Image
+            src={`${baseURL}${proprietario.logo}`}
+            alt={`Logo ${proprietario.nome}`}
+            fill
+            sizes="(max-width: 768px) 100vw, 40px"
+            className="rounded-full object-cover"
+            loading="lazy"
+            onError={() => handleImageError(proprietario.id)}
+          />
+        </div>
+      );
+    }
+    
+    return (
+      <div className={`${size} ${className} rounded-full bg-gray-100 flex items-center justify-center border-2 border-gray-200`}>
+        <Building2 className="h-6 w-6 text-gray-400" />
+      </div>
+    );
+  };
+
   const demandaLink = proprietarioId 
     ? `/proprietario/${proprietarioId}/demandas`
     : '/proprietario'; 
@@ -106,26 +146,7 @@ export function Sidebar() {
         <Link href="/proprietario" prefetch className="block">
           <div className={`${getItemClasses('/proprietario')} py-3`}>
             <div className="relative h-10 w-10 flex-shrink-0">
-              {proprietario?.logo ? (
-                <img
-                  src={`${baseURL}${proprietario.logo}`}
-                  alt={`Logo ${proprietario.nome}`}
-                  className="rounded-full object-cover h-full w-full border-2 border-gray-200 shadow-md hover:border-blue-200 transition-colors"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).style.display = 'none';
-                    const parent = (e.target as HTMLImageElement).parentElement;
-                    if (parent) {
-                      const fallback = parent.querySelector('.fallback-icon');
-                      if (fallback) {
-                        fallback.classList.remove('hidden');
-                      }
-                    }
-                  }}
-                />
-              ) : null}
-              <div className={`fallback-icon ${proprietario?.logo ? 'hidden' : ''} absolute inset-0 rounded-full bg-gray-50 flex items-center justify-center border-2 border-gray-200 shadow-md`}>
-                <Building2 className={`h-6 w-6 ${isActive('/proprietario') ? 'text-blue-600' : 'text-gray-400'} group-hover:text-gray-600`} />
-              </div>
+              {renderLogo("h-10 w-10")}
             </div>
             {!isCollapsed && (
               <div className="ml-4 flex-1 min-w-0">
@@ -226,26 +247,7 @@ export function Sidebar() {
       <div className="md:hidden fixed top-0 left-0 right-0 bg-white shadow-md z-50 flex items-center justify-between p-4">
         <Link href={`/proprietario/${proprietarioId}/dashboard`} className="flex items-center space-x-4 flex-1 min-w-0 mr-4">
           <div className="relative h-12 w-12 flex-shrink-0">
-            {proprietario?.logo ? (
-              <img
-                src={`${baseURL}${proprietario.logo}`}
-                alt={`Logo ${proprietario.nome}`}
-                className="rounded-full object-cover h-full w-full border-2 border-gray-100 shadow-sm"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).style.display = 'none';
-                  const parent = (e.target as HTMLImageElement).parentElement;
-                  if (parent) {
-                    const fallback = parent.querySelector('.fallback-icon');
-                    if (fallback) {
-                      fallback.classList.remove('hidden');
-                    }
-                  }
-                }}
-              />
-            ) : null}
-            <div className={`fallback-icon ${proprietario?.logo ? 'hidden' : ''} absolute inset-0 rounded-full bg-gray-100 flex items-center justify-center border-2 border-gray-200`}>
-              <Building2 className="h-6 w-6 text-gray-400" />
-            </div>
+            {renderLogo("h-12 w-12")}
           </div>
           <div className="flex-1 min-w-0">
             <h1 className="text-lg font-semibold text-gray-900 leading-tight break-words">
@@ -285,28 +287,7 @@ export function Sidebar() {
             </button>
 
             <Link href={`/proprietario/${proprietarioId}/dashboard`} className="flex flex-col items-center text-center space-y-3">
-              <div className={`relative ${isCollapsed ? 'h-10 w-10' : 'h-16 w-16'}`}>
-                {proprietario?.logo ? (
-                  <img
-                    src={`${baseURL}${proprietario.logo}`}
-                    alt={`Logo ${proprietario.nome}`}
-                    className="rounded-full object-cover h-full w-full border-2 border-gray-100 shadow-sm hover:border-blue-200 transition-colors"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).style.display = 'none';
-                      const parent = (e.target as HTMLImageElement).parentElement;
-                      if (parent) {
-                        const fallback = parent.querySelector('.fallback-icon');
-                        if (fallback) {
-                          fallback.classList.remove('hidden');
-                        }
-                      }
-                    }}
-                  />
-                ) : null}
-                <div className={`fallback-icon ${proprietario?.logo ? 'hidden' : ''} absolute inset-0 rounded-full bg-gray-100 flex items-center justify-center border-2 border-gray-200`}>
-                  <Building2 className="h-8 w-8 text-gray-400" />
-                </div>
-              </div>
+              {renderLogo(isCollapsed ? "h-10 w-10" : "h-16 w-16")}
               {!isCollapsed && (
                 <div className="w-full">
                   <h2 className="text-lg font-semibold text-gray-900 leading-tight break-words">
@@ -341,6 +322,7 @@ export function Sidebar() {
                 height={40}
                 className="object-contain w-full h-full opacity-90"
                 sizes="40px"
+                loading="lazy"
               />
             </div>
           </div>
@@ -379,6 +361,7 @@ export function Sidebar() {
                   height={40}
                   className="object-contain w-full h-full opacity-90"
                   sizes="40px"
+                  loading="lazy"
                 />
               </div>
               <div className="min-w-0">

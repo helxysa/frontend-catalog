@@ -7,8 +7,21 @@ function VerifyRole(role: number){
   if (role === 2) {
     return 'admin'
   }
-  else {
+  else if (role === 3) {
+    return 'manager'
+  } else {
     return 'user'
+  } 
+}
+
+// Função para verificar se o usuário é um gerente
+export async function checkIsManager() {
+  try {
+    const response = await api.get(`${baseUrl}/auth/me`);
+    return response.data.user?.roleId === 3; // roleId 3 é manager
+  } catch (error) {
+    console.error('Erro ao verificar se o usuário é gerente:', error);
+    return false;
   }
 }
 
@@ -21,7 +34,7 @@ export async function getProprietarios() {
     console.log(user.roleId)
 
     // Se for admin (roleId 2), buscar todos os proprietários
-    if (VerifyRole(user.roleId) === 'admin') {
+    if (VerifyRole(user.roleId) === 'admin' || VerifyRole(user.roleId) === 'manager') {
       const response = await api.get(`${baseUrl}/proprietarios`);
       return response.data;
     }
@@ -45,7 +58,7 @@ export async function getProprietarioById(id: string) {
     const user = userResponse.data.user;
 
     // Se for admin, pode acessar qualquer proprietário
-    if (VerifyRole(user.roleId) === 'admin') {
+    if (VerifyRole(user.roleId) === 'admin' || VerifyRole(user.roleId) === 'manager') {
       const response = await api.get(`${baseUrl}/proprietarios/${id}`);
       return response.data;
     }
@@ -100,7 +113,6 @@ export async function createProprietario(proprietario: CreateProprietarioData) {
       console.log('No logo file to append');
     }
 
-    // Log FormData entries for debugging
     console.log('FormData entries:');
     for (let pair of formData.entries()) {
       console.log(pair[0], pair[1]);
@@ -138,7 +150,7 @@ export async function createProprietario(proprietario: CreateProprietarioData) {
 
 export async function updateProprietario(id: string, proprietario: Partial<CreateProprietarioData & { user_id: string | number | null }>) {
   try {
-    console.log('Updating proprietario with ID:', id); // Debug log
+    console.log('Updating proprietario with ID:', id); 
     console.log('Update data:', proprietario);
 
     const formData = new FormData();
