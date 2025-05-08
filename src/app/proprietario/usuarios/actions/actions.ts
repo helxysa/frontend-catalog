@@ -2,7 +2,11 @@ import api from '../../../lib/api';
 import axios from 'axios';
 import { UserRegister } from '../types/type';
 
-const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3333';
+const baseUrl = process.env.NEXT_PUBLIC_BASE_URL
+
+
+
+
 export async function listUsers() {
   try {
     const response = await api.get(`${baseUrl}/auth/list-users`);
@@ -10,7 +14,7 @@ export async function listUsers() {
   } catch (error) {
     console.error('Erro ao listar usuários:', error);
     throw error;
-  }
+  } 
 }
 
 export async function registerUser(userData: {

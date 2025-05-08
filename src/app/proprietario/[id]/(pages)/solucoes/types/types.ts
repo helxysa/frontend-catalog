@@ -40,6 +40,7 @@ export interface BaseType {
 }
 
 export interface Times {
+  proprietario_id: number;
   id: number;
   nome: string;
   funcao: string;

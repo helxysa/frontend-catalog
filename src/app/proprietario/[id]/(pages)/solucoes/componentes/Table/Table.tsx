@@ -19,7 +19,10 @@ import { pdf, Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 
-import { Button } from "@/components/ui/button"
+import { useAuth } from "@/app/contexts/AuthContext";
+
+import
+ { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -93,6 +96,7 @@ interface TablePDFProps {
   columns: any[];
   data: any[];
 }
+
 
 // Componente PDF Document modificado
 const TablePDF = ({ columns, data }: TablePDFProps) => {
@@ -245,6 +249,9 @@ const exportToExcel = (columns: { id: string, accessorKey: string }[], data: any
     )
   ];
 
+
+  
+
   // Criar planilha
   const ws = XLSX.utils.aoa_to_sheet(wsData);
   const wb = XLSX.utils.book_new();
@@ -284,6 +291,10 @@ export default function DataTable({
       return '-';
     }
   };
+
+  
+  const { user } = useAuth();
+  const isManager = user?.isManager;
 
   const determinarCorTexto = (corHex: string | undefined) => {
     if (!corHex) return 'text-gray-800';
@@ -763,8 +774,11 @@ export default function DataTable({
       cell: ({ row }) => {
         const solucao = row.original;
         return (
+         
           <div className="flex justify-end space-x-2">
             {formatRepositoryLink(solucao.link)}
+          {!isManager && (
+            <>
             <button
               onClick={() => onEdit(solucao)}
               className="text-green-600 hover:text-green-800 rounded-full hover:bg-green-50 transition-colors"
@@ -777,6 +791,9 @@ export default function DataTable({
             >
               <Trash2 className="w-5 h-5" />
             </button>
+            </>
+          )}
+
             <button
               onClick={() => onInfo(solucao)}
               className="text-blue-500 hover:text-blue-700 rounded-full hover:bg-blue-50 transition-colors"
@@ -1097,7 +1114,6 @@ export default function DataTable({
         </div>
       </div>
 
-      {/* Tabela */}
       <div className="rounded-md border bg-white">
         <Table>
           <TableHeader className="bg-gray-100 border-b">

@@ -20,6 +20,7 @@ import {
 import type { Categoria } from '../types/types';
 import Loading from '@/app/componentes/Loading/Loading';
 import { useSidebar } from '../../../../../../../componentes/Sidebar/SidebarContext';
+import ReusableTable from '../../../componentes/Table/ReusableTable';
 
 interface Proprietario {
   id: number;
@@ -195,52 +196,15 @@ export default function Categoria({ proprietarioId }: { proprietarioId?: string 
           <Loading />
         ) : (
           <div className="bg-white rounded-lg shadow-md overflow-x-auto">
-            <table className="min-w-full">
-              <thead className="bg-gray-200">
-                <tr>
-                  <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
-                  <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nome</th>
-                  <th className="px-4 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {Array.isArray(categorias) && categorias.map((categoria, index) => (
-                  <tr key={categoria.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-600 hidden sm:table-cell">
-                      {index + 1}
-                    </td>
-                    <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-800">
-                      {categoria.nome}
-                    </td>
-                    <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
-                      <div className="flex justify-end space-x-2">
-                        <button
-                          onClick={() => showCategoriaDetails(categoria)}
-                          className="text-blue-500 hover:text-blue-700 p-1 rounded-full hover:bg-blue-50 transition-colors"
-                          title="Detalhes"
-                        >
-                          <Info className="w-5 h-5" />
-                        </button>
-                        <button
-                          onClick={() => openModal(categoria)}
-                          className="text-green-500 hover:text-green-700 p-1 rounded-full hover:bg-green-50 transition-colors"
-                          title="Editar"
-                        >
-                          <Edit2 className="w-5 h-5" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(categoria.id)}
-                          className="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50 transition-colors"
-                          title="Excluir"
-                        >
-                          <Trash2 className="w-5 h-5" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+
+            <ReusableTable
+              items={categorias}
+              onDetails={showCategoriaDetails}
+              onEdit={openModal}
+              onDelete={(id: string | number) => handleDelete(id.toString())}
+              displayField="nome"
+              displayFieldHeader="Nome"
+            />
           </div>
         )}
 

@@ -13,6 +13,10 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  images: {
+    domains: ['localhost', 'http://10.111.32.67:8012'],
+    
+  },
 };
 
 export default nextConfig;

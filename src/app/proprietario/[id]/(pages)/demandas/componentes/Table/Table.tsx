@@ -16,6 +16,7 @@ import {
 import { ArrowUpDown, ChevronDown, Edit2, Trash2, Info, ExternalLink, Columns } from "lucide-react"
 import Link from 'next/link';
 import { useState, useEffect } from "react"
+import { useAuth } from '../../../../../../contexts/AuthContext';
 
 import { Button } from "@/components/ui/button"
 import {
@@ -75,6 +76,10 @@ export default function DataTable({
       return '-';
     }
   };
+
+  const { user } = useAuth();
+  const isManager = user?.isManager;
+
 
   const determinarCorTexto = (corHex: string | undefined) => {
     if (!corHex) return 'text-gray-800';
@@ -390,18 +395,22 @@ export default function DataTable({
         return (
           <div className="flex justify-end space-x-2">
             {formatRepositoryLink(solucao.link)}
-            <button
-              onClick={() => onEdit(solucao)}
-              className="text-green-600 hover:text-green-800 rounded-full hover:bg-green-50 transition-colors"
-            >
-              <Edit2 className="w-5 h-5" />
-            </button>
-            <button
-              onClick={() => onDelete(solucao.id.toString())}
-              className="text-red-400 hover:text-red-700 rounded-full hover:bg-red-50 transition-colors"
-            >
-              <Trash2 className="w-5 h-5" />
-            </button>
+            {!isManager && (
+              <>
+                <button
+                  onClick={() => onEdit(solucao)}
+                  className="text-green-600 hover:text-green-800 rounded-full hover:bg-green-50 transition-colors"
+                >
+                  <Edit2 className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={() => onDelete(solucao.id.toString())}
+                  className="text-red-400 hover:text-red-700 rounded-full hover:bg-red-50 transition-colors"
+                >
+                  <Trash2 className="w-5 h-5" />
+                </button>
+              </>
+            )}
             <button
               onClick={() => onInfo(solucao)}
               className="text-blue-500 hover:text-blue-700 rounded-full hover:bg-blue-50 transition-colors"

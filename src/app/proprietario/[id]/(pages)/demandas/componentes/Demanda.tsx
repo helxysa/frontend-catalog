@@ -18,7 +18,6 @@ import { Plus, Edit2, Trash2, X, Info, ExternalLink } from 'lucide-react';
 import { DemandaType, ResponsavelType, AlinhamentoType, PrioridadeType, StatusType, ProprietarioType, HistoricoType, DemandaFormData } from '../types/types';
 import DeleteConfirmationModal from './ModalConfirmacao/DeleteConfirmationModal';
 import { useSidebar } from '../../../../../componentes/Sidebar/SidebarContext';
-import Link from 'next/link';
 import Form from './Form/Form';
 import DataTable from './Table/Table';
 
@@ -43,8 +42,8 @@ export default function Demanda() {
       data_status: ''
     };
   });
-  const [solucoes, setSolucoes] = useState<{ [key: string]: any[] }>({});
 
+  const [solucoes, setSolucoes] = useState<{ [key: string]: any[] }>({});
   const [proprietarios, setProprietarios] = useState<ProprietarioType[]>([]);
   const [alinhamentos, setAlinhamentos] = useState<AlinhamentoType[]>([]);
   const [prioridades, setPrioridades] = useState<PrioridadeType[]>([]);
@@ -64,6 +63,7 @@ export default function Demanda() {
     responsavel_id: '',
     status_id: ''
   });
+
   const [filteredDemandas, setFilteredDemandas] = useState<DemandaType[]>([]);
   const [shouldRefresh, setShouldRefresh] = useState(0);
   const [tempSearchTerm, setTempSearchTerm] = useState('');

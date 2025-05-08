@@ -18,6 +18,7 @@ import {
 import type { Status } from '../types/types';
 import { ChromePicker } from 'react-color';
 import { useSidebar } from '../../../../../../../componentes/Sidebar/SidebarContext';
+import ReusableTable from '../../../componentes/Table/ReusableTable';
 
 interface Proprietario {
   id: number;
@@ -228,61 +229,14 @@ export default function Status({ proprietarioId }: { proprietarioId?: string }) 
         </div>
 
         <div className="bg-white rounded-lg shadow-md overflow-x-auto">
-          <table className="min-w-full">
-            <thead className="bg-gray-200">
-              <tr>
-                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
-                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[30%]">Nome</th>
-                <th className="px-4 sm:px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-[30%]">Propriedade</th>
-                <th className="px-4 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-[30%]">Ações</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200 ">
-              {Array.isArray(status) && status.map((statusItem, index) => (
-                <tr key={statusItem.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-600 hidden sm:table-cell">
-                    {index + 1}
-                  </td>
-                  <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-800">
-                    {statusItem.nome}
-                  </td>
-                  <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-800 text-center">
-                    <span
-                      className={`rounded-md px-2 py-1 ${determinarCorTexto(statusItem.propriedade)}`}
-                      style={{ backgroundColor: statusItem.propriedade }}
-                    >
-                      {statusItem.nome || 'Não informado'}
-                    </span>
-                  </td>
-                  <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
-                    <div className="flex justify-end space-x-2">
-                      <button
-                        onClick={() => showStatusDetails(statusItem)}
-                        className="text-blue-500 hover:text-blue-700 p-1 rounded-full hover:bg-blue-50 transition-colors"
-                        title="Detalhes"
-                      >
-                        <Info className="w-5 h-5" />
-                      </button>
-                      <button
-                        onClick={() => openModal(statusItem)}
-                        className="text-green-500 hover:text-green-700 p-1 rounded-full hover:bg-green-50 transition-colors"
-                        title="Editar"
-                      >
-                        <Edit2 className="w-5 h-5" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(statusItem.id)}
-                        className="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50 transition-colors"
-                        title="Excluir"
-                      >
-                        <Trash2 className="w-5 h-5" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <ReusableTable
+            items={status}
+            onDetails={showStatusDetails}
+            onEdit={openModal}
+            onDelete={(id: string | number) => handleDelete(id.toString())}
+            displayField="nome"
+            displayFieldHeader="Nome"
+          />
         </div>
 
 
