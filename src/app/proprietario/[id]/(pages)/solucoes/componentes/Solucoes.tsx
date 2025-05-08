@@ -23,32 +23,22 @@ import {
 } from "../actions/actions";
 import { Plus, Edit2, Trash2, X, Info, ChevronRight, ExternalLink, ChevronDown } from 'lucide-react';
 import Link from 'next/link';
-import { SolucaoType, BaseType, HistoricoType, TimeFormData, Times } from '../types/types';
+import { SolucaoFormData, BaseType, HistoricoType, TimeFormData, Times, SolucaoType } from '../types/types';
 import { useSidebar } from '../../../../../componentes/Sidebar/SidebarContext';
 import dynamic from 'next/dynamic';
+import Loading from '../../../../../componentes/Loading/Loading';
 
 const DynamicTable = dynamic(() => import('./Table/Table'), {
-  loading: () => <p>Carregando tabela...</p>,
+  loading: () => <Loading />,
 });
 
-interface SolucaoFormData {
-  nome: string;
-  demanda_id: number | null;  
-  sigla: string;
-  descricao: string;
-  versao: string;
-  repositorio: string | null;
-  link: string | null;
-  andamento: string;
-  criticidade: string | null;
-  tipo_id: number | null;
-  linguagem_id: string | null;
-  desenvolvedor_id: number | null;
-  categoria_id: number | null;
-  responsavel_id: number | null;
-  status_id: number | null;
-  data_status: string;
-}
+const SolucaoFormModal = dynamic(() => import('./SolucaoFormModal.tsx/SolucaoFormModa'), {
+  loading: () => <Loading />, // Pode ser um skeleton específico para o formulário
+});
+const SolucaoInfoModal = dynamic(() => import('./SolucaoInfoModal/SolucaoInfoModal'), {
+  loading: () => <Loading />, // Pode ser um skeleton específico para o modal de info
+});
+// const DeleteConfirmationModal = dynamic(() => import('./ModalConfirmacao/DeleteConfirmationModal'));
 
 type CustomChangeEvent = {
   target: {
@@ -94,7 +84,6 @@ export default function Solucao() {
   });
   const [filteredSolucoes, setFilteredSolucoes] = useState<SolucaoType[]>([]);
   const [search, setSearch] = useState('');
-  const [tempSearchTerm, setTempSearchTerm] = useState('');
   const [shouldRefresh, setShouldRefresh] = useState(0);
   const [formErrors, setFormErrors] = useState({
     nome: false,
@@ -136,7 +125,6 @@ export default function Solucao() {
 
   
 
-  // Função para carregar todas as demandas do select
   const carregarDemandasParaSelect = async () => {
     try {
       const storedId = localStorage.getItem('selectedProprietarioId');
@@ -146,14 +134,12 @@ export default function Solucao() {
         const demandasFiltradas = demandasData.filter(
           (demanda: any) => demanda?.proprietario?.id === Number(storedId)
         );
-        setDemanda(demandasFiltradas); // Estas são as demandas que aparecerão no select
+        setDemanda(demandasFiltradas); 
       }
     } catch (error) {
       console.error('Erro ao carregar demandas para select:', error);
     }
   };
-
-
   useEffect(() => {
     const loadTimes = async () => {
       const timesData = await getTimes();
@@ -628,47 +614,7 @@ export default function Solucao() {
     }
   }, [search, solucoes, linguagens]);
 
-  const renderTableLinguagens = (solucao: any) => {
-    if (solucao.linguagens && Array.isArray(solucao.linguagens)) {
-      return (
-        <div className="flex flex-wrap gap-1">
-          {solucao.linguagens.map((linguagem: any) => (
-            <span
-              key={linguagem.id}
-              className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-700 rounded-full"
-            >
-              {linguagem.nome}
-            </span>
-          ))}
-        </div>
-      );
-    }
-
-    if (solucao.linguagemId) {
-      const ids = String(solucao.linguagemId).split(',').map(id => Number(id.trim()));
-      
-      const linguagensEncontradas = ids
-        .map(id => linguagens.find(l => l.id === id))
-        .filter(Boolean);
-
-      if (linguagensEncontradas.length > 0) {
-        return (
-          <div className="flex flex-wrap gap-1">
-            {linguagensEncontradas.map(linguagem => (
-              <span
-                key={(linguagem as {id: number; nome: string}).id}
-                className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-700 rounded-full"
-              >
-                {(linguagem as {id: number; nome: string}).nome}
-              </span>
-            ))}
-          </div>
-        );
-      }
-    }
-
-    return '-';
-  };
+  
 
   const renderDetalhesLinguagens = (solucao: SolucaoType) => {
     if (solucao.linguagemId) {
@@ -790,539 +736,56 @@ export default function Solucao() {
         {/* <Pagination /> */}
         
         {isModalOpen && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100]">
-              <div className="bg-white rounded-lg shadow-2xl p-6 w-full max-w-4xl z-[101]">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold text-gray-800">
-                  {isEditing ? 'Editar Solução' : 'Nova Solução'}
-                </h2>
-                <button 
-                  onClick={() => {
-                    setIsModalOpen(false);
-                    setIsEditing(null);
-                    setFormData({} as SolucaoFormData);
-                  }}
-                  className="text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full p-2"
-                >
-                  <X className="w-6 h-6" />
-                </button>
-              </div>
-
-              <div className="mb-6 border-b border-gray-200">
-                    <div className="flex space-x-4">
-                      <button
-                        className={`py-2 px-3 ${
-                          activeFormTab === 'ficha-tecnica'
-                            ? 'border-b-2 border-blue-500 text-blue-600'
-                            : 'text-gray-500 hover:text-gray-700'
-                        }`}
-                        onClick={() => setActiveFormTab('ficha-tecnica')}
-                      >
-                        Ficha Técnica
-                      </button>
-                      <button
-                        className={`py-2 px-4 ${
-                          activeFormTab === 'times'
-                            ? 'border-b-2 border-blue-500 text-blue-600'
-                            : 'text-gray-500 hover:text-gray-700'
-                        }`}
-                        onClick={() => setActiveFormTab('times')}
-                      >
-                        Histórico
-                      </button>
-                    </div>
-                  </div>
-              {activeFormTab == 'ficha-tecnica' ? (
-                 <form onSubmit={handleSubmit} className="space-y-4">
-                 <div className="grid grid-cols-3 gap-4">
-                   
-                   <div>
-                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                       Nome <span className="text-red-500">*</span>
-                     </label>
-                     <input 
-                       type="text" 
-                       name="nome" 
-                       value={formData.nome || ''} 
-                       onChange={handleInputChange}
-                       className={`w-full px-2 py-1.5 text-sm border ${
-                         formErrors.nome ? 'border-red-500' : 'border-gray-300'
-                       } rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors`}
-                     />
-                     {formErrors.nome && (
-                       <p className="mt-1 text-sm text-red-500">
-                         Este campo é obrigatório
-                       </p>
-                     )}
-                   </div>
- 
-                   <div>
-                     <label className="block text-sm font-medium text-gray-700 mb-2">Sigla</label>
-                     <input 
-                       type="text" 
-                       name="sigla" 
-                       value={formData.sigla || ''} 
-                       onChange={handleInputChange}
-                       className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors" 
-                     />
-                   </div>
-
-
-                   <div>
-                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                       Demanda 
-                     </label>
-                     <select 
-                       name="demanda_id" 
-                       value={formData.demanda_id || ''}
-                       onChange={handleInputChange}
-                       className={`w-full px-2 py-1.5 text-sm border ${
-                         formErrors.demanda_id ? 'border-red-500' : 'border-gray-300'
-                       } rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors`}
-                     >
-                       <option value="">Selecione uma demanda</option>
-                       {demanda.map((d) => (
-                         <option key={d.id} value={d.id}>{d.sigla || d.nome}</option>
-                       ))}
-                     </select>
-        
-                   </div>
- 
-                   <div className="col-span-3">
-                     <label className="block text-sm font-medium text-gray-700 mb-2">Descrição</label>
-                     <textarea 
-                       name="descricao" 
-                       value={formData.descricao || ''} 
-                       onChange={handleInputChange}
-                       className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors" 
-                     />
-                   </div>
- 
-                   <div>
-                     <label className="block text-sm font-medium text-gray-700 mb-2">Versão</label>
-                     <input 
-                       type="text" 
-                       name="versao" 
-                       value={formData.versao || ''} 
-                       onChange={handleInputChange}
-                       className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors"
-                     />
-                   </div>
- 
-                   <div>
-                     <label className="block text-sm font-medium text-gray-700 mb-2">Repositório</label>
-                     <input 
-                       type="text" 
-                       name="repositorio" 
-                       value={formData.repositorio || ''} 
-                       onChange={handleInputChange}
-                       className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors"
-                       placeholder="URL do repositório"
-                     />
-                   </div>
-
-                   <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Link</label>
-                      <input 
-                        type="text" 
-                        name="link" 
-                        value={formData.link || ''} 
-                        onChange={handleInputChange}
-                        className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors"
-                        placeholder="URL do link"
-                      />
-                    </div>
-
-              
- 
-                   <div>
-                     <label className="block text-sm font-medium text-gray-700 mb-2">Tipo</label>
-                     <select 
-                       name="tipo_id" 
-                       value={formData.tipo_id || ''}
-                       onChange={handleInputChange}
-                       className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors"
-                     >
-                       <option value="">Selecione um tipo</option>
-                       {tipos.map((tipo) => (
-                         <option key={tipo.id} value={tipo.id}>{tipo.nome}</option>
-                       ))}
-                     </select>
-                   </div>
-              
-                   <div>
-                     <label className="block text-sm font-medium text-gray-700 mb-2 ">
-                       Tecnologias
-                     </label>
-                     <div 
-                       onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                       className="relative flex flex-wrap gap-2 p-2 bg-white border border-gray-300 rounded-md min-h-[2.5rem] cursor-pointer hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors"
-                     >
-                       {selectedLanguages.map((langId) => {
-                         const language = linguagens.find(l => l.id === langId);
-                         return (
-                           <div
-                             key={langId}
-                             className="flex items-center gap-1 px-2 py-0.5 bg-blue-100 text-blue-700  text-sm"
-                             onClick={(e) => e.stopPropagation()}
-                           >
-                             <span>{language?.nome}</span>
-                             <button
-                               type="button"
-                               onClick={(e) => {
-                                 e.stopPropagation();
-                                 removeLanguage(langId);
-                               }}
-                               className="w-4 h-4 flex items-center justify-center rounded hover:bg-blue-200 transition-colors"
-                             >
-                               <X className="w-3 h-3" />
-                             </button>
-                           </div>
-                         );
-                       })}
-                       
-                       <div className="flex-1 flex items-center justify-end ">
-                         <svg 
-                           viewBox="0 0 24 24" 
-                           className="w-4 h-4 stroke-current text-[#000000]"
-                           fill="none"
-                           strokeWidth="4"
-                         >
-                           <polyline points="6 9 12 15 18 9" />
-                         </svg>
-                         
-                         {isDropdownOpen && (
-                           <div 
-                             className="absolute z-10 top-full right-0 mt-1 w-48 bg-white border border-gray-300 rounded shadow-sm"
-                             onClick={(e) => e.stopPropagation()}
-                           >
-                             {linguagens
-                               .filter(lang => !selectedLanguages.includes(lang.id))
-                               .map((lang) => (
-                                 <button
-                                   key={lang.id}
-                                   type="button"
-                                   onClick={() => {
-                                     handleLanguageChange({ target: { value: lang.id.toString() }} as any);
-                                     setIsDropdownOpen(false);
-                                   }}
-                                   className="w-full text-left px-2 py-1 text-sm hover:bg-[#0056b3] hover:text-white text-[#333333]"
-                                 >
-                                   {lang.nome}
-                                 </button>
-                               ))}
-                           </div>
-                         )}
-                       </div>
-                     </div>
-                   </div>
-
-                   <div>
-                     <label className="block text-sm font-medium text-gray-700 mb-2">Desenvolvedor</label>
-                     <select 
-                       name="desenvolvedor_id" 
-                       value={formData.desenvolvedor_id || ''}
-                       onChange={handleInputChange}
-                       className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors"
-                     >
-                       <option value="">Selecione um desenvolvedor</option>
-                       {desenvolvedores.map((desenvolvedor) => (
-                         <option key={desenvolvedor.id} value={desenvolvedor.id}>{desenvolvedor.nome}</option>
-                       ))}
-                     </select>
-                   </div>
-
-                   <div>
-                     <label className="block text-sm font-medium text-gray-700 mb-2">Criticidade</label>
-                     <select 
-                       name="criticidade" 
-                       value={formData.criticidade || ''}
-                       onChange={handleInputChange}
-                       className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors"
-                     >
-                       <option value="">Selecione qual a criticidade</option>
-                       <option value="Alta">Alta</option>
-                       <option value="Média">Média</option>
-                       <option value="Baixa">Baixa</option>
-                     </select>
-                   </div>
- 
-
-
-
-                  <div>
-                     <label className="block text-sm font-medium text-gray-700 mb-2">Responsável</label>
-                     <select 
-                       name="responsavel_id" 
-                       value={formData.responsavel_id || ''}
-                       onChange={handleInputChange}
-                       className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors"
-                     >
-                       <option value="">Selecione um responsável</option>
-                       {responsaveis.map((resp) => (
-                         <option key={resp.id} value={resp.id}>{resp.nome}</option>
-                       ))}
-                     </select>
-                   </div>
-
- 
-                   
-                   
-                   <div>
-                     <label className="block text-sm font-medium text-gray-700 mb-2">Categoria</label>
-                     <select 
-                       name="categoria_id" 
-                       value={formData.categoria_id || ''}
-                       onChange={handleInputChange}
-                       className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors"
-                     >
-                       <option value="">Selecione uma categoria</option>
-                       {categorias.map((categoria) => (
-                         <option key={categoria.id} value={categoria.id}>{categoria.nome}</option>
-                       ))}
-                     </select>
-                   </div>
- 
-                  
-
-
-                   
- 
-                   <div>
-                     <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
-                     <select 
-                       name="status_id" 
-                       value={formData.status_id || ''}
-                       onChange={handleInputChange}
-                       className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors"
-                     >
-                       <option value="">Selecione um status</option>
-                       {statusList.map((status) => (
-                         <option key={status.id} value={status.id}>{status.nome}</option>
-                       ))}
-                     </select>
-                   </div>
-
-                   
-                       
-                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Andamento (%)
-                    </label>
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-2xl font-semibold text-blue-600">
-                          {formData.andamento || '0'}%
-                        </span>
-                        <span className="text-sm text-gray-500">
-                          {Number(formData.andamento) === 100 
-                            ? 'Concluído' 
-                            : Number(formData.andamento) > 0 
-                              ? 'Em andamento' 
-                              : 'Não iniciado'}
-                        </span>
-                      </div>
-                      
-                      <div className="relative h-1.5">
-                        <input 
-                          type="range" 
-                          name="andamento" 
-                          min="0"
-                          max="100"
-                          step="5"
-                          value={formData.andamento || '0'} 
-                          onChange={handleInputChange}
-                          className={`
-                            absolute w-full h-1.5 bg-gray-200 rounded-full appearance-none cursor-pointer
-                            [&::-webkit-slider-thumb]:appearance-none
-                            [&::-webkit-slider-thumb]:w-6
-                            [&::-webkit-slider-thumb]:h-6
-                            [&::-webkit-slider-thumb]:rounded-full
-                            [&::-webkit-slider-thumb]:bg-blue-600
-                            [&::-webkit-slider-thumb]:cursor-pointer
-                            [&::-webkit-slider-thumb]:transition-all
-                            [&::-webkit-slider-thumb]:duration-150
-                            [&::-webkit-slider-thumb]:hover:bg-blue-700 
-                            [&::-webkit-slider-thumb]:hover:scale-110
-                            
-                            [&::-moz-range-thumb]:w-4
-                            [&::-moz-range-thumb]:h-4
-                            [&::-moz-range-thumb]:rounded-full
-                            [&::-moz-range-thumb]:border-0
-                            [&::-moz-range-thumb]:bg-blue-600
-                            [&::-moz-range-thumb]:cursor-pointer
-                            [&::-moz-range-thumb]:transition-all
-                            [&::-moz-range-thumb]:duration-150
-                            [&::-moz-range-thumb]:hover:bg-blue-700 
-                            [&::-moz-range-thumb]:hover:scale-110
-                          `}
-                        />
-                        <div 
-                          className="absolute left-0 top-0 h-1.5 bg-blue-600 rounded-l-full transition-all duration-300"
-                          style={{ width: `${formData.andamento || 0}%` }}
-                        />
-                      </div>
-
-                      <div className="flex justify-between text-[10px] text-gray-400 px-1 py-2">
-                        <span>0%</span>
-                        <span>25%</span>
-                        <span>50%</span>
-                        <span>75%</span>
-                        <span>100%</span>
-                      </div>
-                    </div>
-                  </div>
-                 
- 
-                   <div>
-                     <label className="block text-sm font-medium text-gray-700 mb-2">Data Status</label>
-                     <input 
-                       type="date" 
-                       name="data_status" 
-                       value={formData.data_status || ''} 
-                       onChange={handleInputChange}
-                       className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors" 
-                     />
-                   </div>
-                 </div>
- 
-                 <div className="flex justify-end space-x-2 mt-6">
-                   <button 
-                     type="button"
-                     onClick={() => setIsModalOpen(false)}
-                     className="px-3 py-1.5 text-sm text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
-                   >
-                     Cancelar
-                   </button>
-                   <button 
-                     type="submit"
-                     className="px-3 py-1.5 text-sm text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors"
-                   >
-                     Salvar
-                   </button>
-                 </div>
-               </form>
-              ) : (
-                <div>
-                <form onSubmit={handleTimeSubmit} className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2 ">
-                        Nome do Time
-                      </label>
-                      <select 
-                       name="responsavel_id" 
-                       value={timeFormData.nome}
-                       onChange={(e) => setTimeFormData({ ...timeFormData, nome: e.target.value })}
-                       className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors"
-                     >
-                       <option value="">Selecione um responsável</option>
-                       {responsaveis.map((resp) => (
-                         <option key={resp.id} value={resp.id}>{resp.nome}</option>
-                       ))}
-                     </select>
-                     
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Função
-                      </label>
-                      <input
-                        type="text"
-                        value={timeFormData.funcao}
-                        onChange={(e) => setTimeFormData({ ...timeFormData, funcao: e.target.value })}
-                        className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-600"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2 text-gray-600">
-                        Data Início
-                      </label>
-                      <input
-                        type="date"
-                        value={timeFormData.data_inicio}
-                        onChange={(e) => setTimeFormData({ ...timeFormData, data_inicio: e.target.value })}
-                        className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-600"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Data Fim
-                      </label>
-                      <input
-                        type="date"
-                        value={timeFormData.data_fim}
-                        onChange={(e) => setTimeFormData({ ...timeFormData, data_fim: e.target.value })}
-                        className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-600 "
-                      />
-                    </div>
-                  </div>
-                  <div className="flex justify-end space-x-2">
-                    <button
-                      type="submit"
-                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                    >
-                      {selectedTimeId ? 'Atualizar Time' : 'Adicionar Time'}
-                    </button>
-                  </div>
-                </form>
-      
-                {/* Times List */}
-                <div className="mt-6">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Histórico de Times</h3>
-                  <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2">
-                    {times
-                      .sort((a, b) => {
-                        const dateA = a.dataInicio ? new Date(a.dataInicio).getTime() : 0;
-                        const dateB = b.dataInicio ? new Date(b.dataInicio).getTime() : 0;
-                        return dateA - dateB;
-                      })
-                      .map((time) => {
-                        // Encontrar o responsável correspondente
-                        const responsavel = responsaveis.find(r => r.id === Number(time.nome));
-                        
-                        return (
-                          <div
-                            key={time.id}
-                            className="p-4 bg-white rounded-lg hover:bg-gray-50 transition-colors border border-gray-200 shadow-sm"
-                          >
-                            <div className="flex justify-between items-center">
-                              <div>
-                                <h4 className="font-medium text-gray-900 text-base">
-                                  {responsavel?.nome || 'Responsável não encontrado'}
-                                </h4>
-                                <p className="text-sm text-gray-600 mt-1 font-medium">{time.funcao}</p>
-                              </div>
-                              <div className="flex items-center bg-blue-50 px-3 py-1.5 rounded-full border border-blue-100 shadow-sm">
-                                <span className="inline-block w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
-                                <p className="text-sm font-medium text-gray-700">
-                                  {time?.dataInicio ? formatDate(time.dataInicio) : '-'} 
-                                  <span className="mx-2 text-gray-400">→</span> 
-                                  <span className={time?.dataFim ? 'text-gray-700' : 'text-green-600 font-semibold'}>
-                                    {time?.dataFim ? formatDate(time.dataFim) : 'Atual'}
-                                  </span>
-                                </p>
-                              </div>
-                              <div> 
-                              <button
-              onClick={() => handleTimeDelete(time.id)}
-              className="text-red-400 hover:text-red-700 ml-2 p-1 rounded-full hover:bg-red-50 transition-colors"
-              title="Excluir time"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                  </div>
-              </div>
-              </div>
-              )}
-             
-            </div>
-          </div>
+            <SolucaoFormModal
+            isOpen={isModalOpen}
+            isEditing={isEditing}
+            formData={{
+              ...formData,
+              repositorio: formData.repositorio || '',
+              linguagem_id: formData.linguagem_id?.toString() || null,
+              link: formData.link || '',
+              criticidade: formData.criticidade || '',
+            }}
+            setFormData={setFormData}
+            handleInputChange={handleInputChange}
+            handleSubmit={handleSubmit}
+            onClose={() => {
+              setIsModalOpen(false);
+              setIsEditing(null);
+              setFormData({} as SolucaoFormData);
+              setSelectedLanguages([]);
+            }}
+            tipos={tipos}
+            linguagens={linguagens}
+            desenvolvedores={desenvolvedores}
+            categorias={categorias}
+            responsaveis={responsaveis}
+            statusList={statusList}
+            demanda={demanda}
+            formErrors={formErrors}
+            selectedLanguages={selectedLanguages}
+            setSelectedLanguages={setSelectedLanguages}
+            handleLanguageChange={(e: React.ChangeEvent<HTMLSelectElement> | { target: { value: string } }) => {
+              if ('target' in e && typeof e.target.value === 'string') {
+                handleLanguageChange({ target: { value: e.target.value } } as React.ChangeEvent<HTMLSelectElement>);
+              } else {
+                handleLanguageChange(e as React.ChangeEvent<HTMLSelectElement>);
+              }
+            }}
+            removeLanguage={removeLanguage}
+            isDropdownOpen={isDropdownOpen}
+            setIsDropdownOpen={setIsDropdownOpen}
+            activeFormTab={activeFormTab}
+            setActiveFormTab={setActiveFormTab}
+            times={times}
+            timeFormData={timeFormData}
+            setTimeFormData={setTimeFormData}
+            selectedTimeId={selectedTimeId}
+            setSelectedTimeId={setSelectedTimeId}
+            handleTimeSubmit={handleTimeSubmit}
+            handleTimeDelete={handleTimeDelete}
+            formatDate={formatDate}
+          />
         )}
 
         {isInfoModalOpen && selectedDemandDetails && (

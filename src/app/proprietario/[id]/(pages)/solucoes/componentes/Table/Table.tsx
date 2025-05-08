@@ -1114,7 +1114,6 @@ export default function DataTable({
         </div>
       </div>
 
-      {/* Tabela */}
       <div className="rounded-md border bg-white">
         <Table>
           <TableHeader className="bg-gray-100 border-b">
