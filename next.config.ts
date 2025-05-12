@@ -14,7 +14,7 @@ const nextConfig: NextConfig = {
     ];
   },
   images: {
-    domains: ['localhost', '10.111.32.67'],
+    domains: ['localhost', '10.111.32.67', 'api-catalog.mpap.mp.br'],
     
   },
 };
