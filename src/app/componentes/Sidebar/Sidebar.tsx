@@ -108,6 +108,7 @@ export function Sidebar() {
             className="rounded-full object-cover"
             loading="lazy"
             onError={() => handleImageError(proprietario.id)}
+            unoptimized={true}
           />
         </div>
       );

@@ -38,7 +38,7 @@ const SolucaoFormModal = dynamic(() => import('./SolucaoFormModal.tsx/SolucaoFor
 const SolucaoInfoModal = dynamic(() => import('./SolucaoInfoModal/SolucaoInfoModal'), {
   loading: () => <Loading />, // Pode ser um skeleton específico para o modal de info
 });
-// const DeleteConfirmationModal = dynamic(() => import('./ModalConfirmacao/DeleteConfirmationModal'));
+
 
 type CustomChangeEvent = {
   target: {

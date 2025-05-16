@@ -121,6 +121,7 @@ export default function UnitSwitcher() {
             className="object-cover"
             loading="lazy"
             onError={() => handleImageError(proprietario.id)}
+            unoptimized={true}
           />
         </div>
       );

@@ -15,7 +15,14 @@ const nextConfig: NextConfig = {
   },
   images: {
     domains: ['localhost', '10.111.32.67', 'api-catalog.mpap.mp.br'],
-    
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'api-catalog.mpap.mp.br',
+        port: '',
+        pathname: '/tmp/upload/logo/**',
+      },
+    ],
   },
 };
 
