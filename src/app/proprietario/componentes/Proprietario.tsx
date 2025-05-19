@@ -189,7 +189,7 @@ export default function Proprietario() {
             className="object-cover"
             loading="lazy"
             onError={() => handleImageError(escritorio.id)}
-            unoptimized
+            
           />
         </div>
       );

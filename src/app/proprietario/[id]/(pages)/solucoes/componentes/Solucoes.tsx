@@ -30,15 +30,29 @@ import Loading from '../../../../../componentes/Loading/Loading';
 
 const DynamicTable = dynamic(() => import('./Table/Table'), {
   loading: () => <Loading />,
+  ssr: false // Evita carregar no servidor
 });
 
 const SolucaoFormModal = dynamic(() => import('./SolucaoFormModal.tsx/SolucaoFormModa'), {
-  loading: () => <Loading />, // Pode ser um skeleton específico para o formulário
+  loading: () => <Loading />,
+  ssr: false
 });
 const SolucaoInfoModal = dynamic(() => import('./SolucaoInfoModal/SolucaoInfoModal'), {
-  loading: () => <Loading />, // Pode ser um skeleton específico para o modal de info
+  loading: () => <Loading />,
+  ssr: false
 });
 
+// Adicione um componente específico para exportação Excel
+const ExcelExporter = dynamic(
+  () => import('./ExcelExporter'), // Crie este componente separadamente
+  { ssr: false, loading: () => <Loading /> }
+);
+
+// Componente separado para PDF
+const PDFViewer = dynamic(
+  () => import('./PDFViewer'), // Crie este componente separadamente
+  { ssr: false, loading: () => <Loading /> }
+);
 
 type CustomChangeEvent = {
   target: {
