@@ -141,7 +141,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (response.ok) {
         // Se o login for bem-sucedido, buscar os dados do usuário
-        // Fazer uma requisição para obter os dados do usuário
         const userResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3333'}/auth/me`, {
           method: 'GET',
           credentials: 'include',
@@ -155,13 +154,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (userResponse.ok) {
           const userData = await userResponse.json()
           
-          const userWithAdminFlag = {
+          const verifyRole = (roleId: number) => roleId === 2;
+          const verifyManager = (roleId: number) => roleId === 3;
+          
+          const userWithRoles = {
             ...userData.user,
-            isAdmin: userData.user.id === 1 // ID 1 é considerado admin
+            isAdmin: verifyRole(userData.user.roleId),
+            isManager: verifyManager(userData.user.roleId)
           }
           
-          setUser(userWithAdminFlag)
+          setUser(userWithRoles)
           setInitialCheckDone(true)
+          
+          // Força um refresh da página após login bem-sucedido
+          if (typeof window !== 'undefined') {
+            window.location.reload();
+          }
+          
           return true
         } else {
           return false

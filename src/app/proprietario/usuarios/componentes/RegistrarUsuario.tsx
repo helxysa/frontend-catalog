@@ -179,7 +179,7 @@ export default function RegistrarUsuario() {
   // Função para obter o nome do papel do usuário
   const getRoleName = (roleId: number | undefined) => {
     if (roleId === Roles.ADMIN) return 'Administrador';
-    if (roleId === Roles.MANAGER) return 'Gerente';
+    if (roleId === Roles.MANAGER) return 'Diretor';
     return 'Usuário';
   };
 
@@ -523,14 +523,14 @@ export default function RegistrarUsuario() {
                   >
                     <option value={Roles.USER}>Usuário</option>
                     <option value={Roles.ADMIN}>Administrador</option>
-                    <option value={Roles.MANAGER}>Gerente</option>
+                    <option value={Roles.MANAGER}>Diretor</option>
                   </select>
                 </div>
                 <p className="mt-1 text-xs text-gray-500">
                   {formData.roleId === Roles.ADMIN ? 
                     "Administradores têm acesso a todas as funcionalidades do sistema." : 
                     formData.roleId === Roles.MANAGER ?
-                    "Gerentes têm acesso para visualizar todas as informações, mas não podem modificar registros." :
+                    "Diretores têm acesso para visualizar todas as informações, mas não podem modificar registros." :
                     "Usuários têm acesso limitado às suas próprias unidades."}
                 </p>
               </div>
