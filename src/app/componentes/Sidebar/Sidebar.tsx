@@ -44,7 +44,7 @@ const OptimizedImage = dynamic(() => import('next/image'), {
       <Building2 className="h-6 w-6 text-gray-400" />
     </div>
   ),
-  ssr: false
+  ssr: true // Altere para true para renderizar no servidor
 });
 
 export function Sidebar() {
@@ -109,9 +109,10 @@ export function Sidebar() {
             fill
             sizes="(max-width: 768px) 100vw, 40px"
             className="rounded-full object-cover"
-            loading="lazy"
+            loading="eager" // Altere para eager para priorizar o carregamento
+            priority={true} // Adicione priority para imagens acima da dobra
             onError={() => handleImageError(proprietario.id)}
-            unoptimized={true}
+            unoptimized={false} // Altere para false para permitir otimizações
           />
         </div>
       );

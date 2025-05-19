@@ -7,11 +7,19 @@ import { AuthProvider } from './contexts/AuthContext';
 
 const montserrat = Montserrat({
   subsets: ["latin"],
+  display: 'swap', // Adiciona display swap para melhorar o LCP
 });
 
 export const metadata: Metadata = {
   title: "Catalog do Ministerio",
   description: "Catalog do Ministerio",
+  // Adiciona metadados para precarregamento de recursos críticos
+  other: {
+    'link': [
+      '/images.webp',
+     
+    ]
+  }
 };
 
 export default function RootLayout({
