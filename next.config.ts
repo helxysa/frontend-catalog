@@ -8,6 +8,7 @@ const nextConfig: NextConfig = {
     inlineCss: true, // Inline CSS para melhorar o LCP
   },
   images: {
+    unoptimized: true, // Set to true to bypass Next.js image optimization
     remotePatterns: [
       {
         protocol: 'http',
