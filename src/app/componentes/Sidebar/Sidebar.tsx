@@ -28,6 +28,7 @@ const baseURL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3333';
 import Image from 'next/image';
 import { useSidebar } from './SidebarContext';
 import dynamic from 'next/dynamic';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface Proprietario {
   id: number;
@@ -55,6 +56,8 @@ export function Sidebar() {
   const [imageError, setImageError] = useState<Record<string, boolean>>({});
   const pathname = usePathname();
   const { isCollapsed, toggleSidebar } = useSidebar();
+  const { user } = useAuth();
+  const isManager = user?.isManager;
 
   useEffect(() => {
     const storedId = localStorage.getItem('selectedProprietarioId');
@@ -108,6 +111,7 @@ export function Sidebar() {
             className="rounded-full object-cover"
             loading="lazy"
             onError={() => handleImageError(proprietario.id)}
+            unoptimized={true}
           />
         </div>
       );
@@ -185,58 +189,60 @@ export function Sidebar() {
             </div>
           </Link>  */}
 
-        <div className="relative">
-          <button 
-            className={`w-full ${getItemClasses(`/proprietario/${proprietarioId}/configuracoes`)}`}
-            onClick={toggleConfigMenu}
-          >
-            <Settings className={`w-5 h-5 ${isActive(`/proprietario/${proprietarioId}/configuracoes`) ? 'text-blue-600' : 'text-gray-400'} group-hover:text-gray-600`} />
-            {!isCollapsed && (
-              <>
-                <span className="ml-3 text-sm font-medium">Configurações</span>
-                <ChevronDown 
-                  className={`w-4 h-4 ml-auto text-gray-400 transition-transform 
-                    ${isConfigMenuOpen ? 'rotate-180' : ''}`} 
-                />
-              </>
-            )}
-          </button>
-          {!isCollapsed && ['categorias', 'alinhamentos', 'desenvolvedores', 'tecnologias', 'prioridades', 'times', 'status', 'tipos', 'responsaveis'].map((item) => {
-            const getItemIcon = (itemName: string) => {
-              const iconMap: { [key: string]: any } = {
-                categorias: Tags,
-                alinhamentos: GitCompare,
-                desenvolvedores: Users,
-                linguagem: Code2,
-                prioridades: AlertCircle,
-                responsaveis: UserCog,
-                status: CircleDot,
-                tipos: FileType2,
+        {!isManager && (
+          <div className="relative">
+            <button 
+              className={`w-full ${getItemClasses(`/proprietario/${proprietarioId}/configuracoes`)}`}
+              onClick={toggleConfigMenu}
+            >
+              <Settings className={`w-5 h-5 ${isActive(`/proprietario/${proprietarioId}/configuracoes`) ? 'text-blue-600' : 'text-gray-400'} group-hover:text-gray-600`} />
+              {!isCollapsed && (
+                <>
+                  <span className="ml-3 text-sm font-medium">Configurações</span>
+                  <ChevronDown 
+                    className={`w-4 h-4 ml-auto text-gray-400 transition-transform 
+                      ${isConfigMenuOpen ? 'rotate-180' : ''}`} 
+                  />
+                </>
+              )}
+            </button>
+            {!isCollapsed && ['categorias', 'alinhamentos', 'desenvolvedores', 'tecnologias', 'prioridades', 'times', 'status', 'tipos', 'responsaveis'].map((item) => {
+              const getItemIcon = (itemName: string) => {
+                const iconMap: { [key: string]: any } = {
+                  categorias: Tags,
+                  alinhamentos: GitCompare,
+                  desenvolvedores: Users,
+                  linguagem: Code2,
+                  prioridades: AlertCircle,
+                  responsaveis: UserCog,
+                  status: CircleDot,
+                  tipos: FileType2,
+                };
+                return iconMap[itemName] || Settings;
               };
-              return iconMap[itemName] || Settings;
-            };
-            
-            const ItemIcon = getItemIcon(item);
-            
-            return (
-              <div 
-                key={item}
-                className={`${isConfigMenuOpen ? 'block' : 'hidden'} ${isMobile ? 'ml-2 mt-1 space-y-2' : 'ml-4 mt-1 space-y-1'} py-1`}
-              >
-                <Link 
-                  href={`/proprietario/${proprietarioId}/configuracoes/${item}`} 
-                  prefetch
-                  className="block"
+              
+              const ItemIcon = getItemIcon(item);
+              
+              return (
+                <div 
+                  key={item}
+                  className={`${isConfigMenuOpen ? 'block' : 'hidden'} ${isMobile ? 'ml-2 mt-1 space-y-2' : 'ml-4 mt-1 space-y-1'} py-1`}
                 >
-                  <div className={getItemClasses(`/proprietario/${proprietarioId}/configuracoes/${item}`)}>
-                    <ItemIcon className={`w-4 h-4 ${isActive(`/proprietario/${proprietarioId}/configuracoes/${item}`) ? 'text-blue-600' : 'text-gray-400'} group-hover:text-gray-600`} />
-                    <span className="ml-3 text-sm capitalize">{item}</span>
-                  </div>
-                </Link>
-              </div>
-            );
-          })}
-        </div>
+                  <Link 
+                    href={`/proprietario/${proprietarioId}/configuracoes/${item}`} 
+                    prefetch
+                    className="block"
+                  >
+                    <div className={getItemClasses(`/proprietario/${proprietarioId}/configuracoes/${item}`)}>
+                      <ItemIcon className={`w-4 h-4 ${isActive(`/proprietario/${proprietarioId}/configuracoes/${item}`) ? 'text-blue-600' : 'text-gray-400'} group-hover:text-gray-600`} />
+                      <span className="ml-3 text-sm capitalize">{item}</span>
+                    </div>
+                  </Link>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     );
   };
