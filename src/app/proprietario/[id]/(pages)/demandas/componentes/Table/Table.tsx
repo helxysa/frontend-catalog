@@ -164,7 +164,7 @@ export default function DataTable({
           </Button>
         )
       },
-      cell: ({ row }) => <div className="w-[150px] truncate font-medium">{row.getValue("nome") || '-'}</div>,
+      cell: ({ row }) => <div className="w-[150px] truncate font-medium">{row.getValue("nome") || ''}</div>,
     },
     {
       accessorKey: "sigla",
@@ -180,7 +180,7 @@ export default function DataTable({
           </Button>
         )
       },
-      cell: ({ row }) => <div className="truncate">{row.getValue("sigla") || '-'}</div>,
+      cell: ({ row }) => <div className="truncate">{row.getValue("sigla") || ''}</div>,
     },
     {
       accessorKey: "fatorGerador",
@@ -197,7 +197,7 @@ export default function DataTable({
           </Button>
         )
       },
-      cell: ({ row }) => <div className=" ">{row.original.fatorGerador || '-'}</div>,
+      cell: ({ row }) => <div className=" ">{row.original.fatorGerador || ''}</div>,
     },
     {
       accessorKey: "demandante",
@@ -214,9 +214,9 @@ export default function DataTable({
           </Button>
         )
       },
-      cell: ({ row }) => <div className="w-[120px] truncate">{row.original.demandante || '-'}</div>,
+      cell: ({ row }) => <div className="w-[120px] truncate">{row.original.demandante || ''}</div>,
       filterFn: (row, id, value) => {
-        const demandante = row.original.demandante || '-';
+        const demandante = row.original.demandante || '';
         return demandante === value;
       },
     },
@@ -235,7 +235,7 @@ export default function DataTable({
           </Button>
         )
       },
-      cell: ({ row }) => <div className="w-[120px] truncate">{row.original.alinhamento?.nome || '-'}</div>,
+      cell: ({ row }) => <div className="w-[120px] truncate">{row.original.alinhamento?.nome || ''}</div>,
     },
     {
       accessorKey: "prioridade",
@@ -251,7 +251,7 @@ export default function DataTable({
           </Button>
         )
       },
-      cell: ({ row }) => <div className="w-[120px] truncate">{row.original.prioridade?.nome || '-'}</div>,
+      cell: ({ row }) => <div className="w-[120px] truncate">{row.original.prioridade?.nome || ''}</div>,
       filterFn: (row, id, value) => {
         if (value === 'sem_prioridade') {
           // Filtrar demandas sem prioridade (prioridade é null)
@@ -322,7 +322,7 @@ export default function DataTable({
           </Button>
         )
       },
-      cell: ({ row }) => <div className="w-[120px] truncate">{row.original.responsavel?.nome || '-'}</div>,
+      cell: ({ row }) => <div className="w-[120px] truncate">{row.original.responsavel?.nome || ''}</div>,
       filterFn: (row, id, value) => {
         if (value === 'sem_responsavel') {
           // Filtrar demandas sem responsável (responsável é null)
@@ -358,25 +358,15 @@ export default function DataTable({
       },
       cell: ({ row }) => {
         const status = row.original.status;
-        return status?.propriedade ? (
-          <div className="w-[90px] max-w-[90px]">
+        return (
+          <div className="flex items-center">
             <span
-              className={`rounded-md px-2 py-1 inline-block text-sm ${determinarCorTexto(status.propriedade)}`}
-              style={{
-                backgroundColor: status.propriedade,
-                maxWidth: '100%',
-                display: 'inline-block',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap'
-              }}
-              title={status.nome || '-'}
+              className={`rounded-md px-3 py-1 text-sm font-medium ${determinarCorTexto(status?.propriedade)}`}
+              style={{ backgroundColor: status?.propriedade }}
             >
-              {status.nome || '-'}
+              {status?.nome || ''}
             </span>
           </div>
-        ) : (
-          <span className="text-gray-500">-</span>
         );
       },
       filterFn: (row, id, value) => {

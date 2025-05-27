@@ -149,7 +149,7 @@ export default function Demanda() {
     try {
       const demandasData = await getDemandas(page, itemsPerPage);
       const storedId = localStorage.getItem('selectedProprietarioId');
-
+        
       // Preservar a ordem atual das demandas existentes
       const currentOrder = new Map(demandas.map((d, index) => [String(d.id), index]));
 
@@ -219,35 +219,39 @@ export default function Demanda() {
   const handleFormSubmit = async (formDataToSubmit: DemandaFormData) => {
     if (isEditing) {
       try {
-        await updateDemanda(isEditing, formDataToSubmit);
-
-        // Manter a ordem atual das demandas
-        const updatedDemandas = demandas.map(demanda => {
-          if (String(demanda.id) === String(isEditing)) {
-            // Atualizar apenas os campos da demanda editada
-            return {
-              ...demanda,
-              nome: formDataToSubmit.nome,
-              sigla: formDataToSubmit.sigla,
-              descricao: formDataToSubmit.descricao,
-              link: formDataToSubmit.link,
-              demandante: formDataToSubmit.demandante,
-              fatorGerador: formDataToSubmit.fator_gerador,
-              alinhamento: alinhamentos.find(a => a.id === Number(formDataToSubmit.alinhamento_id)),
-              prioridade: prioridades.find(p => p.id === Number(formDataToSubmit.prioridade_id)),
-              responsavel: responsaveis.find(r => r.id === Number(formDataToSubmit.responsavel_id)),
-              status: statusList.find(s => s.id === Number(formDataToSubmit.status_id)),
-              dataStatus: formDataToSubmit.data_status
-            };
-          }
-          return demanda;
-        });
-
-        setDemandas(updatedDemandas as DemandaType[]);
-        setFilteredDemandas(updatedDemandas as DemandaType[]);
+        const updatedDemanda = await updateDemanda(isEditing, formDataToSubmit);
+        
+        // Atualizar o estado com os dados completos retornados do backend
+        setDemandas(prevDemandas => 
+          prevDemandas.map(demanda => 
+            String(demanda.id) === String(isEditing) ? updatedDemanda : demanda
+          )
+        );
+        
+        setFilteredDemandas(prevDemandas => 
+          prevDemandas.map(demanda => 
+            String(demanda.id) === String(isEditing) ? updatedDemanda : demanda
+          )
+        );
 
         // Atualizar soluções se necessário
         fetchSolucoes(isEditing);
+
+        // Recarregar os dados dos selects
+        const [_, proprietariosData, alinhamentosData, prioridadesData, responsaveisData, statusData] = await Promise.all([
+          fetchDemandas(),
+          getProprietarios(),
+          getAlinhamentos(),
+          getPrioridades(),
+          getResponsaveis(),
+          getStatus(),
+        ]);
+
+        setProprietarios(proprietariosData);
+        setAlinhamentos(alinhamentosData);
+        setPrioridades(prioridadesData);
+        setResponsaveis(responsaveisData);
+        setStatusList(statusData);
 
         setIsModalOpen(false);
         setFormData({} as DemandaFormData);
@@ -256,24 +260,40 @@ export default function Demanda() {
         console.error('Erro ao atualizar demanda:', error);
       }
     } else {
-      // Criar nova demanda
-      const newDemanda = await createDemanda(formDataToSubmit);
+      try {
+        // Criar nova demanda
+        const newDemanda = await createDemanda(formDataToSubmit);
 
-      // Adicionar a nova demanda ao estado atual sem recarregar tudo
-      if (newDemanda) {
-        const updatedDemandas = [...demandas, newDemanda];
-        setDemandas(updatedDemandas);
-        setFilteredDemandas(updatedDemandas);
+        // Adicionar a nova demanda ao estado com os dados completos do backend
+        if (newDemanda) {
+          setDemandas(prevDemandas => [...prevDemandas, newDemanda]);
+          setFilteredDemandas(prevDemandas => [...prevDemandas, newDemanda]);
 
-        // Buscar soluções para a nova demanda
-        fetchSolucoes(newDemanda.id);
-      } else {
-        // Se não conseguir obter a nova demanda, recarregar tudo
-        await fetchDemandas();
+          // Buscar soluções para a nova demanda
+          fetchSolucoes(newDemanda.id);
+
+          // Recarregar os dados dos selects
+          const [_, proprietariosData, alinhamentosData, prioridadesData, responsaveisData, statusData] = await Promise.all([
+            fetchDemandas(),
+            getProprietarios(),
+            getAlinhamentos(),
+            getPrioridades(),
+            getResponsaveis(),
+            getStatus(),
+          ]);
+
+          setProprietarios(proprietariosData);
+          setAlinhamentos(alinhamentosData);
+          setPrioridades(prioridadesData);
+          setResponsaveis(responsaveisData);
+          setStatusList(statusData);
+        }
+
+        setIsModalOpen(false);
+        setFormData({} as DemandaFormData);
+      } catch (error) {
+        console.error('Erro ao criar demanda:', error);
       }
-
-      setIsModalOpen(false);
-      setFormData({} as DemandaFormData);
     }
   };
 

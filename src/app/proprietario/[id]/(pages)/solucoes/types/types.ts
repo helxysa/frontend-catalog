@@ -31,6 +31,17 @@ export interface SolucaoType {
       fatorGerador: string;
       alinhamento?: { id: number; nome: string };
     };
+    times?: {
+      responsavel_id: number;
+      funcao: string;
+      dataInicio: string;
+      dataFim: string;
+    }[];
+    atualizacoes?: {
+      nome: string;
+      descricao: string;
+      data_atualizacao: string;
+    };
 }
 
 export interface BaseType {
@@ -39,14 +50,7 @@ export interface BaseType {
   propriedade: string;
 }
 
-export interface Times {
-  proprietario_id: number;
-  id: number;
-  nome: string;
-  funcao: string;
-  dataInicio: string;
-  dataFim: string;
-}
+
 
 export interface SolucaoFormData {
   nome: string;
@@ -65,6 +69,19 @@ export interface SolucaoFormData {
   status_id: number | null;
   demanda_id: number | null;
   data_status: string | null;
+  times: {
+    id: number;
+    responsavel_id: number;
+    funcao: string;
+    dataInicio: string;
+    dataFim: string;
+  }[];
+  atualizacoes: {
+    id: number;
+    nome: string;
+    descricao: string;
+    data_atualizacao: string;
+  }[];
 }
 
 export interface HistoricoType {
@@ -105,10 +122,48 @@ export interface BaseType {
 }
 
 
-export interface TimeFormData {
-  nome: string;
-  funcao: string;
-  data_inicio: string;
-  data_fim?: string;
-  proprietario_id: number;
+
+
+
+
+export interface SolucaoFormModalProps {
+  isOpen: boolean;
+  isEditing: string | null;
+  formData: SolucaoFormData;
+  setFormData: React.Dispatch<React.SetStateAction<SolucaoFormData>>;
+  handleInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement> | { target: { name: string; value: string; } }) => void;
+  handleSubmit: (e: React.FormEvent<HTMLFormElement>) => Promise<void>;
+  onClose: () => void;
+  tipos: BaseType[];
+  linguagens: BaseType[];
+  desenvolvedores: BaseType[];
+  categorias: BaseType[];
+  responsaveis: BaseType[];
+  statusList: (BaseType & { propriedade: string })[];
+  demanda: BaseType[];
+  formErrors: { nome: boolean; demanda_id: boolean };
+  selectedLanguages: number[];
+  setSelectedLanguages: React.Dispatch<React.SetStateAction<number[]>>;
+  handleLanguageChange: (e: React.ChangeEvent<HTMLSelectElement> | {target: { value: string }}) => void;
+  removeLanguage: (langId: number) => void;
+  isDropdownOpen: boolean;
+  setIsDropdownOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  activeFormTab: string;
+  setActiveFormTab: React.Dispatch<React.SetStateAction<string>>;
+  times: {
+    id: number;
+    responsavel_id: number;
+    funcao: string;
+    dataInicio: string;
+    dataFim: string;
+  }[];
+  atualizacoes: {
+    id: number;
+    nome: string;
+    descricao: string;
+    data_atualizacao: string;
+  }[];
+  formatDate: (dateString?: string | null) => string;
+  selectedAtualizacaoId: string | null;
+  setSelectedAtualizacaoId: React.Dispatch<React.SetStateAction<string | null>>;
 }

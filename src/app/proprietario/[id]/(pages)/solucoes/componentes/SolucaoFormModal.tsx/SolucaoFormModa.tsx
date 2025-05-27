@@ -1,42 +1,9 @@
 'use client';
 
-import React from 'react';
-import { X, Plus, Trash2 } from 'lucide-react';
-import { SolucaoFormData, BaseType, TimeFormData, Times } from '../../types/types'; 
+import React, { useState } from 'react';
+import { X, Plus, Trash2, Edit2 } from 'lucide-react';
+import { SolucaoFormData, BaseType, SolucaoFormModalProps } from '../../types/types'; 
 
-interface SolucaoFormModalProps {
-  isOpen: boolean;
-  isEditing: string | null;
-  formData: SolucaoFormData;
-  setFormData: React.Dispatch<React.SetStateAction<SolucaoFormData>>;
-  handleInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement> | { target: { name: string; value: string; } }) => void;
-  handleSubmit: (e: React.FormEvent<HTMLFormElement>) => Promise<void>;
-  onClose: () => void;
-  tipos: BaseType[];
-  linguagens: BaseType[];
-  desenvolvedores: BaseType[];
-  categorias: BaseType[];
-  responsaveis: BaseType[];
-  statusList: (BaseType & { propriedade: string })[];
-  demanda: BaseType[];
-  formErrors: { nome: boolean; demanda_id: boolean };
-  selectedLanguages: number[];
-  setSelectedLanguages: React.Dispatch<React.SetStateAction<number[]>>;
-  handleLanguageChange: (e: React.ChangeEvent<HTMLSelectElement> | {target: { value: string }}) => void;
-  removeLanguage: (langId: number) => void;
-  isDropdownOpen: boolean;
-  setIsDropdownOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  activeFormTab: string;
-  setActiveFormTab: React.Dispatch<React.SetStateAction<string>>;
-  times: Times[];
-  timeFormData: TimeFormData;
-  setTimeFormData: React.Dispatch<React.SetStateAction<TimeFormData>>;
-  selectedTimeId: string | null;
-  setSelectedTimeId: React.Dispatch<React.SetStateAction<string | null>>;
-  handleTimeSubmit: (e: React.FormEvent) => Promise<void>;
-  handleTimeDelete: (id: string) => Promise<void>;
-  formatDate: (dateString?: string | null) => string;
-}
 
 export default function SolucaoFormModal({
   isOpen,
@@ -62,15 +29,88 @@ export default function SolucaoFormModal({
   setIsDropdownOpen,
   activeFormTab,
   setActiveFormTab,
-  times,
-  timeFormData,
-  setTimeFormData,
-  selectedTimeId,
-  setSelectedTimeId,
-  handleTimeSubmit,
-  handleTimeDelete,
   formatDate,
 }: SolucaoFormModalProps) {
+  const [timeFormData, setTimeFormData] = useState({
+    responsavel_id: 0,
+    funcao: '',
+    dataInicio: '',
+    dataFim: ''
+  });
+
+  const [atualizacaoFormData, setAtualizacaoFormData] = useState({
+    nome: '',
+    descricao: '',
+    data_atualizacao: ''
+  });
+
+  const handleTimeSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Get the current highest ID from existing times
+    const currentHighestId = formData.times?.length 
+      ? Math.max(...formData.times.map(time => time.id || 0))
+      : 0;
+    
+    // Create new time entry with incremented ID
+    const newTime = {
+      id: currentHighestId + 1,
+      ...timeFormData
+    };
+
+    setFormData(prev => ({
+      ...prev,
+      times: [...(prev.times || []), newTime]
+    }));
+    
+    setTimeFormData({
+      responsavel_id: 0,
+      funcao: '',
+      dataInicio: '',
+      dataFim: ''
+    });
+  };
+
+  const handleAtualizacaoSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Get the current highest ID from existing updates
+    const currentHighestId = formData.atualizacoes?.length 
+      ? Math.max(...formData.atualizacoes.map(atualizacao => atualizacao.id || 0))
+      : 0;
+    
+    // Create new update entry with incremented ID
+    const newAtualizacao = {
+      id: currentHighestId + 1,
+      ...atualizacaoFormData
+    };
+
+    setFormData(prev => ({
+      ...prev,
+      atualizacoes: [...(prev.atualizacoes || []), newAtualizacao]
+    }));
+    
+    setAtualizacaoFormData({
+      nome: '',
+      descricao: '',
+      data_atualizacao: ''
+    });
+  };
+
+  const handleTimeDelete = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      times: prev.times.filter((_, i) => i !== index)
+    }));
+  };
+
+  const handleAtualizacaoDelete = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      atualizacoes: prev.atualizacoes.filter((_, i) => i !== index)
+    }));
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -107,6 +147,15 @@ export default function SolucaoFormModal({
               onClick={() => setActiveFormTab('times')}
             >
               Histórico de Times
+            </button>
+            <button
+              className={`py-2 px-4 ${activeFormTab === 'atualizacoes'
+                  ? 'border-b-2 border-blue-500 text-blue-600'
+                  : 'text-gray-500 hover:text-gray-700'
+                }`}
+              onClick={() => setActiveFormTab('atualizacoes')}
+            >
+              Histórico de Atualizações
             </button>
           </div>
         </div>
@@ -464,7 +513,7 @@ export default function SolucaoFormModal({
               </button>
             </div>
           </form>
-          ) : ( // activeFormTab === 'times'
+          ) : activeFormTab === 'times' ? (
             <div>
               <form onSubmit={handleTimeSubmit} className="space-y-4 mb-6 p-5 border rounded-md bg-gray-50">
                 <h3 className="text-lg font-medium text-gray-800 mb-3">
@@ -476,14 +525,14 @@ export default function SolucaoFormModal({
                       Nome do Integrante
                     </label>
                     <select
-                      name="nome"
-                      value={timeFormData.nome || ''}
-                      onChange={(e) => setTimeFormData({ ...timeFormData, nome: e.target.value })}
+                      name="responsavel_id"
+                      value={timeFormData.responsavel_id || ''}
+                      onChange={(e) => setTimeFormData({ ...timeFormData, responsavel_id: Number(e.target.value) })}
                       className="w-full p-2.5 text-sm border border-gray-300 rounded-md text-gray-800 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 focus:outline-none transition-colors"
                     >
                       <option value="">Selecione um responsável</option>
                       {responsaveis.map((resp) => (
-                        <option key={resp.id} value={String(resp.id)}>{resp.nome}</option>
+                        <option key={resp.id} value={resp.id}>{resp.nome}</option>
                       ))}
                     </select>
                   </div>
@@ -505,8 +554,8 @@ export default function SolucaoFormModal({
                     </label>
                     <input
                       type="date"
-                      value={timeFormData.data_inicio || ''}
-                      onChange={(e) => setTimeFormData({ ...timeFormData, data_inicio: e.target.value })}
+                      value={timeFormData.dataInicio || ''}
+                      onChange={(e) => setTimeFormData({ ...timeFormData, dataInicio: e.target.value })}
                       className="w-full p-2.5 text-sm border border-gray-300 rounded-md text-gray-700 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 focus:outline-none transition-colors"
                     />
                   </div>
@@ -516,8 +565,8 @@ export default function SolucaoFormModal({
                     </label>
                     <input
                       type="date"
-                      value={timeFormData.data_fim || ''}
-                      onChange={(e) => setTimeFormData({ ...timeFormData, data_fim: e.target.value })}
+                      value={timeFormData.dataFim || ''}
+                      onChange={(e) => setTimeFormData({ ...timeFormData, dataFim: e.target.value })}
                       className="w-full p-2.5 text-sm border border-gray-300 rounded-md text-gray-700 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 focus:outline-none transition-colors"
                     />
                   </div>
@@ -536,21 +585,20 @@ export default function SolucaoFormModal({
               <div className="mt-6">
                 <h3 className="text-lg font-medium text-gray-800 mb-4">Histórico de Times da Solução</h3>
                 <div className="space-y-3 max-h-[250px] overflow-y-auto pr-2">
-                  {times && times.length > 0 ? (
-                    times
+                  {formData.times && formData.times.length > 0 ? (
+                    formData.times
                       .sort((a, b) => new Date(a.dataInicio || '').getTime() - new Date(b.dataInicio || '').getTime())
-                      .map((time) => {
-                        const timeNome = String(time.nome || '');
-                        const responsavel = responsaveis.find(r => r.id === Number(timeNome));
+                      .map((time, index) => {
+                        const responsavel = responsaveis.find(r => r.id === time.responsavel_id);
                         return (
                           <div
-                            key={time.id}
+                            key={index}
                             className="p-3 bg-white rounded-lg hover:bg-gray-50 transition-colors border border-gray-200 shadow-sm"
                           >
                             <div className="flex justify-between items-center">
                               <div>
                                 <h4 className="font-medium text-gray-800 text-sm">
-                                  {responsavel?.nome || `ID: ${timeNome}`}
+                                  {responsavel?.nome || `ID: ${time.responsavel_id}`}
                                 </h4>
                                 <p className="text-xs text-gray-500 mt-0.5">{time.funcao || '-'}</p>
                               </div>
@@ -563,7 +611,7 @@ export default function SolucaoFormModal({
                               </div>
                               <div className="flex items-center gap-2">
                                 <button
-                                  onClick={() => handleTimeDelete(String(time.id || ''))}
+                                  onClick={() => handleTimeDelete(index)}
                                   className="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50 transition-colors"
                                   title="Excluir time"
                                 >
@@ -582,7 +630,102 @@ export default function SolucaoFormModal({
                 </div>
               </div>
             </div>
-          )}
+          ) : activeFormTab === 'atualizacoes' ? (
+            <div>
+              <form onSubmit={handleAtualizacaoSubmit} className="space-y-4 mb-6 p-5 border rounded-md bg-gray-50">
+                <h3 className="text-lg font-medium text-gray-800 mb-3">
+                  Adicionar Nova Atualização
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                      Nome da Atualização
+                    </label>
+                    <input
+                      type="text"
+                      value={atualizacaoFormData.nome || ''}
+                      onChange={(e) => setAtualizacaoFormData({ ...atualizacaoFormData, nome: e.target.value })}
+                      className="w-full p-2.5 text-sm border border-gray-300 rounded-md text-gray-700 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 focus:outline-none transition-colors"
+                      placeholder="Ex: Correção de bug, Nova funcionalidade"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                      Data da Atualização
+                    </label>
+                    <input
+                      type="date"
+                      value={atualizacaoFormData.data_atualizacao || ''}
+                      onChange={(e) => setAtualizacaoFormData({ ...atualizacaoFormData, data_atualizacao: e.target.value })}
+                      className="w-full p-2.5 text-sm border border-gray-300 rounded-md text-gray-700 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 focus:outline-none transition-colors"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                      Descrição
+                    </label>
+                    <textarea
+                      value={atualizacaoFormData.descricao || ''}
+                      onChange={(e) => setAtualizacaoFormData({ ...atualizacaoFormData, descricao: e.target.value })}
+                      rows={3}
+                      className="w-full p-2.5 text-sm border border-gray-300 rounded-md text-gray-700 bg-white hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 focus:outline-none transition-colors"
+                      placeholder="Descreva as alterações realizadas..."
+                    />
+                  </div>
+                </div>
+                <div className="flex justify-end space-x-3 mt-2">
+                  <button
+                    type="submit"
+                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm flex items-center gap-2 transition-colors"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Adicionar Atualização
+                  </button>
+                </div>
+              </form>
+
+              <div className="mt-6">
+                <h3 className="text-lg font-medium text-gray-800 mb-4">Histórico de Atualizações da Solução</h3>
+                <div className="space-y-3 max-h-[250px] overflow-y-auto pr-2">
+                  {formData.atualizacoes && formData.atualizacoes.length > 0 ? (
+                    formData.atualizacoes
+                      .sort((a, b) => new Date(b.data_atualizacao || '').getTime() - new Date(a.data_atualizacao || '').getTime())
+                      .map((atualizacao, index) => (
+                        <div
+                          key={index}
+                          className="p-3 bg-white rounded-lg hover:bg-gray-50 transition-colors border border-gray-200 shadow-sm"
+                        >
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <h4 className="font-medium text-gray-800 text-sm">
+                                {atualizacao.nome}
+                              </h4>
+                              <p className="text-xs text-gray-500 mt-1">{atualizacao.descricao}</p>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <div className="text-xs text-gray-600">
+                                {formatDate(atualizacao.data_atualizacao)}
+                              </div>
+                              <button
+                                onClick={() => handleAtualizacaoDelete(index)}
+                                className="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50 transition-colors"
+                                title="Excluir atualização"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                  ) : (
+                    <p className="text-sm text-gray-500 text-center py-4 bg-gray-50 rounded-lg border border-gray-200">
+                      Nenhuma atualização registrada para esta solução ainda.
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          ) : null}
         </div>
       </div>
     </div>

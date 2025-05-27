@@ -59,17 +59,17 @@ export default function Form({
       // Preparar dados para envio
       const formDataToSubmit: DemandaFormData = {
         ...formData,
-        nome: formData.nome || '-',
-        sigla: formData.sigla || '-',
-        descricao: formData.descricao || '-',
+        nome: formData.nome || '',
+        sigla: formData.sigla || '',
+        descricao: formData.descricao || '',
         link: formData.link || '',
-        fator_gerador: formData.fator_gerador || '-',
-        demandante: formData.demandante || '-',
+        fator_gerador: formData.fator_gerador || '',
+        demandante: formData.demandante || '',
         proprietario_id: Number(formData.proprietario_id),
-        alinhamento_id: formData.alinhamento_id ? Number(formData.alinhamento_id) : null,
-        prioridade_id: formData.prioridade_id ? Number(formData.prioridade_id) : null,
-        responsavel_id: formData.responsavel_id ? Number(formData.responsavel_id) : null,
-        status_id: formData.status_id ? Number(formData.status_id) : null,
+        alinhamento_id: formData.alinhamento_id ? Number(formData.alinhamento_id) : 0,
+        prioridade_id: formData.prioridade_id ? Number(formData.prioridade_id) : 0,
+        responsavel_id: formData.responsavel_id ? Number(formData.responsavel_id) : 0,
+        status_id: formData.status_id ? Number(formData.status_id) : 0,
         data_status: formData.data_status || new Date().toISOString().split('T')[0]
       };
 
