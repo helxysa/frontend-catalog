@@ -1,5 +1,5 @@
 import axios from 'axios'
-import api from '../../actions/api';
+import api from '../../../../../../lib/api';
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
 if (!baseUrl) {

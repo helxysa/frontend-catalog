@@ -1,4 +1,4 @@
-import api from '../../../lib/api';
+import api from '../../../../lib/api';
 import axios from 'axios';
 import { UserRegister } from '../types/type';
 

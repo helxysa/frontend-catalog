@@ -1,4 +1,4 @@
-import api from '../../lib/api';
+import api from '../../../lib/api';  
 import axios, { AxiosError } from 'axios';
 import { RegisterUserData, CreateProprietarioData } from '../types/type';
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3333';
