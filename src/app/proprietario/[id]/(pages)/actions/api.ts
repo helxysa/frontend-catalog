@@ -1,6 +1,5 @@
 import axios from 'axios';
 
-// Criar uma instância do axios com configurações padrão
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3333',
   headers: {
@@ -10,8 +9,7 @@ const api = axios.create({
   withCredentials: true,
 });
 
-//Tem o lib api e esse aqui, ambos tem a mesma função, mas caso seja necessario fazer alguma alteracao apenas nos itens DOS
-//proprietarios, pode ser alterado somente esse
+
 
 api.interceptors.response.use(
   (response) => response,

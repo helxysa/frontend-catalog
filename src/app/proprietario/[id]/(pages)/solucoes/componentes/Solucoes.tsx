@@ -16,29 +16,39 @@ import {
   getDemandas,
   getHistoricoSolucoes,
   getAllDemandas,
-  getTimes,
-  createTime,
-  updateTime,
-  deleteTime
 } from "../actions/actions";
 import { Plus, Edit2, Trash2, X, Info, ChevronRight, ExternalLink, ChevronDown } from 'lucide-react';
 import Link from 'next/link';
-import { SolucaoFormData, BaseType, HistoricoType, TimeFormData, Times, SolucaoType } from '../types/types';
+import { SolucaoFormData, BaseType, HistoricoType, SolucaoType, } from '../types/types';
 import { useSidebar } from '../../../../../componentes/Sidebar/SidebarContext';
 import dynamic from 'next/dynamic';
 import Loading from '../../../../../componentes/Loading/Loading';
 
 const DynamicTable = dynamic(() => import('./Table/Table'), {
   loading: () => <Loading />,
+  ssr: false // Evita carregar no servidor
 });
 
 const SolucaoFormModal = dynamic(() => import('./SolucaoFormModal.tsx/SolucaoFormModa'), {
-  loading: () => <Loading />, // Pode ser um skeleton específico para o formulário
+  loading: () => <Loading />,
+  ssr: false
 });
 const SolucaoInfoModal = dynamic(() => import('./SolucaoInfoModal/SolucaoInfoModal'), {
-  loading: () => <Loading />, // Pode ser um skeleton específico para o modal de info
+  loading: () => <Loading />,
+  ssr: false
 });
 
+// Adicione um componente específico para exportação Excel
+const ExcelExporter = dynamic(
+  () => import('./ExcelExporter'), // Crie este componente separadamente
+  { ssr: false, loading: () => <Loading /> }
+);
+
+// Componente separado para PDF
+const PDFViewer = dynamic(
+  () => import('./PDFViewer'), // Crie este componente separadamente
+  { ssr: false, loading: () => <Loading /> }
+);
 
 type CustomChangeEvent = {
   target: {
@@ -72,6 +82,7 @@ export default function Solucao() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const itemsPerPage = 15;
+  const [atualizacoes, setAtualizacoes] = useState<any[]>([]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [filters, setFilters] = useState({
     demanda_id: '',
@@ -92,15 +103,8 @@ export default function Solucao() {
   const [selectedLanguages, setSelectedLanguages] = useState<number[]>([]);
   const [activeFormTab, setActiveFormTab] = useState('ficha-tecnica');
   const [times, setTimes] = useState<any[]>([]);
+  const [selectedAtualizacaoId, setSelectedAtualizacaoId] = useState<string | null>(null);
   const { isCollapsed } = useSidebar();
-  const [timeFormData, setTimeFormData] = useState<TimeFormData>({
-    nome: '',
-    funcao: '',
-    data_inicio: '',
-    data_fim: '',
-    proprietario_id: 0
-  });
-  const [selectedTimeId, setSelectedTimeId] = useState<string | null>(null);
 
   useEffect(() => {
     const proprietarioId = params.id;
@@ -140,51 +144,7 @@ export default function Solucao() {
       console.error('Erro ao carregar demandas para select:', error);
     }
   };
-  useEffect(() => {
-    const loadTimes = async () => {
-      const timesData = await getTimes();
-      
-      if (timesData) {
-        setTimes(timesData);
-      }
-    };
-    
-    loadTimes();
-  }, []);
-
-
-  const handleTimeSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      const storedId = localStorage.getItem('selectedProprietarioId');
-      const timeData = {
-        ...timeFormData,
-        proprietario_id: Number(storedId)
-      };
-
-      if (selectedTimeId) {
-        await updateTime(selectedTimeId, timeData);
-      } else {
-        await createTime(timeData);
-      }
-
-      // Refresh times list
-      const updatedTimes = await getTimes();
-      setTimes(updatedTimes);
-
-      // Reset form
-      setTimeFormData({
-        nome: '',
-        funcao: '',
-        data_inicio: '',
-        data_fim: '',
-        proprietario_id: 0
-      });
-      setSelectedTimeId(null);
-    } catch (error) {
-      console.error('Error saving time:', error);
-    }
-  };
+ 
 
 
   // Modifique a função que busca as soluções para atualizar o totalPages
@@ -262,6 +222,23 @@ export default function Solucao() {
         return;
       }
 
+      // Format times data as JSON with the specified structure
+      const formattedTimes = formData.times?.map(time => ({
+        id: time.id,
+        responsavel_id: Number(time.responsavel_id),
+        funcao: time.funcao || '',
+        data_inicio: time.dataInicio || '',
+        data_fim: time.dataFim || ''
+      })) || [];
+
+      // Format updates data as JSON with the specified structure
+      const formattedAtualizacoes = formData.atualizacoes?.map(atualizacao => ({
+        id: atualizacao.id,
+        nome: atualizacao.nome || '',
+        descricao: atualizacao.descricao || '',
+        data_atualizacao: atualizacao.data_atualizacao || ''
+      })) || [];
+
       const linguagemValue = selectedLanguages.length > 0 ? selectedLanguages.join(',') : null;
       
       // Garantir que todos os campos estejam no formato correto
@@ -283,9 +260,12 @@ export default function Solucao() {
         responsavel_id: formData.responsavel_id ? Number(formData.responsavel_id) : null,
         status_id: formData.status_id ? Number(formData.status_id) : null,
         demanda_id: formData.demanda_id ? Number(formData.demanda_id) : null,
-        data_status: formData.data_status || new Date().toISOString().split('T')[0]
+        data_status: formData.data_status || new Date().toISOString().split('T')[0],
+        // Send times as JSON string with the new structure
+        times: JSON.stringify(formattedTimes),
+        // Send updates as JSON string with the new structure
+        atualizacoes: JSON.stringify(formattedAtualizacoes)
       };
-  
 
       if (isEditing) {
         try {
@@ -350,15 +330,7 @@ export default function Solucao() {
     }
   };
 
-  const handleTimeDelete = async (id: string) => {
-    try {
-      await deleteTime(id);
-      const updatedTimes = await getTimes();
-      setTimes(updatedTimes);
-    } catch (error) {
-      console.error('Error deleting time:', error);
-    }
-  };
+
   
   const formatDate = (dateString?: string | null) => {
    
@@ -549,7 +521,7 @@ export default function Solucao() {
       repositorio: solucao.repositorio || '',
       link: solucao.link || '',
       andamento: solucao.andamento || '',
-      criticidade: solucao.criticidade || '', // Garantir que seja string vazia se null
+      criticidade: solucao.criticidade || '',
       tipo_id: solucao.tipo?.id || null,
       linguagem_id: solucao.linguagemId || null,
       desenvolvedor_id: solucao.desenvolvedor?.id || null,
@@ -557,13 +529,28 @@ export default function Solucao() {
       responsavel_id: solucao.responsavel?.id || null,
       status_id: solucao.status?.id || null,
       demanda_id: solucao.demandaId || null,
-      data_status: solucao.data_status || solucao.dataStatus || ''
+      data_status: solucao.data_status || solucao.dataStatus || '',
+      // Parse the times JSON string if it exists and ensure it has IDs
+      times: solucao.times ? (typeof solucao.times === 'string' ? JSON.parse(solucao.times) : solucao.times).map((time: any) => ({
+        id: time.id,
+        responsavel_id: time.responsavel_id,
+        funcao: time.funcao || '',
+        dataInicio: time.data_inicio || '',
+        dataFim: time.data_fim || ''
+      })) : [],
+      // Parse the updates JSON string if it exists and ensure it has IDs
+      atualizacoes: solucao.atualizacoes ? (typeof solucao.atualizacoes === 'string' ? JSON.parse(solucao.atualizacoes) : solucao.atualizacoes).map((atualizacao: any) => ({
+        id: atualizacao.id,
+        nome: atualizacao.nome || '',
+        descricao: atualizacao.descricao || '',
+        data_atualizacao: atualizacao.data_atualizacao || ''
+      })) : []
     } as SolucaoFormData;
 
     setFormData(formDataToSet);
-    setIsEditing(solucao.id.toString());
+    setIsEditing(String(solucao.id));
     setIsModalOpen(true);
-  }, [setFormData, setIsEditing, setIsModalOpen]);
+  }, []);
 
   const handleLanguageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const value = Number(e.target.value);
@@ -693,6 +680,8 @@ export default function Solucao() {
   };
   
 
+
+
   return (
     <div className={`
       w-full bg-gray-50
@@ -777,14 +766,11 @@ export default function Solucao() {
             setIsDropdownOpen={setIsDropdownOpen}
             activeFormTab={activeFormTab}
             setActiveFormTab={setActiveFormTab}
-            times={times}
-            timeFormData={timeFormData}
-            setTimeFormData={setTimeFormData}
-            selectedTimeId={selectedTimeId}
-            setSelectedTimeId={setSelectedTimeId}
-            handleTimeSubmit={handleTimeSubmit}
-            handleTimeDelete={handleTimeDelete}
             formatDate={formatDate}
+            times={times}
+            atualizacoes={atualizacoes}
+            selectedAtualizacaoId={selectedAtualizacaoId}
+            setSelectedAtualizacaoId={setSelectedAtualizacaoId}
           />
         )}
 
