@@ -35,10 +35,10 @@ export default function Demanda() {
       demandante: '',
       link: '',
       fator_gerador: '',
-      alinhamento_id: 0,
-      prioridade_id: 0,
-      responsavel_id: 0,
-      status_id: 0,
+      alinhamento_id: null,
+      prioridade_id: null,
+      responsavel_id: null,
+      status_id: null,
       data_status: ''
     };
   });

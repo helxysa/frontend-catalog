@@ -44,6 +44,9 @@ export default function Form({
     e.preventDefault();
 
     try {
+      // Adicionar este log
+      console.log('Proprietario ID:', formData.proprietario_id);
+      
       // Validar campos obrigatórios
       const errors = {
         nome: !formData.nome,
@@ -53,6 +56,7 @@ export default function Form({
       setFormErrors(errors);
 
       if (errors.nome || errors.proprietario_id) {
+        console.log('Validation errors:', errors);
         return;
       }
 
@@ -66,10 +70,10 @@ export default function Form({
         fator_gerador: formData.fator_gerador || '',
         demandante: formData.demandante || '',
         proprietario_id: Number(formData.proprietario_id),
-        alinhamento_id: formData.alinhamento_id ? Number(formData.alinhamento_id) : 0,
-        prioridade_id: formData.prioridade_id ? Number(formData.prioridade_id) : 0,
-        responsavel_id: formData.responsavel_id ? Number(formData.responsavel_id) : 0,
-        status_id: formData.status_id ? Number(formData.status_id) : 0,
+        alinhamento_id: formData.alinhamento_id ? Number(formData.alinhamento_id) : null,
+        prioridade_id: formData.prioridade_id ? Number(formData.prioridade_id) : null,
+        responsavel_id: formData.responsavel_id ? Number(formData.responsavel_id) : null,
+        status_id: formData.status_id ? Number(formData.status_id) : null,
         data_status: formData.data_status || new Date().toISOString().split('T')[0]
       };
 
