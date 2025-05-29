@@ -52,9 +52,9 @@ export async function updateSolucao(id: string, solucao: any) {
       return response.data;
     } catch (error) {
       console.error("Error updating solution:", error);
-      throw error; // Lançar o erro para que ele seja tratado no handleSubmit
+      throw error;
     }
-  }
+}
 
 export async function deleteSolucao(id: string) {
     try {

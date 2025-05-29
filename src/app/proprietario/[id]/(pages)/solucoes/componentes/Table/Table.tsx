@@ -13,7 +13,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table"
-import { ArrowUpDown, ChevronDown, Edit2, Trash2, Info, ExternalLink, Columns, FileText, FileSpreadsheet } from "lucide-react"
+import { ArrowUpDown, Edit2, Trash2, Info, ExternalLink, Columns, FileText, FileSpreadsheet, HistoryIcon } from "lucide-react"
 import Link from 'next/link';
 import { pdf, Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
 import * as XLSX from 'xlsx';
@@ -48,6 +48,7 @@ interface TableProps {
   onEdit: (solucao: SolucaoType) => void;
   onDelete: (id: string) => void;
   onInfo: (solucao: SolucaoType) => void;
+  onHistorico: (solucao: SolucaoType) => void;
 }
 
 // Estilos para o PDF
@@ -267,7 +268,8 @@ export default function DataTable({
   isCollapsed,
   onEdit,
   onDelete,
-  onInfo
+  onInfo,
+  onHistorico
 }: TableProps) {
   // Helper functions
   const formatDate = (dateString?: string | null) => {
@@ -779,6 +781,12 @@ export default function DataTable({
             {formatRepositoryLink(solucao.link)}
           {!isManager && (
             <>
+             <button
+              onClick={() => onHistorico(solucao)}
+              className="text-blue-600 hover:text-blue-800 rounded-full hover:bg-blue-50 transition-colors"
+            >
+              <HistoryIcon className="w-5 h-5" />
+            </button>
             <button
               onClick={() => onEdit(solucao)}
               className="text-green-600 hover:text-green-800 rounded-full hover:bg-green-50 transition-colors"
@@ -791,6 +799,7 @@ export default function DataTable({
             >
               <Trash2 className="w-5 h-5" />
             </button>
+           
             </>
           )}
 

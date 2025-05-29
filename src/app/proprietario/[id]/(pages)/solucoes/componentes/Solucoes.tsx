@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react';
+import { use } from 'react'
 import { useParams } from 'next/navigation';
 import { 
   getSolucoes, 
@@ -34,6 +35,11 @@ const SolucaoFormModal = dynamic(() => import('./SolucaoFormModal.tsx/SolucaoFor
   ssr: false
 });
 const SolucaoInfoModal = dynamic(() => import('./SolucaoInfoModal/SolucaoInfoModal'), {
+  loading: () => <Loading />,
+  ssr: false
+});
+
+const HistoricoModal = dynamic(() => import('./HistoricoModal/HistoricoModal'), {
   loading: () => <Loading />,
   ssr: false
 });
@@ -82,6 +88,8 @@ export default function Solucao() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const itemsPerPage = 15;
+  const [isHistoricoModalOpen, setIsHistoricoModalOpen] = useState(false);
+  const [selectedSolucaoId, setSelectedSolucaoId] = useState<number | null>(null);
   const [atualizacoes, setAtualizacoes] = useState<any[]>([]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [filters, setFilters] = useState({
@@ -157,7 +165,7 @@ export default function Solucao() {
       }
 
       const solucoesData = await getSolucoes(page, itemsPerPage, Number(storedId));
-      const solucoesArray = solucoesData || []; // Removi o .data, pois o backend já retorna o array diretamente
+      const solucoesArray = solucoesData || []; 
       setSolucoes(solucoesArray);
     } catch (error) {
       console.error('Erro ao buscar soluções:', error);
@@ -391,6 +399,12 @@ export default function Solucao() {
       console.error('Error fetching histórico:', error);
     }
   }, [setSelectedDemandDetails, setIsInfoModalOpen, setActiveTab, getHistoricoSolucoes]);
+
+
+  const handleHistoricoClick = (solucao: SolucaoType) => {
+    setSelectedSolucaoId(solucao.id);
+    setIsHistoricoModalOpen(true);
+  };
 
   const formatHistoricoDescricao = (descricao: string, evento: HistoricoType) => {
     // Função para formatar valores nulos
@@ -720,6 +734,7 @@ export default function Solucao() {
           onEdit={handleEditClick}
           onDelete={handleDeleteClick}
           onInfo={handleInfoClick}
+          onHistorico={handleHistoricoClick}
         />
         
         {/* <Pagination /> */}
@@ -1071,6 +1086,15 @@ export default function Solucao() {
             isOpen={isDeleteModalOpen}
             onClose={() => setIsDeleteModalOpen(false)}
             onConfirm={confirmDelete}
+          />
+        )}
+        {isHistoricoModalOpen && selectedSolucaoId && (
+          <HistoricoModal
+            isOpen={isHistoricoModalOpen}
+            onClose={() => setIsHistoricoModalOpen(false)}
+            solucaoId={selectedSolucaoId}
+            responsaveis={responsaveis}
+            formatDate={formatDate}
           />
         )}
       </div>
