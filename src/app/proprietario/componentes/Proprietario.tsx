@@ -260,12 +260,14 @@ export default function Proprietario() {
                   USUÁRIOS
                 </Link>
               )}
-              <button
+              {!user?.isManager && (
+                <button
                 onClick={() => setShowModal(true)}
                 className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transform transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
               >
                 + CRIAR UNIDADE
               </button>
+              )}
             </div>
           </div>
 

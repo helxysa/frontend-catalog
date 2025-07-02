@@ -20,9 +20,14 @@ import DeleteConfirmationModal from './ModalConfirmacao/DeleteConfirmationModal'
 import { useSidebar } from '../../../../../componentes/Sidebar/SidebarContext';
 import Form from './Form/Form';
 import DataTable from './Table/Table';
+import { useAuth } from '@/app/contexts/AuthContext'
+
+
 
 export default function Demanda() {
   const [demandas, setDemandas] = useState<DemandaType[]>([]);
+  const {  user } = useAuth();  
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedDemandDetails, setSelectedDemandDetails] = useState<DemandaType | null>(null);
   const [formData, setFormData] = useState<DemandaFormData>(() => {
@@ -540,13 +545,16 @@ export default function Demanda() {
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold text-gray-800">Crie sua demanda</h1>
           <div className="flex gap-2">
-            <button
+            {!user?.isManager && (
+              <button
               onClick={() => setIsModalOpen(true)}
               className="bg-blue-600 text-white px-4 py-2 rounded-md flex items-center gap-2 hover:bg-blue-700 transition-colors"
             >
               <Plus className="w-4 h-4" />
               Adicionar
             </button>
+            )}
+            
           </div>
         </div>
 
