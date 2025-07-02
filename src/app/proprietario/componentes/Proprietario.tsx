@@ -10,6 +10,7 @@ import Link from "next/link";
 import DeleteConfirmationModal from "../[id]/(pages)/demandas/componentes/ModalConfirmacao/DeleteConfirmationModal";
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
+import Footer  from '@/app/componentes/Footer/Footer'
 
 // Componente de imagem otimizado com lazy loading
 const OptimizedImage = dynamic(() => import('next/image'), { 
@@ -356,7 +357,7 @@ export default function Proprietario() {
                     <p className="text-xs text-gray-400">
                       Criado em: {new Date(escritorio.createdAt).toLocaleDateString('pt-BR')}
                     </p>
-                    {user?.isAdmin && (
+                    {user?.isAdmin || user?.isManager && (
                       escritorio.user ? (
                         <p className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded-full font-medium">
                           Proprietário: {escritorio.user.fullName || escritorio.user.email}
@@ -413,6 +414,7 @@ export default function Proprietario() {
           )}
         </div>
       </main>
+      <Footer />
     </div>
   );
 }
