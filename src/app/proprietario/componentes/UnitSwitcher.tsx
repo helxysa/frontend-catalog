@@ -17,7 +17,7 @@ interface Proprietario {
 }
 
 // Componente de imagem otimizado com lazy loading
-const OptimizedImage = dynamic(() => import('next/image'), { 
+const OptimizedImage = dynamic(() => import('next/image'), {
   loading: () => (
     <div className="rounded-full bg-gray-200 h-full w-full flex items-center justify-center">
       <Building2 className="h-4 w-4 text-gray-400" />
@@ -32,6 +32,7 @@ export default function UnitSwitcher() {
   const [selectedProprietario, setSelectedProprietario] = useState<Proprietario | null>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [imageError, setImageError] = useState<Record<string, boolean>>({});
+  const [isImageLoaded, setIsImageLoaded] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
   const { user } = useAuth();
@@ -51,19 +52,19 @@ export default function UnitSwitcher() {
       try {
         const data = await getProprietarios();
         setProprietarios(data);
-        
+
         // Se não houver proprietários, não fazer nada
         if (!data || data.length === 0) return;
-        
+
         // Se houver apenas um proprietário, selecionar automaticamente
         if (data.length === 1) {
           handleProprietarioChange(data[0].id.toString());
           return;
         }
-        
+
         // Verificar se há um proprietário selecionado no localStorage
         const storedId = localStorage.getItem('selectedProprietarioId');
-        
+
         // Se houver um ID armazenado e ele pertencer ao usuário atual, usá-lo
         if (storedId) {
           const proprietarioExists = data.some((p: Proprietario) => p.id.toString() === storedId);
@@ -72,7 +73,7 @@ export default function UnitSwitcher() {
             return;
           }
         }
-        
+
         // Caso contrário, selecionar o primeiro proprietário
         handleProprietarioChange(data[0].id.toString());
       } catch (error) {
@@ -112,24 +113,31 @@ export default function UnitSwitcher() {
   const renderLogo = (proprietario: Proprietario, size = 8) => {
     if (proprietario?.logo && !imageError[proprietario.id]) {
       return (
-        <div className={`relative h-${size} w-${size} overflow-hidden rounded-full`}>
+        <div className={`relative h-${size} w-${size} overflow-hidden rounded-full bg-gray-200`}>
+          {/* Esqueleto, visível por padrão */}
+          {!isImageLoaded && (
+            <div className="h-full w-full animate-pulse bg-gray-300"></div>
+          )}
+
+          {/* Imagem, inicialmente invisível */}
           <Image
             src={`${baseURL}${proprietario.logo}`}
             alt={`Logo ${proprietario.nome}`}
             fill
             sizes="(max-width: 768px) 100vw, 33vw"
-            className="object-cover"
+            className={`object-cover transition-opacity duration-300 ${isImageLoaded ? 'opacity-100' : 'opacity-0'}`}
             loading="lazy"
             onError={() => handleImageError(proprietario.id)}
+            onLoadingComplete={() => setIsImageLoaded(true)} // Muda o estado quando a imagem carrega
             unoptimized={true}
           />
         </div>
       );
     }
-    
+
     return (
       <div className={`h-${size} w-${size} rounded-full bg-gray-200 flex items-center justify-center`}>
-        <Building2 className={`h-${size/2} w-${size/2} text-gray-400`} />
+        <Building2 className={`h-${size / 2} w-${size / 2} text-gray-400`} />
       </div>
     );
   };

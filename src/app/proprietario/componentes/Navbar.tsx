@@ -24,24 +24,41 @@ export default function Navbar() {
 
   return (
     <nav className="fixed top-0 left-0 right-0 bg-white border-b border-gray-200 transition-all duration-300 z-50 shadow-sm">
-      <div className="h-20 flex items-center justify-between px-6 lg:px-8 w-full max-w-[2000px] mx-auto">
+      <div className="h-20 flex items-center justify-between px-6 lg:px-8 w-full max-w-[1880px] mx-auto">
         {/* Left side - Catalog */}
         <div className="flex items-center">
           <Link
             href="/proprietario"
             className="flex items-center gap-3 hover:opacity-80 transition-opacity group"
           >
-            <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-4 py-2 rounded-md font-bold text-base group-hover:from-blue-700 group-hover:to-blue-800 transition-all">
-              1.0
-            </div>
+
             <span className="text-2xl font-bold text-gray-900">Catalog</span>
           </Link>
         </div>
 
         {/* Right side - Ministry Info, Logo and Logout */}
-        <div className="flex items-center gap-8">
-          <div className="hidden md:flex items-center gap-8">
-            {/* Logout Button */}
+        <div className="flex items-center gap-6">
+          <div className="hidden md:flex items-center gap-4">
+            <div className="flex items-center gap-4">
+              <div className="h-14 w-14 relative flex-shrink-0">
+                <Image
+                  src="/images.webp"
+                  alt="MP-AP Logo"
+                  width={56}
+                  height={56}
+                  className="object-contain w-full h-full"
+                  priority
+                  sizes="56px"
+                />
+              </div>
+              <div>
+                <h2 className="text-lg font-medium text-gray-900">Ministério Público</h2>
+                <p className="text-sm text-gray-600">do Estado do Amapá</p>
+              </div>
+            </div>
+
+            <div className="h-10 border-l border-gray-300" />
+
             <button
               onClick={async () => {
                 await logout();
@@ -53,22 +70,6 @@ export default function Navbar() {
               <LogOut className="h-4 w-4" />
               <span>Sair</span>
             </button>
-
-            <div>
-              <h2 className="text-lg font-medium text-gray-900">Ministério Público</h2>
-              <p className="text-sm text-gray-600">do Estado do Amapá</p>
-            </div>
-            <div className="h-14 w-14 relative">
-              <Image
-                src="/images.webp"
-                alt="MP-AP Logo"
-                width={56}
-                height={56}
-                className="object-contain w-full h-full"
-                priority
-                sizes="56px"
-              />
-            </div>
           </div>
 
           {/* Mobile menu button */}

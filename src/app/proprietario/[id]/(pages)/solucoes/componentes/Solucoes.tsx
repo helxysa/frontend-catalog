@@ -24,6 +24,7 @@ import { SolucaoFormData, BaseType, HistoricoType, SolucaoType, } from '../types
 import { useSidebar } from '../../../../../componentes/Sidebar/SidebarContext';
 import dynamic from 'next/dynamic';
 import Loading from '../../../../../componentes/Loading/Loading';
+import { useAuth } from '@/app/contexts/AuthContext'
 
 const DynamicTable = dynamic(() => import('./Table/Table'), {
   loading: () => <Loading />,
@@ -66,6 +67,7 @@ type CustomChangeEvent = {
 const DeleteConfirmationModal = dynamic(() => import('./ModalConfirmacao/DeleteConfirmationModal'));
 
 export default function Solucao() {
+  const { user } = useAuth();
   const params = useParams();
   const [solucoes, setSolucoes] = useState<SolucaoType[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -714,13 +716,16 @@ export default function Solucao() {
           <h1 className="text-2xl font-bold text-gray-800">Crie sua solução</h1>
           <div className="flex gap-2">
             {/* <UpdateSolucoesButton /> */}
-            <button 
+            {!user?.isManager && (
+              <button 
               onClick={handleOpenModal}
               className="bg-blue-600 text-white px-4 py-2 rounded-md flex items-center gap-2 hover:bg-blue-700 transition-colors"
             >
               <Plus className="w-4 h-4" />
               Adicionar
             </button>
+            )}
+            
           </div>
         </div>
 

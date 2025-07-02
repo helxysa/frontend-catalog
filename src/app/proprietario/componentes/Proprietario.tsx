@@ -10,9 +10,10 @@ import Link from "next/link";
 import DeleteConfirmationModal from "../[id]/(pages)/demandas/componentes/ModalConfirmacao/DeleteConfirmationModal";
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
+import Footer from '@/app/componentes/Footer/Footer'
 
 // Componente de imagem otimizado com lazy loading
-const OptimizedImage = dynamic(() => import('next/image'), { 
+const OptimizedImage = dynamic(() => import('next/image'), {
   loading: () => (
     <div className="bg-blue-50 h-full w-full flex items-center justify-center rounded-lg">
       <Building2 className="h-10 w-10 text-blue-500" />
@@ -53,7 +54,7 @@ function ConfirmCloneModal({ isOpen, onClose, onConfirm, proprietarioName }: Con
         <div className="text-center">
           <div className="w-12 h-12 bg-blue-100 rounded-full mx-auto flex items-center justify-center mb-4">
             <svg className="w-6 h-6 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </div>
           <h3 className="text-lg font-semibold text-gray-900 mb-2">Confirmar Clonagem</h3>
@@ -189,12 +190,12 @@ export default function Proprietario() {
             className="object-cover"
             loading="lazy"
             onError={() => handleImageError(escritorio.id)}
-            
+
           />
         </div>
       );
     }
-    
+
     return (
       <div className="h-20 w-20 flex-shrink-0 rounded-lg bg-blue-50 flex items-center justify-center">
         <Building2 className="h-10 w-10 text-blue-500" />
@@ -252,7 +253,7 @@ export default function Proprietario() {
               <p className="mt-2 text-gray-600">Gerencie as unidades</p>
             </div>
             <div className="flex flex-row gap-2">
-              {user?.isAdmin &&  (
+              {user?.isAdmin && (
                 <Link
                   href="/proprietario/usuarios"
                   className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transform transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
@@ -260,12 +261,14 @@ export default function Proprietario() {
                   USUÁRIOS
                 </Link>
               )}
-              <button
-                onClick={() => setShowModal(true)}
-                className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transform transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-              >
-                + CRIAR UNIDADE
-              </button>
+              {!user?.isManager && (
+                <button
+                  onClick={() => setShowModal(true)}
+                  className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transform transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                >
+                  + CRIAR UNIDADE
+                </button>
+              )}
             </div>
           </div>
 
@@ -300,8 +303,8 @@ export default function Proprietario() {
                           aria-label="Editar"
                         >
                           <svg className="w-4 h-4 text-gray-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" strokeLinecap="round" strokeLinejoin="round"/>
-                            <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" strokeLinecap="round" strokeLinejoin="round"/>
+                            <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" strokeLinecap="round" strokeLinejoin="round" />
+                            <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" strokeLinecap="round" strokeLinejoin="round" />
                           </svg>
                         </button>
                         <button
@@ -314,7 +317,7 @@ export default function Proprietario() {
                           aria-label="Clonar"
                         >
                           <svg className="w-4 h-4 text-gray-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" strokeLinecap="round" strokeLinejoin="round"/>
+                            <path d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" strokeLinecap="round" strokeLinejoin="round" />
                           </svg>
                         </button>
                         <button
@@ -323,9 +326,9 @@ export default function Proprietario() {
                           aria-label="Excluir"
                         >
                           <svg className="w-4 h-4 text-red-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" strokeLinecap="round" strokeLinejoin="round"/>
-                            <line x1="10" y1="11" x2="10" y2="17" strokeLinecap="round" strokeLinejoin="round"/>
-                            <line x1="14" y1="11" x2="14" y2="17" strokeLinecap="round" strokeLinejoin="round"/>
+                            <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" strokeLinecap="round" strokeLinejoin="round" />
+                            <line x1="10" y1="11" x2="10" y2="17" strokeLinecap="round" strokeLinejoin="round" />
+                            <line x1="14" y1="11" x2="14" y2="17" strokeLinecap="round" strokeLinejoin="round" />
                           </svg>
                         </button>
                       </>
@@ -354,7 +357,7 @@ export default function Proprietario() {
                     <p className="text-xs text-gray-400">
                       Criado em: {new Date(escritorio.createdAt).toLocaleDateString('pt-BR')}
                     </p>
-                    {user?.isAdmin && (
+                    {(user?.isAdmin || user?.isManager) && (
                       escritorio.user ? (
                         <p className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded-full font-medium">
                           Proprietário: {escritorio.user.fullName || escritorio.user.email}
@@ -411,6 +414,7 @@ export default function Proprietario() {
           )}
         </div>
       </main>
+      <Footer />
     </div>
   );
 }
