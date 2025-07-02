@@ -3,7 +3,6 @@ import { useState, useEffect } from "react";
 import { registerUser, updateUser, deleteUser, checkIsAdmin, listUsers, getCurrentUser } from "../actions/actions";
 import { UserPlus, Mail, User, Lock, Eye, EyeOff, Users, Calendar, X, Shield, ShieldCheck, Trash2, Edit2, ChevronLeft } from 'lucide-react';
 import { UserRegister } from "../types/type";
-import api from "../../../lib/api";
 import DeleteConfirmationModal from "../../../proprietario/[id]/(pages)/solucoes/componentes/ModalConfirmacao/DeleteConfirmationModal";
 import Link from "next/link";
 
@@ -179,7 +178,7 @@ export default function RegistrarUsuario() {
   // Função para obter o nome do papel do usuário
   const getRoleName = (roleId: number | undefined) => {
     if (roleId === Roles.ADMIN) return 'Administrador';
-    if (roleId === Roles.MANAGER) return 'Diretor';
+    if (roleId === Roles.MANAGER) return 'Leitor';
     return 'Usuário';
   };
 
@@ -523,14 +522,14 @@ export default function RegistrarUsuario() {
                   >
                     <option value={Roles.USER}>Usuário</option>
                     <option value={Roles.ADMIN}>Administrador</option>
-                    <option value={Roles.MANAGER}>Diretor</option>
+                    <option value={Roles.MANAGER}>Leitor</option>
                   </select>
                 </div>
                 <p className="mt-1 text-xs text-gray-500">
                   {formData.roleId === Roles.ADMIN ? 
                     "Administradores têm acesso a todas as funcionalidades do sistema." : 
                     formData.roleId === Roles.MANAGER ?
-                    "Diretores têm acesso para visualizar todas as informações, mas não podem modificar registros." :
+                    "Lietores tem acesso para visualizar todas as informações, mas não podem modificar registros." :
                     "Usuários têm acesso limitado às suas próprias unidades."}
                 </p>
               </div>
