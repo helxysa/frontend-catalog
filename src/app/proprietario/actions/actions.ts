@@ -1,9 +1,9 @@
-import api from '../../../lib/api';  
+import api from '../../../lib/api';
 import axios, { AxiosError } from 'axios';
 import { RegisterUserData, CreateProprietarioData } from '../types/type';
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3333';
 
-function VerifyRole(role: number){
+function VerifyRole(role: number) {
   if (role === 2) {
     return 'admin'
   }
@@ -11,7 +11,7 @@ function VerifyRole(role: number){
     return 'manager'
   } else {
     return 'user'
-  } 
+  }
 }
 
 // Função para verificar se o usuário é um gerente
@@ -150,7 +150,7 @@ export async function createProprietario(proprietario: CreateProprietarioData) {
 
 export async function updateProprietario(id: string, proprietario: Partial<CreateProprietarioData & { user_id: string | number | null }>) {
   try {
-    console.log('Updating proprietario with ID:', id); 
+    console.log('Updating proprietario with ID:', id);
     console.log('Update data:', proprietario);
 
     const formData = new FormData();
@@ -234,18 +234,17 @@ export async function deleteProprietario(id: string) {
   }
 }
 
-
-
 export async function cloneProprietario(id: string) {
   try {
+    console.log('API SENDO CHAMADA')
     const response = await api.post(`${baseUrl}/proprietarios/${id}/clone`);
-    return response.data;
+    console.log('resposta', response.data)
+    return response.data.data;
   } catch (error) {
     if (axios.isAxiosError(error)) {
       console.error('Error cloning proprietario:', error.response?.data);
-      if (error.response?.status === 404) {
-        throw new Error('Proprietário não encontrado');
-      }
+      const errorMessage = error.response?.data?.message || 'Erro ao clonar proprietário.';
+      throw new Error(errorMessage);
     }
     throw new Error('Erro ao clonar proprietário');
   }
