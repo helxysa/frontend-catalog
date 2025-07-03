@@ -14,7 +14,6 @@ import {
   deleteSolucao,
   createSolucao,
   updateSolucao,
-  getDemandas,
   getHistoricoSolucoes,
   getAllDemandas,
 } from "../actions/actions";

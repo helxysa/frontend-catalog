@@ -7,7 +7,7 @@ import { Building2, Trash2 } from 'lucide-react';
 import Navbar from './Navbar';
 import { useAuth } from "../../contexts/AuthContext";
 import Link from "next/link";
-import DeleteConfirmationModal from "../[id]/(pages)/demandas/componentes/ModalConfirmacao/DeleteConfirmationModal";
+import DeleteConfirmationModal from './DeleteConfirmationModal';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import Footer from '@/app/componentes/Footer/Footer'

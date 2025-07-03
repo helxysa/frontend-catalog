@@ -1,16 +1,37 @@
 import api from '../../../../../../lib/api';
+import { revalidatePath } from "next/cache";
 
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3333';
 const url = '/demandas';
 
-export async function getDemandas(page: number = 1, limit: number = 8) {
+
+
+export async function getDemandas(proprietarioId: string | number) {
+  if (!proprietarioId) {
+    console.log("ID do proprietário não fornecido.");
+    return [];
+  }
   try {
-    const response = await api.get(`${url}?page=${page}&limit=${limit}`);
-    return response.data;
+    const response = await api.get(`/demandas/busca/${proprietarioId}?page=1&limit=10`);
+    return response.data; 
+  } catch (err) {
+    console.error("Erro ao buscar demandas no servidor:", err);
+    return [];
+  }
+}
+
+// 2. AÇÃO PARA DELETAR (JÁ PREPARADA PARA O FUTURO)
+export async function deleteDemandaAction(id: number) {
+  try {
+    await api.delete(`${url}/${id}`);
+
+    // Invalida o cache da rota principal para forçar a atualização dos dados
+    revalidatePath("/demandas"); // Coloque aqui a rota da sua página
+
+    return { success: true, message: "Demanda deletada com sucesso!" };
   } catch (error) {
-    console.error("Error fetching demands:", error);
-    return null;
+    return { success: false, message: "Erro ao deletar a demanda." };
   }
 }
 
@@ -124,22 +145,6 @@ export async function getResponsaveis() {
   }
 }
 
-
-export async function getStatus() {
-  try {
-    const storedId = localStorage.getItem('selectedProprietarioId');
-    if (!storedId) {
-      throw new Error("ProprietarioId not found in localStorage");
-    }
-    const response = await api.get(`${urlSelect}/proprietarios/${storedId}/status`);
-    return response.data;
-  } catch (error) {
-    console.error("Error fetching status:", error);
-    return null;
-  }
-}
-
-
 export async function getHistoricoDemandas() {
   try {
     const response = await api.get(`${urlSelect}/historico_demandas`);
@@ -149,5 +154,8 @@ export async function getHistoricoDemandas() {
     return null;
   }
 }
+
+
+
 
 
