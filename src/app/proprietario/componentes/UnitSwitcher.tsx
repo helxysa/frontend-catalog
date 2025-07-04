@@ -112,27 +112,33 @@ export default function UnitSwitcher() {
 
   const renderLogo = (proprietario: Proprietario, size = 8) => {
     if (proprietario?.logo && !imageError[proprietario.id]) {
-      return (
-        <div className={`relative h-${size} w-${size} overflow-hidden rounded-full bg-gray-200`}>
-          {/* Esqueleto, visível por padrão */}
-          {!isImageLoaded && (
-            <div className="h-full w-full animate-pulse bg-gray-300"></div>
-          )}
+      try {
+        const logoUrl = new URL(proprietario.logo, baseURL).toString();
+        return (
+          <div className={`relative h-${size} w-${size} overflow-hidden rounded-full bg-gray-200`}>
+            {/* Esqueleto, visível por padrão */}
+            {!isImageLoaded && (
+              <div className="h-full w-full animate-pulse bg-gray-300"></div>
+            )}
 
-          {/* Imagem, inicialmente invisível */}
-          <Image
-            src={`${baseURL}${proprietario.logo}`}
-            alt={`Logo ${proprietario.nome}`}
-            fill
-            sizes="(max-width: 768px) 100vw, 33vw"
-            className={`object-cover transition-opacity duration-300 ${isImageLoaded ? 'opacity-100' : 'opacity-0'}`}
-            loading="lazy"
-            onError={() => handleImageError(proprietario.id)}
-            onLoadingComplete={() => setIsImageLoaded(true)} // Muda o estado quando a imagem carrega
-            unoptimized={true}
-          />
-        </div>
-      );
+            {/* Imagem, inicialmente invisível */}
+            <Image
+              src={logoUrl}
+              alt={`Logo ${proprietario.nome}`}
+              fill
+              sizes="(max-width: 768px) 100vw, 33vw"
+              className={`object-cover transition-opacity duration-300 ${isImageLoaded ? 'opacity-100' : 'opacity-0'}`}
+              loading="lazy"
+              onError={() => handleImageError(proprietario.id)}
+              onLoadingComplete={() => setIsImageLoaded(true)} // Muda o estado quando a imagem carrega
+              unoptimized={true}
+            />
+          </div>
+        );
+      } catch (error) {
+        console.error(`URL inválida para o logo no UnitSwitcher: ${proprietario.logo}. BaseURL: ${baseURL}`);
+        handleImageError(proprietario.id);
+      }
     }
 
     return (

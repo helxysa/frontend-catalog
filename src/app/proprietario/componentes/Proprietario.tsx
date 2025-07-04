@@ -7,7 +7,7 @@ import { Building2, Trash2 } from 'lucide-react';
 import Navbar from './Navbar';
 import { useAuth } from "../../contexts/AuthContext";
 import Link from "next/link";
-import DeleteConfirmationModal from "../[id]/(pages)/demandas/componentes/ModalConfirmacao/DeleteConfirmationModal";
+import DeleteConfirmationModal from "./DeleteConfirmationModal";
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import Footer from '@/app/componentes/Footer/Footer'
@@ -180,20 +180,26 @@ export default function Proprietario() {
 
   const renderLogo = (escritorio: Proprietario) => {
     if (escritorio.logo && !imageError[escritorio.id]) {
-      return (
-        <div className="relative h-20 w-20 flex-shrink-0 rounded-lg overflow-hidden">
-          <Image
-            src={`${baseURL}${escritorio.logo}`}
-            alt={`Logo ${escritorio.nome}`}
-            fill
-            sizes="(max-width: 768px) 100vw, 80px"
-            className="object-cover"
-            loading="lazy"
-            onError={() => handleImageError(escritorio.id)}
-
-          />
-        </div>
-      );
+      try {
+        const logoUrl = new URL(escritorio.logo, baseURL).toString();
+        return (
+          <div className="relative h-20 w-20 flex-shrink-0 rounded-lg overflow-hidden">
+            <Image
+              src={logoUrl}
+              alt={`Logo ${escritorio.nome}`}
+              fill
+              sizes="(max-width: 768px) 100vw, 80px"
+              className="object-cover"
+              loading="lazy"
+              onError={() => handleImageError(escritorio.id)}
+            />
+          </div>
+        );
+      } catch (error) {
+        console.error(`URL inválida para o logo: ${escritorio.logo}. BaseURL: ${baseURL}`);
+        // Se a construção da URL falhar, aciona o erro para mostrar o ícone padrão
+        handleImageError(escritorio.id);
+      }
     }
 
     return (
