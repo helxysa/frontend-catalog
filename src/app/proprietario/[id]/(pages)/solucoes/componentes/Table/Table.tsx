@@ -51,7 +51,6 @@ interface TableProps {
   onHistorico: (solucao: SolucaoType) => void;
 }
 
-// Estilos para o PDF
 const styles = StyleSheet.create({
   page: {
     flexDirection: 'column',

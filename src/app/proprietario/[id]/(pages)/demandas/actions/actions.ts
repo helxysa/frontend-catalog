@@ -1,16 +1,38 @@
 import api from '../../../../../../lib/api';
+import { revalidatePath } from "next/cache";
 
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3333';
 const url = '/demandas';
 
-export async function getDemandas(page: number = 1, limit: number = 8) {
+
+
+export async function getDemandas(proprietarioId: string | number, page: number = 1, limit: number = 10) {
+  if (!proprietarioId) {
+    console.log("ID do proprietário não fornecido.");
+    return { data: [], meta: { total: 0, perPage: limit, currentPage: page, lastPage: 1 } };
+  }
   try {
-    const response = await api.get(`${url}?page=${page}&limit=${limit}`);
-    return response.data;
+    const response = await api.get(`/demandas/busca/${proprietarioId}?page=${page}&limit=${limit}`);
+    return response.data; 
+  } catch (err: any) {
+    if (err.isAxiosError && err.response && err.response.status === 404) {
+      return { data: [], meta: { total: 0, perPage: limit, currentPage: page, lastPage: 1 } };
+    }
+    console.error("Erro ao buscar demandas no servidor:", err);
+    return { data: [], meta: { total: 0, perPage: limit, currentPage: page, lastPage: 1 } };
+  }
+}
+
+export async function deleteDemandaAction(id: number) {
+  try {
+    await api.delete(`${url}/${id}`);
+
+    revalidatePath("/demandas"); 
+
+    return { success: true, message: "Demanda deletada com sucesso!" };
   } catch (error) {
-    console.error("Error fetching demands:", error);
-    return null;
+    return { success: false, message: "Erro ao deletar a demanda." };
   }
 }
 
@@ -124,21 +146,19 @@ export async function getResponsaveis() {
   }
 }
 
-
-export async function getStatus() {
+export async function getHistoricoByDemandaId(demandaId: number) {
+  if (!demandaId) {
+    console.error("ID da demanda não fornecido para buscar histórico.");
+    return [];
+  }
   try {
-    const storedId = localStorage.getItem('selectedProprietarioId');
-    if (!storedId) {
-      throw new Error("ProprietarioId not found in localStorage");
-    }
-    const response = await api.get(`${urlSelect}/proprietarios/${storedId}/status`);
+    const response = await api.get(`/demandas/${demandaId}/historico`);
     return response.data;
   } catch (error) {
-    console.error("Error fetching status:", error);
-    return null;
+    console.error("Erro ao buscar histórico da demanda:", error);
+    return [];
   }
 }
-
 
 export async function getHistoricoDemandas() {
   try {
@@ -149,5 +169,3 @@ export async function getHistoricoDemandas() {
     return null;
   }
 }
-
-

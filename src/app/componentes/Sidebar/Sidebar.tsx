@@ -101,21 +101,27 @@ export function Sidebar() {
 
   const renderLogo = (size: string, className: string = "") => {
     if (proprietario?.logo && !imageError[proprietario.id]) {
-      return (
-        <div className={`relative ${size} ${className}`}>
-          <Image
-            src={`${baseURL}${proprietario.logo}`}
-            alt={`Logo ${proprietario.nome}`}
-            fill
-            sizes="(max-width: 768px) 100vw, 40px"
-            className="rounded-full object-cover"
-            loading="eager" // Altere para eager para priorizar o carregamento
-            priority={true} // Adicione priority para imagens acima da dobra
-            onError={() => handleImageError(proprietario.id)}
-            unoptimized={false} // Altere para false para permitir otimizações
-          />
-        </div>
-      );
+      try {
+        const logoUrl = new URL(proprietario.logo, baseURL).toString();
+        return (
+          <div className={`relative ${size} ${className}`}>
+            <Image
+              src={logoUrl}
+              alt={`Logo ${proprietario.nome}`}
+              fill
+              sizes="(max-width: 768px) 100vw, 40px"
+              className="rounded-full object-cover"
+              loading="eager" // Altere para eager para priorizar o carregamento
+              priority={true} // Adicione priority para imagens acima da dobra
+              onError={() => handleImageError(proprietario.id)}
+              unoptimized={false} // Altere para false para permitir otimizações
+            />
+          </div>
+        );
+      } catch (error) {
+        console.error(`URL inválida para o logo no Sidebar: ${proprietario.logo}. BaseURL: ${baseURL}`);
+        handleImageError(proprietario.id);
+      }
     }
     
     return (

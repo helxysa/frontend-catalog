@@ -1,454 +1,393 @@
-'use client'
+'use client';
 
-import * as React from "react"
+import { useEffect, useState, useMemo, useCallback } from 'react';
+import { getDemandas, getSolucoesByDemandaId, deleteDemandaAction } from '../../actions/actions';
+import { Demanda, PaginatedResponse } from '../../types/types';
 import {
-  ColumnDef,
-  ColumnFiltersState,
-  SortingState,
-  VisibilityState,
-  flexRender,
-  getCoreRowModel,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  useReactTable,
-} from "@tanstack/react-table"
-import { ArrowUpDown, ChevronDown, Edit2, Trash2, Info, ExternalLink, Columns } from "lucide-react"
-import Link from 'next/link';
-import { useState, useEffect } from "react"
-import { useAuth } from '../../../../../../contexts/AuthContext';
-
-import { Button } from "@/components/ui/button"
+  Table as ShadcnTable,
+  TableHeader,
+  TableRow,
+  TableHead,
+  TableBody,
+  TableCell,
+} from '@/components/ui/table';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Input } from "@/components/ui/input"
+} from '@/components/ui/dropdown-menu';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
+  useReactTable,
+  getCoreRowModel,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  flexRender,
+  ColumnDef,
+  SortingState,
+  ColumnFiltersState,
+  VisibilityState,
+} from '@tanstack/react-table';
+import Form from '../Form/Form';
+import {
+  ArrowUpDown,
+  Columns,
+  Edit2,
+  ExternalLink,
+  Info,
+  Plus,
+  Trash2,
+} from 'lucide-react';
+import InfoModal from '../InfoModal/InfoModal';
 
-import { DemandaType } from "../../types/types";
-import { getSolucoesByDemandaId } from "../../actions/actions";
+export default function Table() {
+  const [data, setData] = useState<Demanda[]>([]);
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [demandaToEdit, setDemandaToEdit] = useState<Demanda | null>(null);
+  const [solucoes, setSolucoes] = useState<{ [key: number]: any[] }>({});
+  const [loadingSolucoes, setLoadingSolucoes] = useState<{ [key: number]: boolean }>({});
+  const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
+  const [selectedDemanda, setSelectedDemanda] = useState<Demanda | null>(null);
 
+  const [pagination, setPagination] = useState({
+    pageIndex: 0,
+    pageSize: 10,
+  });
+  const [totalRows, setTotalRows] = useState(0);
 
-interface TableProps {
-  demandas: DemandaType[];
-  isCollapsed: boolean;
-  onEdit: (solucao: DemandaType) => void;
-  onDelete: (id: string) => void;
-  onInfo: (solucao: DemandaType) => void;
-}
+  const [sorting, setSorting] = useState<SortingState>([]);
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+  const [globalFilter, setGlobalFilter] = useState('');
 
-export default function DataTable({
-  demandas,
-  isCollapsed,
-  onEdit,
-  onDelete,
-  onInfo
-}: TableProps) {
-  // Helper functions
-  const formatDate = (dateString?: string | null) => {
-    if (!dateString) {
-      return '-';
-    }
-
-    try {
-      const date = new Date(dateString);
-
-      if (isNaN(date.getTime())) {
-        return '-';
+  const fetchData = useCallback(async () => {
+    const proprietarioId = localStorage.getItem('selectedProprietarioId');
+    if (proprietarioId) {
+      try {
+        const response: PaginatedResponse = await getDemandas(
+          proprietarioId,
+          pagination.pageIndex + 1,
+          pagination.pageSize
+        );
+        const demandasData = response.data || [];
+        setData(demandasData);
+        setTotalRows(response.meta.total);
+      } catch (error) {
+        console.error('Erro ao buscar demandas:', error);
+        setData([]);
       }
+    }
+  }, [pagination]);
 
-      return new Intl.DateTimeFormat('pt-BR', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric'
-      }).format(date);
+  const fetchSolucoes = async (demandaId: number) => {
+    if (loadingSolucoes[demandaId] || solucoes[demandaId]) return;
+
+    setLoadingSolucoes(prev => ({ ...prev, [demandaId]: true }));
+    try {
+      const solucoesData = await getSolucoesByDemandaId(String(demandaId));
+      setSolucoes(prev => ({ ...prev, [demandaId]: solucoesData || [] }));
     } catch (error) {
-      return '-';
+      console.error(`Erro ao buscar soluções para demanda ${demandaId}:`, error);
+      setSolucoes(prev => ({ ...prev, [demandaId]: [] }));
+    } finally {
+      setLoadingSolucoes(prev => ({ ...prev, [demandaId]: false }));
     }
   };
 
-  const { user } = useAuth();
-  const isManager = user?.isManager;
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
-
-  const determinarCorTexto = (corHex: string | undefined) => {
-    if (!corHex) return 'text-gray-800';
-
-    corHex = corHex.replace('#', '');
-
-    const r = parseInt(corHex.substr(0, 2), 16);
-    const g = parseInt(corHex.substr(2, 2), 16);
-    const b = parseInt(corHex.substr(4, 2), 16);
-
-    const luminancia = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-
-    return luminancia > 0.5 ? 'text-gray-800' : 'text-white';
+  const handleCreate = () => {
+    setDemandaToEdit(null);
+    setIsFormOpen(true);
   };
 
-  const formatRepositoryLink = (repo: string) => {
-    if (!repo || repo === '') return '';
-    if (repo.includes('github.com')) {
-      return (
-        <a
-          href={repo}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1"
-        >
-          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-            <path fillRule="evenodd" d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.17 6.839 9.49.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.604-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.464-1.11-1.464-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.836c.85.004 1.705.114 2.504.336 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.137 20.167 22 16.418 22 12c0-5.523-4.477-10-10-10z" clipRule="evenodd" />
-          </svg>
-          GitHub
-        </a>
-      );
+  const handleEdit = useCallback((demanda: Demanda) => {
+    setDemandaToEdit(demanda);
+    setIsFormOpen(true);
+  }, []);
+
+  const handleDelete = async (id: number) => {
+    if (window.confirm('Tem certeza que deseja excluir esta demanda?')) {
+      try {
+        await deleteDemandaAction(id);
+        fetchData();
+      } catch (error) {
+        console.error('Erro ao excluir demanda', error);
+        alert('Falha ao excluir a demanda.');
+      }
     }
-    return (
-      <div>
-        <Link
-          href={repo}
-          target="_blank"
-          className="text-purple-500 hover:text-purple-700 rounded-full hover:bg-purple-50 transition-colors"
-        >
-          <ExternalLink className="w-5 h-5" />
-        </Link>
-      </div>
-    );
+  }
+
+  const handleInfo = (demanda: Demanda) => {
+    setSelectedDemanda(demanda);
+    setIsInfoModalOpen(true);
+  };
+
+  const handleCloseInfoModal = () => {
+    setIsInfoModalOpen(false);
+    setSelectedDemanda(null);
+  };
+
+  const handleCloseForm = () => {
+    setIsFormOpen(false);
+    setDemandaToEdit(null);
+  };
+
+  const handleSaveForm = () => {
+    handleCloseForm();
+    fetchData();
   };
 
   const handleClearFilters = () => {
     table.resetColumnFilters();
   };
 
-  const [solucoes, setSolucoes] = useState<{ [key: string]: any[] }>({});
-
-  const fetchSolucoes = async (demandaId: string) => {
-    const solucoesData = await getSolucoesByDemandaId(demandaId);
-    setSolucoes(prev => ({ ...prev, [demandaId]: solucoesData }));
+  const formatDate = (dateString?: string | null) => {
+    if (!dateString) return '-';
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return '-';
+      return new Intl.DateTimeFormat('pt-BR').format(date);
+    } catch (error) {
+      return '-';
+    }
   };
 
-  useEffect(() => {
-    if (demandas) {
-      demandas.forEach(demanda => {
-        fetchSolucoes(demanda.id);
-      });
-    }
-  }, [demandas]);
+  const determinarCorTexto = (corHex: string | undefined) => {
+    if (!corHex) return 'text-gray-800';
+    corHex = corHex.replace('#', '');
+    const r = parseInt(corHex.substr(0, 2), 16);
+    const g = parseInt(corHex.substr(2, 2), 16);
+    const b = parseInt(corHex.substr(4, 2), 16);
+    const luminancia = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    return luminancia > 0.5 ? 'text-gray-800' : 'text-white';
+  };
 
-  const columns: ColumnDef<DemandaType>[] = [
-    {
+  const columns = useMemo<ColumnDef<Demanda>[]>(
+    () => [
+      {
         id: "index",
         header: "#",
         cell: ({ row }) => <div className="text-sm text-gray-500">{row.index + 1}</div>,
       },
-    {
-      accessorKey: "nome",
-      header: ({ column }) => {
-        return (
-          <Button
-            variant="ghost"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-            className="text-xs font-medium text-gray-600 w-full justify-start p-0 hover:bg-transparent"
-          >
-            Nome
-            <ArrowUpDown className="" />
+      {
+        accessorKey: 'nome',
+        header: ({ column }) => (
+          <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")} className="text-xs font-medium text-gray-600 w-full justify-start p-0 hover:bg-transparent">
+            Nome <ArrowUpDown className="ml-2 h-4 w-4" />
           </Button>
-        )
+        ),
       },
-      cell: ({ row }) => <div className="w-[150px] truncate font-medium">{row.getValue("nome") || ''}</div>,
-    },
-    {
-      accessorKey: "sigla",
-      header: ({ column }) => {
-        return (
-          <Button
-            variant="ghost"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-            className="text-xs font-medium text-gray-600 w-full justify-start p-0 hover:bg-transparent"
-          >
-            Sigla
-            <ArrowUpDown className="" />
+      {
+        accessorKey: 'sigla',
+        header: ({ column }) => (
+          <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")} className="text-xs font-medium text-gray-600 w-full justify-start p-0 hover:bg-transparent">
+            Sigla <ArrowUpDown className="ml-2 h-4 w-4" />
           </Button>
-        )
+        ),
       },
-      cell: ({ row }) => <div className="truncate">{row.getValue("sigla") || ''}</div>,
-    },
-    {
-      accessorKey: "fatorGerador",
-      header: ({ column }) => {
-        return (
-          <Button
-            variant="ghost"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-            className="text-xs font-medium text-gray-600 w-full justify-start p-0 hover:bg-transparent"
+      {
+        accessorKey: 'fatorGerador',
+        header: ({ column }) => (
+          <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")} className="text-xs font-medium text-gray-600 w-full justify-start p-0 hover:bg-transparent">
+            Fator Gerador <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        ),
+      },
+      {
+        accessorKey: 'demandante',
+        header: ({ column }) => (
+          <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")} className="text-xs font-medium text-gray-600 w-full justify-start p-0 hover:bg-transparent">
+            Demandante <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        ),
+        filterFn: (row, id, value) => {
+          return value === row.getValue(id);
+        },
+      },
+      {
+        accessorKey: 'alinhamento.nome',
+        header: ({ column }) => (
+          <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")} className="text-xs font-medium text-gray-600 w-full justify-start p-0 hover:bg-transparent">
+            Alinhamento <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        ),
+        cell: ({ row }) => row.original.alinhamento?.nome || 'N/A',
+      },
+      {
+        id: 'prioridade',
+        accessorFn: row => row.prioridade?.nome,
+        header: ({ column }) => (
+          <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")} className="text-xs font-medium text-gray-600 w-full justify-start p-0 hover:bg-transparent">
+            Prioridade <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        ),
+        cell: ({ row }) => row.original.prioridade?.nome || 'N/A',
+        filterFn: (row, id, value) => {
+          if (value === 'sem_prioridade') {
+            return !row.original.prioridade || !row.original.prioridade.nome;
+          }
+          return row.original.prioridade?.nome === value;
+        },
+      },
+      {
+        id: 'solucoes',
+        header: 'Soluções',
+        cell: ({ row }) => {
+          const demandaId = row.original.id;
+          const solucoesDemanda = solucoes[demandaId];
+          const isLoading = loadingSolucoes[demandaId];
 
-          >
-            Fato Gerador
-            <ArrowUpDown className="" />
-          </Button>
-        )
-      },
-      cell: ({ row }) => <div className=" ">{row.original.fatorGerador || ''}</div>,
-    },
-    {
-      accessorKey: "demandante",
-      header: ({ column }) => {
-        return (
-          <Button
-            variant="ghost"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-            className="text-xs font-medium text-gray-600 w-full justify-start p-0 hover:bg-transparent"
+          const handleMouseEnter = () => {
+            fetchSolucoes(demandaId);
+          };
 
-          >
-            Demandante
-            <ArrowUpDown className="" />
-          </Button>
-        )
-      },
-      cell: ({ row }) => <div className="w-[120px] truncate">{row.original.demandante || ''}</div>,
-      filterFn: (row, id, value) => {
-        const demandante = row.original.demandante || '';
-        return demandante === value;
-      },
-    },
-    {
-      accessorKey: "alinhamento",
-      header: ({ column }) => {
-        return (
-          <Button
-            variant="ghost"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-            className="text-xs font-medium text-gray-600 w-full justify-start p-0 hover:bg-transparent"
-
-          >
-            Alinhamento
-            <ArrowUpDown className="" />
-          </Button>
-        )
-      },
-      cell: ({ row }) => <div className="w-[120px] truncate">{row.original.alinhamento?.nome || ''}</div>,
-    },
-    {
-      accessorKey: "prioridade",
-      header: ({ column }) => {
-        return (
-          <Button
-            variant="ghost"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-            className="text-xs font-medium text-gray-600 w-full justify-start p-0 hover:bg-transparent"
-          >
-            Prioridade
-            <ArrowUpDown className="" />
-          </Button>
-        )
-      },
-      cell: ({ row }) => <div className="w-[120px] truncate">{row.original.prioridade?.nome || ''}</div>,
-      filterFn: (row, id, value) => {
-        if (value === 'sem_prioridade') {
-          // Filtrar demandas sem prioridade (prioridade é null)
-          return !row.original.prioridade || !row.original.prioridade.nome;
+          return (
+            <div onMouseEnter={handleMouseEnter} className="text-center">
+              {isLoading ? "..." : (solucoesDemanda !== undefined ? solucoesDemanda.length : <span className='text-gray-400'>-</span>)}
+            </div>
+          );
         }
-        return row.original.prioridade?.nome.toLowerCase() === value.toLowerCase();
       },
-    },
-    {
-      accessorKey: "solucoes",
-      header: ({ column }) => {
-        return (
-          <Button
-            variant="ghost"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-            className="text-xs font-medium text-gray-600 w-full justify-start p-0 hover:bg-transparent"
-          >
-            Soluções
-            <ArrowUpDown className="" />
+      {
+        id: 'responsavel',
+        accessorFn: row => row.responsavel?.nome,
+        header: ({ column }) => (
+          <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")} className="text-xs font-medium text-gray-600 w-full justify-start p-0 hover:bg-transparent">
+            Responsável <ArrowUpDown className="ml-2 h-4 w-4" />
           </Button>
-        )
+        ),
+        cell: ({ row }) => row.original.responsavel?.nome || 'N/A',
+        filterFn: (row, id, value) => {
+          if (value === 'sem_responsavel') {
+            return !row.original.responsavel || !row.original.responsavel.nome;
+          }
+          return row.original.responsavel?.nome === value;
+        },
       },
-      cell: ({ row }) => {
-        const solucoesDemanda = solucoes[row.original.id] || [];
-        const count = solucoesDemanda.length;
-        const [position, setPosition] = useState({ x: 0, y: 0 });
-
-        const handleMouseMove = (e: React.MouseEvent) => {
-          setPosition({ x: e.clientX, y: e.clientY });
-        };
-
-        return (
-          <div className="relative group" onMouseMove={handleMouseMove}>
-            <div className="cursor-help">{count}</div>
-            {count > 0 && (
-              <div
-                className="fixed hidden group-hover:block z-[9999] bg-white border border-gray-200 shadow-lg rounded-md p-2"
-                style={{
-                  left: `${position.x + 10}px`,
-                  top: `${position.y + 10}px`,
-                }}
-              >
-                <div className="text-sm font-medium text-gray-700 mb-1">Soluções:</div>
-                <ul className="space-y-1">
-                  {solucoesDemanda.map((solucao, index) => (
-                    <li key={index} className="text-sm text-gray-600 whitespace-nowrap">
-                      - {solucao.nome}
-                    </li>
-                  ))}
-                </ul>
+      {
+        accessorKey: 'dataStatus',
+        header: ({ column }) => (
+          <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")} className="text-xs font-medium text-gray-600 w-full justify-start p-0 hover:bg-transparent">
+            Data Status <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        ),
+        cell: ({ row }) => formatDate(row.original.dataStatus),
+      },
+      {
+        id: 'status',
+        accessorFn: row => row.status?.nome,
+        header: ({ column }) => (
+          <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")} className="text-xs font-medium text-gray-600 w-full justify-start p-0 hover:bg-transparent">
+            Status <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        ),
+        cell: ({ row }) => {
+          const status = row.original.status;
+          if (!status?.nome) {
+            return (
+              <div className="flex items-center">
+                <span className="rounded-md px-3 py-1 text-sm font-medium text-gray-700 bg-gray-200">
+                  N/A
+                </span>
               </div>
-            )}
-          </div>
-        );
+            );
+          }
+          return (
+            <div className="flex items-center">
+              <span
+                className={`rounded-md px-3 py-1 text-sm font-medium ${determinarCorTexto(status.propriedade)}`}
+                style={{ backgroundColor: status.propriedade }}
+              >
+                {status.nome}
+              </span>
+            </div>
+          );
+        },
+        filterFn: (row, id, value) => {
+          const statusNome = row.original.status?.nome;
+          if (value === 'sem_status') {
+            return !statusNome;
+          }
+          return statusNome === value;
+        },
       },
-    },
-    {
-      accessorKey: "responsavel",
-      header: ({ column }) => {
-        return (
-          <Button
-            variant="ghost"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-            className="text-xs font-medium text-gray-600 w-full justify-start p-0 hover:bg-transparent"
-          >
-            Responsável
-            <ArrowUpDown className="" />
-          </Button>
-        )
-      },
-      cell: ({ row }) => <div className="w-[120px] truncate">{row.original.responsavel?.nome || ''}</div>,
-      filterFn: (row, id, value) => {
-        if (value === 'sem_responsavel') {
-          // Filtrar demandas sem responsável (responsável é null)
-          return !row.original.responsavel || !row.original.responsavel.nome;
-        }
-        return row.original.responsavel?.nome === value;
-      },
-    },
-    {
-      accessorKey: "data_status",
-      header: () => {
-        return (
-          <div className="text-xs font-medium text-gray-600 w-full justify-start p-0">
-            Data Status
-          </div>
-        )
-      },
-      cell: ({ row }) => <div className="truncate">{formatDate(row.original.dataStatus || row.original.dataStatus)}</div>,
-    },
-    {
-      accessorKey: "status",
-      header: ({ column }) => {
-        return (
-          <Button
-            variant="ghost"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-            className="text-xs font-medium text-gray-600 w-full justify-start p-0 hover:bg-transparent"
-          >
-            Status
-            <ArrowUpDown className="" />
-          </Button>
-        )
-      },
-      cell: ({ row }) => {
-        const status = row.original.status;
-        return (
-          <div className="flex items-center">
-            <span
-              className={`rounded-md px-3 py-1 text-sm font-medium ${determinarCorTexto(status?.propriedade)}`}
-              style={{ backgroundColor: status?.propriedade }}
-            >
-              {status?.nome || ''}
-            </span>
-          </div>
-        );
-      },
-      filterFn: (row, id, value) => {
-        if (value === 'sem_status') {
-          // Filtrar demandas sem status (status é null)
-          return !row.original.status || !row.original.status.nome;
-        }
-        return row.original.status?.nome === value;
-      },
-    },
-    {
-      id: "actions",
-      header: () => <div className="text-right">Ações</div>,
-      cell: ({ row }) => {
-        const solucao = row.original;
-        return (
-          <div className="flex justify-end space-x-2">
-            {formatRepositoryLink(solucao.link)}
-            {!isManager && (
-              <>
-                <button
-                  onClick={() => onEdit(solucao)}
-                  className="text-green-600 hover:text-green-800 rounded-full hover:bg-green-50 transition-colors"
+      {
+        id: 'actions',
+        header: () => <div className="text-right">Ações</div>,
+        cell: ({ row }) => {
+          const demanda = row.original;
+          return (
+            <div className="flex justify-end space-x-2">
+              {demanda.link && (
+                <a
+                  href={demanda.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-purple-600 hover:text-purple-800 rounded-full hover:bg-purple-50 transition-colors p-1"
                 >
-                  <Edit2 className="w-5 h-5" />
-                </button>
-                <button
-                  onClick={() => onDelete(solucao.id.toString())}
-                  className="text-red-400 hover:text-red-700 rounded-full hover:bg-red-50 transition-colors"
-                >
-                  <Trash2 className="w-5 h-5" />
-                </button>
-              </>
-            )}
-            <button
-              onClick={() => onInfo(solucao)}
-              className="text-blue-500 hover:text-blue-700 rounded-full hover:bg-blue-50 transition-colors"
-            >
-              <Info className="w-5 h-5" />
-            </button>
-          </div>
-        );
-      },
-    },
-  ];
+                  <ExternalLink className="w-5 h-5" />
+                </a>
+              )}
+              <button onClick={() => handleEdit(demanda)} className="text-green-600 hover:text-green-800 rounded-full hover:bg-green-50 transition-colors p-1">
+                <Edit2 className="w-5 h-5" />
+              </button>
+              <button onClick={() => handleDelete(demanda.id)} className="text-red-400 hover:text-red-700 rounded-full hover:bg-red-50 transition-colors p-1">
+                <Trash2 className="w-5 h-5" />
+              </button>
+              <button onClick={() => handleInfo(demanda)} className="text-blue-500 hover:text-blue-700 rounded-full hover:bg-blue-50 transition-colors p-1">
+                <Info className="w-5 h-5" />
+              </button>
 
-  const [sorting, setSorting] = React.useState<SortingState>([
-    { id: "index", desc: false }
-  ])
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
-  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
-  const [pagination, setPagination] = React.useState({
-    pageIndex: 0,
-    pageSize: 10,
-  })
+            </div>
+          );
+        },
+      },
+    ],
+    [handleEdit, solucoes, loadingSolucoes]
+  );
+
+  const pageCount = Math.ceil(totalRows / pagination.pageSize);
 
   const table = useReactTable({
-    data: demandas,
+    data,
     columns,
-    onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
-    getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    onColumnVisibilityChange: setColumnVisibility,
-    onPaginationChange: setPagination,
-    initialState: {
-      sorting: [{ id: "index", desc: false }],
-    },
+    manualPagination: true,
+    pageCount,
     state: {
       sorting,
       columnFilters,
+      globalFilter,
       columnVisibility,
       pagination,
     },
-  })
+    onPaginationChange: setPagination,
+    onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
+    onGlobalFilterChange: setGlobalFilter,
+    onColumnVisibilityChange: setColumnVisibility,
+    getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+  });
 
   return (
-    <div className="w-full">
+    <div className="w-full space-y-4 pt-4">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-gray-800">Crie sua demanda</h1>
+        <Button onClick={handleCreate} className="bg-blue-600 hover:bg-blue-700 text-white">
+          <Plus className="mr-2 h-4 w-4" /> Adicionar
+        </Button>
+      </div>
+
       <div className="flex items-center justify-between py-4 gap-4">
-        <div className="flex gap-2 items-center flex-1 flex-wrap">
+        <div className="flex flex-wrap items-center gap-2">
           <Input
             placeholder="Filtrar por nome..."
             value={(table.getColumn("nome")?.getFilterValue() as string) ?? ""}
@@ -457,39 +396,32 @@ export default function DataTable({
             }
             className="w-[200px] bg-white border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 shadow-sm"
           />
-
-          {/* Filtro de Demandante */}
           <select
             value={(table.getColumn("demandante")?.getFilterValue() as string) ?? ""}
             onChange={(event) =>
-              table.getColumn("demandante")?.setFilterValue(event.target.value)
+              table.getColumn("demandante")?.setFilterValue(event.target.value || undefined)
             }
             className="w-[180px] h-10 rounded-md border border-gray-300 bg-white px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 shadow-sm"
           >
             <option value="">Todos os demandantes</option>
-            {Array.from(new Set(demandas.map(s => s.demandante)))
+            {Array.from(new Set(data.map(s => s.demandante).filter(Boolean)))
               .sort()
               .map((demandante) => (
                 <option key={demandante} value={demandante}>
-                  {demandante === "-" ? "Não informado" : demandante}
+                  {demandante}
                 </option>
               ))}
           </select>
-
-
-
-
           <select
             value={(table.getColumn("responsavel")?.getFilterValue() as string) ?? ""}
             onChange={(event) =>
-              table.getColumn("responsavel")?.setFilterValue(event.target.value)
+              table.getColumn("responsavel")?.setFilterValue(event.target.value || undefined)
             }
             className="w-[180px] h-10 rounded-md border border-gray-300 bg-white px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 shadow-sm"
           >
             <option value="">Todos os responsáveis</option>
             <option value="sem_responsavel">Não informado</option>
-            {Array.from(new Set(demandas.map(s => s.responsavel?.nome)))
-              .filter(Boolean)
+            {Array.from(new Set(data.map(s => s.responsavel?.nome).filter(Boolean) as string[]))
               .sort()
               .map((responsavel) => (
                 <option key={responsavel} value={responsavel}>
@@ -497,18 +429,16 @@ export default function DataTable({
                 </option>
               ))}
           </select>
-
           <select
             value={(table.getColumn("prioridade")?.getFilterValue() as string) ?? ""}
             onChange={(event) =>
-              table.getColumn("prioridade")?.setFilterValue(event.target.value)
+              table.getColumn("prioridade")?.setFilterValue(event.target.value || undefined)
             }
             className="w-[180px] h-10 rounded-md border border-gray-300 bg-white px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 shadow-sm"
           >
-            <option value="">Todos as prioridades</option>
+            <option value="">Todas as prioridades</option>
             <option value="sem_prioridade">Não informado</option>
-            {Array.from(new Set(demandas.map(s => s.prioridade?.nome)))
-              .filter(Boolean)
+            {Array.from(new Set(data.map(s => s.prioridade?.nome).filter(Boolean) as string[]))
               .sort()
               .map((prioridade) => (
                 <option key={prioridade} value={prioridade}>
@@ -516,18 +446,16 @@ export default function DataTable({
                 </option>
               ))}
           </select>
-
           <select
             value={(table.getColumn("status")?.getFilterValue() as string) ?? ""}
             onChange={(event) =>
-              table.getColumn("status")?.setFilterValue(event.target.value)
+              table.getColumn("status")?.setFilterValue(event.target.value || undefined)
             }
             className="w-[180px] h-10 rounded-md border border-gray-300 bg-white px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 shadow-sm"
           >
             <option value="">Todos os status</option>
             <option value="sem_status">Não informado</option>
-            {Array.from(new Set(demandas.map(s => s.status?.nome)))
-              .filter(Boolean)
+            {Array.from(new Set(data.map(s => s.status?.nome).filter(Boolean) as string[]))
               .sort()
               .map((status) => (
                 <option key={status} value={status}>
@@ -535,48 +463,18 @@ export default function DataTable({
                 </option>
               ))}
           </select>
-
-          {/* <select
-            value={(table.getColumn("fatorGerador")?.getFilterValue() as string) ?? ""}
-            onChange={(event) =>
-              table.getColumn("fatorGerador")?.setFilterValue(event.target.value)
-            }
-            className="w-[180px] h-10 rounded-md border border-gray-300 bg-white px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 shadow-sm"
-          >
-            <option value="">Todos os fatores geradores</option>
-            {Array.from(new Set(demandas.map(s => s.fatorGerador)))
-              .filter(Boolean)
-              .sort()
-              .map((fator) => (
-                <option key={fator} value={fator}>
-                  {fator}
-                </option>
-              ))}
-          </select> */}
-
-
         </div>
-
         <div className="flex gap-2">
-          <Button
-            variant="outline"
-            onClick={handleClearFilters}
-            className="bg-white h-10"
-          >
+          <Button variant="outline" onClick={handleClearFilters} className="bg-white">
             Limpar Filtros
           </Button>
-
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button
-                variant="outline"
-                size="icon"
-                className="bg-white h-10 w-10 shrink-0"
-              >
+              <Button variant="outline" size="icon">
                 <Columns className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
+            <DropdownMenuContent align="end" className="w-48">
               {table
                 .getAllColumns()
                 .filter((column) => column.getCanHide())
@@ -589,8 +487,9 @@ export default function DataTable({
                       onCheckedChange={(value) =>
                         column.toggleVisibility(!!value)
                       }
+                      onSelect={(e) => e.preventDefault()}
                     >
-                      {column.id}
+                      {typeof column.columnDef.header === 'string' ? column.columnDef.header : column.id}
                     </DropdownMenuCheckboxItem>
                   )
                 })}
@@ -599,21 +498,18 @@ export default function DataTable({
         </div>
       </div>
       <div className="rounded-md border bg-white">
-        <Table>
+        <ShadcnTable>
           <TableHeader className="bg-gray-100 border-b">
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
-                  <TableHead
-                    key={header.id}
-                    className="text-xs font-medium text-gray-600 h-9 px-2"
-                  >
+                  <TableHead key={header.id} className="text-xs font-medium text-gray-600 h-9 px-2">
                     {header.isPlaceholder
                       ? null
                       : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
+                        header.column.columnDef.header,
+                        header.getContext()
+                      )}
                   </TableHead>
                 ))}
               </TableRow>
@@ -622,44 +518,31 @@ export default function DataTable({
           <TableBody className="bg-white">
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  className="border-b hover:bg-gray-50/80 transition-colors"
-                >
+                <TableRow key={row.id} className="border-b hover:bg-gray-50/80 transition-colors">
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell
-                      key={cell.id}
-                      className="px-2 py-2"
-                    >
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
+                    <TableCell key={cell.id} className="px-2 py-2">
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
                   ))}
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-24 text-center text-gray-500"
-                >
+                <TableCell colSpan={columns.length} className="h-24 text-center text-gray-500">
                   Nenhum resultado encontrado.
                 </TableCell>
               </TableRow>
             )}
           </TableBody>
-        </Table>
+        </ShadcnTable>
       </div>
       <div className="flex items-center justify-between space-x-2 py-4">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center space-x-2">
           <Button
             variant="outline"
             size="sm"
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}
-            className="bg-white"
           >
             Anterior
           </Button>
@@ -668,17 +551,15 @@ export default function DataTable({
             size="sm"
             onClick={() => table.nextPage()}
             disabled={!table.getCanNextPage()}
-            className="bg-white"
           >
             Próximo
           </Button>
-
           <select
+            className="h-10 rounded-md border border-gray-300 bg-white px-3 text-sm"
             value={table.getState().pagination.pageSize}
             onChange={e => {
-              table.setPageSize(Number(e.target.value))
+              table.setPageSize(Number(e.target.value));
             }}
-            className="h-8 rounded-md border border-gray-300 bg-white px-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 shadow-sm"
           >
             {[10, 50, 100].map(pageSize => (
               <option key={pageSize} value={pageSize}>
@@ -687,17 +568,18 @@ export default function DataTable({
             ))}
           </select>
         </div>
-
-        <div className="flex items-center gap-2 text-sm text-gray-500">
-          <div>
-            Página {table.getState().pagination.pageIndex + 1} de{" "}
-            {table.getPageCount()}
-          </div>
-          <div>
-            | Total: {table.getFilteredRowModel().rows.length} registros
-          </div>
+        <div className="text-sm text-muted-foreground">
+          Página {table.getState().pagination.pageIndex + 1} de {table.getPageCount()} | Total: {totalRows} {totalRows === 1 ? 'registro' : 'registros'}
         </div>
       </div>
+      {isInfoModalOpen && <InfoModal demanda={selectedDemanda} onClose={handleCloseInfoModal} />}
+      {isFormOpen && (
+        <Form
+          demandaToEdit={demandaToEdit as any}
+          onClose={handleCloseForm}
+          onSave={handleSaveForm}
+        />
+      )}
     </div>
-  )
+  );
 }

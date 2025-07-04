@@ -141,14 +141,10 @@ export default function Solucao() {
 
   const carregarDemandasParaSelect = async () => {
     try {
-      const storedId = localStorage.getItem('selectedProprietarioId');
       const demandasData = await getAllDemandas();
       
       if (demandasData) {
-        const demandasFiltradas = demandasData.filter(
-          (demanda: any) => demanda?.proprietario?.id === Number(storedId)
-        );
-        setDemanda(demandasFiltradas); 
+        setDemanda(demandasData);
       }
     } catch (error) {
       console.error('Erro ao carregar demandas para select:', error);
@@ -157,7 +153,6 @@ export default function Solucao() {
  
 
 
-  // Modifique a função que busca as soluções para atualizar o totalPages
   const fetchSolucoes = async (page = currentPage) => {
     try {
       const storedId = localStorage.getItem('selectedProprietarioId');

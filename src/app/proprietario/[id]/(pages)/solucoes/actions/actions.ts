@@ -72,17 +72,22 @@ const urlSelect = `${baseUrl}`;
 
 export async function getAllDemandas() {
     try {
-        const response = await api.get(`${urlSelect}/demandas/all`);
-        return response.data;
+        const storedId = localStorage.getItem('selectedProprietarioId');
+        if (!storedId) {
+            throw new Error("ProprietarioId not found in localStorage");
+        }
+        // Usar um limit alto para pegar todas as demandas do proprietário
+        const response = await api.get(`${urlSelect}/demandas/busca/${storedId}?limit=1000`);
+        return response.data.data; // Note: resposta paginada tem .data
     } catch (error) {
         console.error("Error fetching all demands:", error);
         return null;
     }
 }
 
-export async function getDemandas(page: number = 1, limit: number = 8) {
+export async function getDemandas(proprietariId: string) {
     try {
-        const response = await api.get(`${urlSelect}/demandas?page=${page}&limit=${limit}`);
+        const response = await api.get(`${urlSelect}/demandas`);
         return response.data;
     } catch (error) {
         console.error("Error fetching demands:", error);
