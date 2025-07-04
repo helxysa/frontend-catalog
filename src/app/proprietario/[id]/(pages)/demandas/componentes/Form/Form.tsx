@@ -56,10 +56,8 @@ export default function Form({ demandaToEdit, onClose, onSave }: FormProps) {
         try {
             if (demandaToEdit) {
                 await updateDemanda(demandaToEdit.id, formData);
-                alert('Demanda atualizada com sucesso!');
             } else {
                 await createDemanda(formData)
-                alert('Demanda criada')
             }
             onSave();
         } catch (error) {
@@ -104,211 +102,232 @@ export default function Form({ demandaToEdit, onClose, onSave }: FormProps) {
     }
 
     const title = demandaToEdit ? "Editar Demanda" : "Nova Demanda";
-    const submitButtonText = demandaToEdit ? "Salvar Alterações" : "Criar Demanda";
+    const submitButtonText = demandaToEdit ? "Salvar" : "Salvar";
 
     return (
-        <div className="max-w-4xl mx-auto p-4 bg-white rounded-lg shadow-md">
-            <h2 className="text-xl font-bold mb-4 text-gray-800">{title}</h2>
-
-            <form onSubmit={handleSubmit} className="space-y-3">
-                {/* Grid para campos principais */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {/* Nome e Sigla na mesma linha */}
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700">
-                            Nome *
-                        </label>
-                        <input
-                            type="text"
-                            name="nome"
-                            value={formData.nome || ''}
-                            onChange={handleChange}
-                            required
-                            className="w-full p-1.5 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                            placeholder="Nome da demanda"
-                        />
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700">
-                            Sigla *
-                        </label>
-                        <input
-                            type="text"
-                            name="sigla"
-                            value={formData.sigla || ''}
-                            onChange={handleChange}
-                            required
-                            className="w-full p-1.5 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                            placeholder="Sigla"
-                        />
-                    </div>
-
-                    {/* Demandante e Fator Gerador */}
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700">
-                            Demandante
-                        </label>
-                        <input
-                            type="text"
-                            name="demandante"
-                            value={formData.demandante || ''}
-                            onChange={handleChange}
-                            className="w-full p-1.5 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                            placeholder="Nome do demandante"
-                        />
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700">
-                            Fator Gerador
-                        </label>
-                        <input
-                            type="text"
-                            name="fator_gerador"
-                            value={formData.fator_gerador || ''}
-                            onChange={handleChange}
-                            className="w-full p-1.5 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                            placeholder="Fator gerador"
-                        />
-                    </div>
-
-                    {/* Alinhamento e Prioridade */}
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700">
-                            Alinhamento
-                        </label>
-                        <select
-                            name="alinhamento_id"
-                            value={formData.alinhamento_id || ''}
-                            onChange={handleChange}
-                            onFocus={() => loadSelectOptions(getAlinhamentos, setAlinhamentos, alinhamentos, 'alinhamentos')}
-                            className="w-full p-1.5 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                        >
-                            <option value="">{loading['alinhamentos'] ? 'Carregando...' : 'Selecione'}</option>
-                            {alinhamentos.map((item) => (
-                                <option key={item.id} value={item.id}>{item.nome}</option>
-                            ))}
-                        </select>
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700">
-                            Prioridade
-                        </label>
-                        <select
-                            name="prioridade_id"
-                            value={formData.prioridade_id || ''}
-                            onChange={handleChange}
-                            onFocus={() => loadSelectOptions(getPrioridades, setPrioridades, prioridades, 'prioridades')}
-                            className="w-full p-1.5 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                        >
-                            <option value="">{loading['prioridades'] ? 'Carregando...' : 'Selecione'}</option>
-                            {prioridades.map((item) => (
-                                <option key={item.id} value={item.id}>{item.nome}</option>
-                            ))}
-                        </select>
-                    </div>
-
-                    {/* Responsável e Status */}
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700">
-                            Responsável
-                        </label>
-                        <select
-                            name="responsavel_id"
-                            value={formData.responsavel_id || ''}
-                            onChange={handleChange}
-                            onFocus={() => loadSelectOptions(getResponsaveis, setResponsaveis, responsaveis, 'responsaveis')}
-                            className="w-full p-1.5 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                        >
-                            <option value="">{loading['responsaveis'] ? 'Carregando...' : 'Selecione'}</option>
-                            {responsaveis.map((item) => (
-                                <option key={item.id} value={item.id}>{item.nome}</option>
-                            ))}
-                        </select>
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700">
-                            Status
-                        </label>
-                        <select
-                            name="status_id"
-                            value={formData.status_id || ''}
-                            onChange={handleChange}
-                            onFocus={() => loadSelectOptions(getStatus, setStatus, status, 'status')}
-                            className="w-full p-1.5 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                        >
-                            <option value="">{loading['status'] ? 'Carregando...' : 'Selecione'}</option>
-                            {status.map((item) => (
-                                <option key={item.id} value={item.id}>{item.nome}</option>
-                            ))}
-                        </select>
-                    </div>
-
-                    {/* Data Status e Link */}
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700">
-                            Data Status
-                        </label>
-                        <input
-                            type="date"
-                            name="data_status"
-                            value={formData.data_status || ''}
-                            onChange={handleChange}
-                            className="w-full p-1.5 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                        />
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700">
-                            Link
-                        </label>
-                        <input
-                            type="url"
-                            name="link"
-                            value={formData.link || ''}
-                            onChange={handleChange}
-                            className="w-full p-1.5 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                            placeholder="https://exemplo.com"
-                        />
-                    </div>
-                </div>
-
-                {/* Descrição em largura completa */}
-                <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                        Descrição
-                    </label>
-                    <textarea
-                        name="descricao"
-                        value={formData.descricao || ''}
-                        onChange={handleChange}
-                        rows={2}
-                        className="w-full p-1.5 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                        placeholder="Descrição detalhada da demanda"
-                    />
-                </div>
-
-                {/* Botões */}
-                <div className="flex justify-end gap-2 pt-3">
+        <div className="fixed inset-0 bg-black bg-opacity-20 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto border border-gray-200">
+                {/* Header */}
+                <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-white rounded-t-lg">
+                    <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
                     <button
                         type="button"
                         onClick={onClose}
-                        className="px-4 py-1.5 bg-gray-100 text-gray-700 text-sm rounded-md hover:bg-gray-200 focus:ring-1 focus:ring-gray-500 focus:ring-offset-1 transition-colors"
+                        className="text-gray-400 hover:text-gray-600 text-2xl font-light w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded-full transition-colors"
                     >
-                        Cancelar
-                    </button>
-                    <button
-                        type="submit"
-                        disabled={isSubmitting}
-                        className="px-4 py-1.5 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 focus:ring-1 focus:ring-blue-500 focus:ring-offset-1 transition-colors disabled:bg-blue-400 disabled:cursor-not-allowed"
-                    >
-                        {isSubmitting ? 'Salvando...' : submitButtonText}
+                        ×
                     </button>
                 </div>
-            </form>
+
+                {/* Form Content */}
+                <div className="p-6 bg-white">
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                        {/* Nome - campo completo */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Nome
+                            </label>
+                            <input
+                                type="text"
+                                name="nome"
+                                value={formData.nome || ''}
+                                onChange={handleChange}
+                                required
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                                placeholder="Nome da demanda"
+                            />
+                        </div>
+
+                        {/* Sigla e Demandante lado a lado */}
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Sigla
+                                </label>
+                                <input
+                                    type="text"
+                                    name="sigla"
+                                    value={formData.sigla || ''}
+                                    onChange={handleChange}
+                                    required
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                                    placeholder="Sigla"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Demandante
+                                </label>
+                                <input
+                                    type="text"
+                                    name="demandante"
+                                    value={formData.demandante || ''}
+                                    onChange={handleChange}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                                    placeholder="Nome do demandante"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Descrição - campo completo */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Descrição
+                            </label>
+                            <textarea
+                                name="descricao"
+                                value={formData.descricao || ''}
+                                onChange={handleChange}
+                                rows={3}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white resize-none"
+                                placeholder="Descrição detalhada da demanda"
+                            />
+                        </div>
+
+                        {/* Fator Gerador e Link do PCA lado a lado */}
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Fato Gerador
+                                </label>
+                                <input
+                                    type="text"
+                                    name="fator_gerador"
+                                    value={formData.fator_gerador || ''}
+                                    onChange={handleChange}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                                    placeholder="Fator gerador"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Link do PCA
+                                </label>
+                                <input
+                                    type="url"
+                                    name="link"
+                                    value={formData.link || ''}
+                                    onChange={handleChange}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                                    placeholder="https://exemplo.com"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Alinhamento e Prioridade lado a lado */}
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Alinhamento
+                                </label>
+                                <select
+                                    name="alinhamento_id"
+                                    value={formData.alinhamento_id || ''}
+                                    onChange={handleChange}
+                                    onFocus={() => loadSelectOptions(getAlinhamentos, setAlinhamentos, alinhamentos, 'alinhamentos')}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                                >
+                                    <option value="">{loading['alinhamentos'] ? 'Carregando...' : 'Selecione um alinhamento'}</option>
+                                    {alinhamentos.map((item) => (
+                                        <option key={item.id} value={item.id}>{item.nome}</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Prioridade
+                                </label>
+                                <select
+                                    name="prioridade_id"
+                                    value={formData.prioridade_id || ''}
+                                    onChange={handleChange}
+                                    onFocus={() => loadSelectOptions(getPrioridades, setPrioridades, prioridades, 'prioridades')}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                                >
+                                    <option value="">{loading['prioridades'] ? 'Carregando...' : 'Selecione uma prioridade'}</option>
+                                    {prioridades.map((item) => (
+                                        <option key={item.id} value={item.id}>{item.nome}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+
+                        {/* Responsável e Status lado a lado */}
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Responsável
+                                </label>
+                                <select
+                                    name="responsavel_id"
+                                    value={formData.responsavel_id || ''}
+                                    onChange={handleChange}
+                                    onFocus={() => loadSelectOptions(getResponsaveis, setResponsaveis, responsaveis, 'responsaveis')}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                                >
+                                    <option value="">{loading['responsaveis'] ? 'Carregando...' : 'Selecione um responsável'}</option>
+                                    {responsaveis.map((item) => (
+                                        <option key={item.id} value={item.id}>{item.nome}</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Status
+                                </label>
+                                <select
+                                    name="status_id"
+                                    value={formData.status_id || ''}
+                                    onChange={handleChange}
+                                    onFocus={() => loadSelectOptions(getStatus, setStatus, status, 'status')}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                                >
+                                    <option value="">{loading['status'] ? 'Carregando...' : 'Selecione um status'}</option>
+                                    {status.map((item) => (
+                                        <option key={item.id} value={item.id}>{item.nome}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+
+                        {/* Data Status */}
+                        <div className="w-1/2">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Data Status
+                            </label>
+                            <input
+                                type="date"
+                                name="data_status"
+                                value={formData.data_status || ''}
+                                onChange={handleChange}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                            />
+                        </div>
+
+                        {/* Botões */}
+                        <div className="flex justify-end gap-3 pt-6 border-t border-gray-200 bg-white">
+                            <button
+                                type="button"
+                                onClick={onClose}
+                                className="px-6 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors font-medium"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                type="submit"
+                                disabled={isSubmitting}
+                                className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:bg-blue-400 disabled:cursor-not-allowed font-medium"
+                            >
+                                {isSubmitting ? 'Salvando...' : submitButtonText}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </div>
     )
 }
