@@ -377,16 +377,6 @@ export default function Table() {
     getSortedRowModel: getSortedRowModel(),
   });
 
-  if (isFormOpen) {
-    return (
-      <Form 
-        demandaToEdit={demandaToEdit as any}
-        onClose={handleCloseForm}
-        onSave={handleSaveForm}
-      />
-    );
-  }
-
   return (
     <div className="w-full space-y-4 pt-4">
       <div className="flex items-center justify-between">
@@ -583,6 +573,13 @@ export default function Table() {
         </div>
       </div>
       {isInfoModalOpen && <InfoModal demanda={selectedDemanda} onClose={handleCloseInfoModal} />}
+      {isFormOpen && (
+        <Form 
+          demandaToEdit={demandaToEdit as any}
+          onClose={handleCloseForm}
+          onSave={handleSaveForm}
+        />
+      )}
     </div>
   );
 }
