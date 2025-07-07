@@ -5,8 +5,8 @@ const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3333',
   headers: {
     'Accept': 'application/json',
+    'Content-Type': 'application/json',
   },
-  // Importante: isso permite que os cookies sejam enviados em requisições cross-origin
   withCredentials: true,
 });
 

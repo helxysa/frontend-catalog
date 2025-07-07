@@ -34,11 +34,18 @@ export async function getSolucaoById(id: string) {
 
 export async function createSolucao(solucao: any) {
     try {
-        const response = await api.post(`${url}`, solucao);
+        console.log('URL sendo usada:', url);
+        console.log('Dados sendo enviados:', JSON.stringify(solucao, null, 2));
+        
+        const response = await api.post(url, solucao, {
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
         return response.data;
-    } catch (error) {
-        console.error("Error creating solution:", error);
-        return null;
+    } catch (err) {
+        console.error("Error creating solution:", err);
+      
     }
 }
 
