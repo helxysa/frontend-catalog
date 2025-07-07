@@ -49,6 +49,20 @@ interface TableProps {
   onDelete: (id: string) => void;
   onInfo: (solucao: SolucaoType) => void;
   onHistorico: (solucao: SolucaoType) => void;
+
+    // Props de paginação
+    hasNextPage?: boolean;
+    hasPrevPage?: boolean;
+    totalPages?: number;
+    currentPage?: number;
+    totalRecords?: number;
+    limit?: number;
+  
+    // Callbacks para paginação e limite
+    onNextPage?: () => void;
+    onPrevPage?: () => void;
+    onLimitChange?: (newLimit: number) => void;
+
 }
 
 const styles = StyleSheet.create({

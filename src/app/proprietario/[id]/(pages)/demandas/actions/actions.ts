@@ -98,8 +98,8 @@ export async function getAlinhamentos() {
     if (!storedId) {
       throw new Error("ProprietarioId not found in localStorage");
     }
-    const response = await api.get(`${urlSelect}/proprietarios/${storedId}/alinhamentos`);
-    return response.data;
+    const response = await api.get(`${urlSelect}/proprietarios/${storedId}/alinhamentos?page=1&limit=100`);
+    return response.data.data;
   } catch (error) {
     console.error("Error fetching alinhamentos:", error);
     return null;
@@ -113,8 +113,8 @@ export async function getPrioridades() {
     if (!storedId) {
       throw new Error("ProprietarioId not found in localStorage");
     }
-    const response = await api.get(`${urlSelect}/proprietarios/${storedId}/prioridades`);
-    return response.data;
+    const response = await api.get(`${urlSelect}/proprietarios/${storedId}/prioridades?page=1&limit=100`);
+    return response.data.data;
   } catch (error) {
     console.error("Error fetching prioridades:", error);
     return null;
@@ -138,8 +138,8 @@ export async function getResponsaveis() {
     if (!storedId) {
       throw new Error("ProprietarioId not found in localStorage");
     }
-    const response = await api.get(`${urlSelect}/proprietarios/${storedId}/responsaveis`);
-    return response.data;
+    const response = await api.get(`${urlSelect}/proprietarios/${storedId}/responsaveis?page=1&limit=100`);
+    return response.data.data;
   } catch (error) {
     console.error("Error fetching responsaveis:", error);
     return null;

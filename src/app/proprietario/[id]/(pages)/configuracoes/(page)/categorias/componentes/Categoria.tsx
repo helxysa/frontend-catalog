@@ -18,84 +18,56 @@ import {
   Menu
 } from 'lucide-react';
 import type { Categoria } from '../types/types';
+import { PaginationMeta } from '../types/types';
 import Loading from '@/app/componentes/Loading/Loading';
 import { useSidebar } from '../../../../../../../componentes/Sidebar/SidebarContext';
 import ReusableTable from '../../../componentes/Table/ReusableTable';
 
-interface Proprietario {
-  id: number;
-  nome: string;
-}
+
 
 export default function Categoria({ proprietarioId }: { proprietarioId?: string }) {
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [pagination, setPagination] = useState<PaginationMeta | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [limit, setLimit] = useState(15);
   const [currentCategoria, setCurrentCategoria] = useState<Partial<Categoria>>(() => ({
     proprietario_id: proprietarioId ? proprietarioId :
-                    localStorage.getItem('selectedProprietarioId') || ''
+      localStorage.getItem('selectedProprietarioId') || ''
   }));
   const [isEditMode, setIsEditMode] = useState(false);
   const [selectedCategoriaDetails, setSelectedCategoriaDetails] = useState<Categoria | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [proprietarios, setProprietarios] = useState<Proprietario[]>([]);
   const { isCollapsed } = useSidebar();
 
   useEffect(() => {
     const loadCategorias = async () => {
       setIsLoading(true);
-      setCategorias([]);
 
       const storedId = proprietarioId || localStorage.getItem('selectedProprietarioId');
       if (storedId) {
         try {
-          const data = await getCategorias(storedId);
-          setCategorias(data);
+          const data = await getCategorias(storedId, currentPage, limit);
+          setCategorias(data.data);
+          setPagination(data.meta);
         } catch (error) {
           console.error('Error loading categorias:', error);
           setCategorias([]);
+          setPagination(null);
         }
       }
       setIsLoading(false);
     };
 
     loadCategorias();
+  }, [proprietarioId, currentPage, limit]);
 
-    // Carregar proprietários com logs de depuração
-    const loadProprietarios = async () => {
-      try {
-       
-
-        const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3333'}/proprietarios`, {
-          method: 'GET',
-          credentials: 'include', // Importante para enviar cookies de autenticação
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-          },
-        });
-
-
-        if (!response.ok) {
-          throw new Error(`Erro ao carregar proprietários: ${response.status}`);
-        }
-
-        const data = await response.json();
-
-        if (Array.isArray(data)) {
-          setProprietarios(data);
-        } else {
-          console.error('Dados de proprietários não são um array:', data);
-          setProprietarios([]);
-        }
-      } catch (error) {
-        console.error('Erro ao carregar proprietários:', error);
-        setProprietarios([]);
-      }
-    };
-
-    loadProprietarios();
-  }, [proprietarioId]);
+  useEffect(() => {
+    if (pagination) {
+      console.log('Dados de paginação:', pagination);
+    }
+  }, [pagination]);
 
   useEffect(() => {
     if (isModalOpen) {
@@ -120,6 +92,23 @@ export default function Categoria({ proprietarioId }: { proprietarioId?: string 
     setIsModalOpen(true);
   };
 
+  const handleLimitChange = (newLimit: number) => {
+    setLimit(newLimit);
+    setCurrentPage(1); // Volta para a primeira página ao mudar o limite
+  };
+
+  const handleNextPage = () => {
+    if (pagination?.nextPageUrl) {
+      setCurrentPage((prev) => prev + 1);
+    }
+  };
+
+  const handlePrevPage = () => {
+    if (pagination?.previousPageUrl) {
+      setCurrentPage((prev) => prev - 1);
+    }
+  };
+
   const handleCreate = async () => {
     if (currentCategoria.nome && currentCategoria.descricao && currentCategoria.proprietario_id) {
       const categoriaToSave = {
@@ -129,8 +118,19 @@ export default function Categoria({ proprietarioId }: { proprietarioId?: string 
       };
 
       try {
-        const created = await createCategoria(categoriaToSave);
-        setCategorias([...categorias, created]);
+        await createCategoria(categoriaToSave);
+        if (currentPage !== 1) {
+          setCurrentPage(1);
+        } else {
+          const storedId = proprietarioId || localStorage.getItem('selectedProprietarioId');
+          if (storedId) {
+            setIsLoading(true);
+            const data = await getCategorias(storedId, 1, limit);
+            setCategorias(data.data);
+            setPagination(data.meta);
+            setIsLoading(false);
+          }
+        }
         setIsModalOpen(false);
         setCurrentCategoria({});
       } catch (error: any) {
@@ -156,7 +156,19 @@ export default function Categoria({ proprietarioId }: { proprietarioId?: string 
 
   const handleDelete = async (id: string) => {
     await deleteCategoria(id);
-    setCategorias(categorias.filter(c => c.id !== id));
+
+    if (categorias.length === 1 && currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    } else {
+      const storedId = proprietarioId || localStorage.getItem('selectedProprietarioId');
+      if (storedId) {
+        setIsLoading(true);
+        const data = await getCategorias(storedId, currentPage, limit);
+        setCategorias(data.data);
+        setPagination(data.meta);
+        setIsLoading(false);
+      }
+    }
   };
 
   const showCategoriaDetails = (categoria: Categoria) => {
@@ -195,17 +207,23 @@ export default function Categoria({ proprietarioId }: { proprietarioId?: string 
         {isLoading ? (
           <Loading />
         ) : (
-          <div className="bg-white rounded-lg shadow-md overflow-x-auto">
-
-            <ReusableTable
-              items={categorias}
-              onDetails={showCategoriaDetails}
-              onEdit={openModal}
-              onDelete={(id: string | number) => handleDelete(id.toString())}
-              displayField="nome"
-              displayFieldHeader="Nome"
-            />
-          </div>
+          <ReusableTable
+            items={categorias}
+            onDetails={showCategoriaDetails}
+            onEdit={openModal}
+            onDelete={(id: string | number) => handleDelete(id.toString())}
+            displayField="nome"
+            displayFieldHeader="Nome"
+            currentPage={pagination?.currentPage || 1}
+            hasNextPage={!!pagination?.nextPageUrl}
+            hasPrevPage={!!pagination?.previousPageUrl}
+            totalPages={pagination?.lastPage || 1}
+            totalRecords={pagination?.total || 0}
+            limit={limit}
+            onNextPage={handleNextPage}
+            onPrevPage={handlePrevPage}
+            onLimitChange={handleLimitChange}
+          />
         )}
 
         {isModalOpen && (
@@ -223,30 +241,6 @@ export default function Categoria({ proprietarioId }: { proprietarioId?: string 
                 </button>
               </div>
               <div className="space-y-4 sm:space-y-6">
-                <div className="text-gray-700">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Proprietário</label>
-                  {/* Adicionando logs para depuração */}
-                 
-
-                  {/* Substituindo o dropdown por um campo de texto estático */}
-                  <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700">
-                    {(() => {
-                      // Função para buscar o nome do proprietário com logs detalhados
-                      if (!Array.isArray(proprietarios)) {
-                        return `Proprietário #${currentCategoria.proprietario_id}`;
-                      }
-
-                      if (proprietarios.length === 0) {
-                        return `Proprietário #${currentCategoria.proprietario_id}`;
-                      }
-
-                      const prop = proprietarios.find(p => p.id === Number(currentCategoria.proprietario_id));
-
-                      return prop?.nome || `Proprietário #${currentCategoria.proprietario_id}`;
-                    })()}
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1">ID: {currentCategoria.proprietario_id}</p>
-                </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Nome</label>
                   <input

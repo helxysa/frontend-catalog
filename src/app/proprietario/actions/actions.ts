@@ -56,6 +56,7 @@ export async function getProprietarioById(id: string) {
     // Obter informações do usuário atual
     const userResponse = await api.get(`${baseUrl}/auth/me`);
     const user = userResponse.data.user;
+    
 
     // Se for admin, pode acessar qualquer proprietário
     if (VerifyRole(user.roleId) === 'admin' || VerifyRole(user.roleId) === 'manager') {

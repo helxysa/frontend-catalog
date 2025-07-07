@@ -6,8 +6,8 @@ if (!baseUrl) {
 }
 const url = `${baseUrl}/linguagens`;
 
-export async function getLinguagens(proprietarioId: string) {
-  const response = await api.get(`${baseUrl}/proprietarios/${proprietarioId}/linguagens`);
+export async function getLinguagens(proprietarioId: string, page: number, limit: number) {
+  const response = await api.get(`${baseUrl}/proprietarios/${proprietarioId}/linguagens?page=${page}&limit=${limit}`);
   return response.data;
 }
 

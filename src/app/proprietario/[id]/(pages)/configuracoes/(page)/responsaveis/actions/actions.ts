@@ -7,8 +7,8 @@ if (!baseUrl) {
 const url = `${baseUrl}/responsaveis`;
 
 
-export async function getDesenvolvedores(proprietarioId: string) {
-  const response = await api.get(`${baseUrl}/proprietarios/${proprietarioId}/responsaveis`);
+export async function getDesenvolvedores(proprietarioId: string, page: number, limit: number) {
+  const response = await api.get(`${baseUrl}/proprietarios/${proprietarioId}/responsaveis?page=${page}&limit=${limit}`);
   return response.data;
 }
 

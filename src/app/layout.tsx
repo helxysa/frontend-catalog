@@ -4,6 +4,7 @@ import "./globals.css";
 import { AppWrapper } from './componentes/Sidebar/AppWrapper'
 import { SidebarProvider } from './componentes/Sidebar/SidebarContext';
 import { AuthProvider } from './contexts/AuthContext';
+import { ProprietariosProvider } from './contexts/ProprietarioContext';
 
 const montserrat = Montserrat({
   subsets: ["latin"],
@@ -31,11 +32,13 @@ export default function RootLayout({
     <html lang="pt-BR" suppressHydrationWarning>
       <body className={`${montserrat.className}  antialiased vsc-initialized`}>
         <AuthProvider>
+          <ProprietariosProvider>
           <SidebarProvider>
             <AppWrapper>
               {children}
             </AppWrapper>
           </SidebarProvider>
+        </ProprietariosProvider>
         </AuthProvider>
       </body>
     </html>

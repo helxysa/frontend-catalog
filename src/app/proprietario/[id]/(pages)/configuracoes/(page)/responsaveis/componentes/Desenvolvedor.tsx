@@ -20,6 +20,8 @@ import {
 import type { Responsavel } from '../types/types';
 import { useSidebar } from '../../../../../../../componentes/Sidebar/SidebarContext';
 import ReusableTable from '../../../componentes/Table/ReusableTable';
+import { PaginationMeta } from '../../categorias/types/types';
+
 interface Proprietario {
   id: number;
   nome: string;
@@ -28,6 +30,9 @@ interface Proprietario {
 export default function Desenvolvedor({ proprietarioId }: { proprietarioId?: string }) {
   const [desenvolvedores, setDesenvolvedores] = useState<Responsavel[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [pagination, setPagination] = useState<PaginationMeta | null>(null);
+  const [limit, setLimit] = useState(15);
+  const [currentPage, setCurrentPage] = useState(1);
   const [currentDesenvolvedor, setCurrentDesenvolvedor] = useState<Partial<Responsavel>>(() => ({
     // Initialize with proprietarioId from props or localStorage
     proprietario_id: proprietarioId ? proprietarioId :
@@ -47,13 +52,15 @@ export default function Desenvolvedor({ proprietarioId }: { proprietarioId?: str
       const storedId = proprietarioId || localStorage.getItem('selectedProprietarioId');
       if (storedId) {
         try {
-          const data = await getDesenvolvedores(storedId);
+          const data = await getDesenvolvedores(storedId, currentPage, limit);
 
           // Use data directly since getCategorias already filters by proprietario_id
-          setDesenvolvedores(data);
+          setDesenvolvedores(data.data);
+          setPagination(data.meta)
         } catch (error) {
           console.error('Error loading desenvolvedores:', error);
           setDesenvolvedores([]);
+          setPagination(null)
         }
       }
     };
@@ -61,35 +68,25 @@ export default function Desenvolvedor({ proprietarioId }: { proprietarioId?: str
     loadDesenvolvedores();
 
     // Carregar proprietários
-    const loadProprietarios = async () => {
-      try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3333'}/proprietarios`, {
-          method: 'GET',
-          credentials: 'include',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-          },
-        });
+   
+  }, [proprietarioId, currentPage, limit]);
 
-        if (!response.ok) {
-          throw new Error(`Erro ao carregar proprietários: ${response.status}`);
-        }
+  const handleLimitChange = (newLimit: number) => {
+    setLimit(newLimit);
+    setCurrentPage(1); 
+  };
 
-        const data = await response.json();
+  const handleNextPage = () => {
+    if (pagination?.nextPageUrl) {
+      setCurrentPage((prev) => prev + 1);
+    }
+  };
 
-        if (Array.isArray(data)) {
-          setProprietarios(data);
-        } else {
-          setProprietarios([]);
-        }
-      } catch (error) {
-        setProprietarios([]);
-      }
-    };
-
-    loadProprietarios();
-  }, [proprietarioId]);
+  const handlePrevPage = () => {
+    if (pagination?.previousPageUrl) {
+      setCurrentPage((prev) => prev - 1);
+    }
+  };
 
   // When modal is opened, ensure proprietarioId is set
   useEffect(() => {
@@ -190,17 +187,23 @@ export default function Desenvolvedor({ proprietarioId }: { proprietarioId?: str
         </div>
 
         {/* Table with mobile scroll and responsive layout */}
-        <div className="bg-white rounded-lg shadow-md overflow-x-auto">
-         <ReusableTable
+        <ReusableTable
           items={desenvolvedores}
           onDetails={showDesenvolvedorDetails}
           onEdit={openModal}
           onDelete={(id: string | number) => handleDelete(id.toString())}
           displayField="nome"
           displayFieldHeader="Nome"
+          currentPage={pagination?.currentPage || 1}
+          hasNextPage={!!pagination?.nextPageUrl}
+          hasPrevPage={!!pagination?.previousPageUrl}
+          totalPages={pagination?.lastPage || 1}
+          totalRecords={pagination?.total || 0}
+          limit={limit}
+          onNextPage={handleNextPage}
+          onPrevPage={handlePrevPage}
+          onLimitChange={handleLimitChange}
         />
-        </div>
-
         {/* Modal for Create/Edit - Responsive */}
         {isModalOpen && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
@@ -217,28 +220,7 @@ export default function Desenvolvedor({ proprietarioId }: { proprietarioId?: str
                 </button>
               </div>
               <div className="space-y-4 sm:space-y-6">
-                <div className="text-gray-700">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Proprietário</label>
-
-                  {/* Substituindo o dropdown por um campo de texto estático */}
-                  <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700">
-                    {(() => {
-                      // Função para buscar o nome do proprietário
-                      if (!Array.isArray(proprietarios)) {
-                        return `Proprietário #${currentDesenvolvedor.proprietario_id}`;
-                      }
-
-                      if (proprietarios.length === 0) {
-                        return `Proprietário #${currentDesenvolvedor.proprietario_id}`;
-                      }
-
-                      const prop = proprietarios.find(p => p.id === Number(currentDesenvolvedor.proprietario_id));
-
-                      return prop?.nome || `Proprietário #${currentDesenvolvedor.proprietario_id}`;
-                    })()}
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1">ID: {currentDesenvolvedor.proprietario_id}</p>
-                </div>
+                
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Nome</label>
                   <input

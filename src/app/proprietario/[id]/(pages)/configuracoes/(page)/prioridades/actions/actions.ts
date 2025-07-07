@@ -6,8 +6,8 @@ if (!baseUrl) {
 }
 const url = `${baseUrl}/prioridades`;
 
-export async function getPrioridades(proprietarioId: string) {
-  const response = await api.get(`${baseUrl}/proprietarios/${proprietarioId}/prioridades`);
+export async function getPrioridades(proprietarioId: string, page: number, limit: number) {
+  const response = await api.get(`${baseUrl}/proprietarios/${proprietarioId}/prioridades?page=${page}&limit=${limit}`);
   return response.data;
 }
 

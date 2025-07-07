@@ -95,7 +95,7 @@ export async function getAllDemandas() {
 export async function getDemandas(proprietariId: string) {
     try {
         const response = await api.get(`${urlSelect}/demandas`);
-        return response.data;
+        return response.data.data;
     } catch (error) {
         console.error("Error fetching demands:", error);
         return null;
@@ -112,8 +112,8 @@ export async function getTipos() {
         if (!storedId) {
             throw new Error("ProprietarioId not found in localStorage");
         }
-        const response = await api.get(`${urlSelect}/proprietarios/${storedId}/tipos`);
-        return response.data;
+        const response = await api.get(`${urlSelect}/proprietarios/${storedId}/tipos?page=1&limit=100`);
+        return response.data.data;
     } catch (error) {
         console.error("Error fetching types:", error);
         return null;
@@ -129,8 +129,8 @@ export async function getLinguagens() {
         if (!storedId) {
             throw new Error("ProprietarioId not found in localStorage");
         }
-        const response = await api.get(`${urlSelect}/proprietarios/${storedId}/linguagens`);
-        return response.data;
+        const response = await api.get(`${urlSelect}/proprietarios/${storedId}/linguagens?page=1&limit=100`);
+        return response.data.data;
     } catch (error) {
         console.error("Error fetching languages:", error);
         return null;
@@ -150,8 +150,8 @@ export async function getDesenvolvedores() {
         if (!storedId) {
             throw new Error("ProprietarioId not found in localStorage");
         }
-        const response = await api.get(`${urlSelect}/proprietarios/${storedId}/desenvolvedores`);
-        return response.data;
+        const response = await api.get(`${urlSelect}/proprietarios/${storedId}/desenvolvedores?page=1&limit=100`);
+        return response.data.data;
     } catch (error) {
         console.error("Error fetching developers:", error);
         return null;
@@ -167,8 +167,8 @@ export async function getCategorias() {
         if (!storedId) {
             throw new Error("ProprietarioId not found in localStorage");
         }
-        const response = await api.get(`${urlSelect}/proprietarios/${storedId}/categorias`);
-        return response.data;
+        const response = await api.get(`${urlSelect}/proprietarios/${storedId}/categorias?page=1&limit=100`);
+        return response.data.data;
     } catch (error) {
         console.error("Error fetching categories:", error);
         return null;
@@ -184,8 +184,8 @@ export async function getStatus() {
         if (!storedId) {
             throw new Error("ProprietarioId not found in localStorage");
         }
-        const response = await api.get(`${urlSelect}/proprietarios/${storedId}/status`);
-        return response.data;
+        const response = await api.get(`${urlSelect}/proprietarios/${storedId}/status?page=1&limit=100`);
+        return response.data.data;
     } catch (error) {
         console.error("Error fetching status:", error);
         return null;
@@ -201,8 +201,8 @@ export async function getResponsaveis() {
         if (!storedId) {
             throw new Error("ProprietarioId not found in localStorage");
         }
-        const response = await api.get(`${urlSelect}/proprietarios/${storedId}/responsaveis`);
-        return response.data;
+        const response = await api.get(`${urlSelect}/proprietarios/${storedId}/responsaveis?page=1&limit=100`);
+        return response.data.data;
     } catch (error) {
         console.error("Error fetching responsibles:", error);
         return null;

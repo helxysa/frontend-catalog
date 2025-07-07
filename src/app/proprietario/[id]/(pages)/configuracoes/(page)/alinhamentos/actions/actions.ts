@@ -7,8 +7,8 @@ if (!baseUrl) {
 }
 const url = `${baseUrl}/alinhamentos`;
 
-export async function getAlinhamentos(proprietarioId: string) {
-  const response = await api.get(`${baseUrl}/proprietarios/${proprietarioId}/alinhamentos`);
+export async function getAlinhamentos(proprietarioId: string, page: number, limit: number) {
+  const response = await api.get(`${baseUrl}/proprietarios/${proprietarioId}/alinhamentos?page=${page}&limit=${limit}`);
   return response.data;
 }
 

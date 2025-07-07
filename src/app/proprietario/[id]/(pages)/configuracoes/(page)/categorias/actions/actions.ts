@@ -5,8 +5,8 @@ if (!baseUrl) {
   throw new Error("NEXT_PUBLIC_BASE_URL is not defined in the environment variables.");
 }
 
-export async function getCategorias(proprietarioId: string) {
-  const response = await api.get(`${baseUrl}/proprietarios/${proprietarioId}/categorias`);
+export async function getCategorias(proprietarioId: string, page: number, limit: number) {
+  const response = await api.get(`${baseUrl}/proprietarios/${proprietarioId}/categorias?page=${page}&limit=${limit}`);
   return response.data;
 }
 
