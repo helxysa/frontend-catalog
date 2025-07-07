@@ -3,13 +3,13 @@
 import { useEffect, useState, useCallback } from 'react';
 import { use } from 'react'
 import { useParams } from 'next/navigation';
-import { 
-  getSolucoes, 
-  getTipos, 
-  getLinguagens, 
-  getDesenvolvedores, 
-  getCategorias, 
-  getResponsaveis, 
+import {
+  getSolucoes,
+  getTipos,
+  getLinguagens,
+  getDesenvolvedores,
+  getCategorias,
+  getResponsaveis,
   getStatus,
   deleteSolucao,
   createSolucao,
@@ -124,25 +124,25 @@ export default function Solucao() {
   }, [params.id]);
 
   const determinarCorTexto = (corHex: string | undefined) => {
-    if (!corHex) return 'text-gray-800'; 
-   
+    if (!corHex) return 'text-gray-800';
+
     corHex = corHex.replace('#', '');
-    
+
     const r = parseInt(corHex.substr(0, 2), 16);
     const g = parseInt(corHex.substr(2, 2), 16);
     const b = parseInt(corHex.substr(4, 2), 16);
-    
+
     const luminancia = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-  
+
     return luminancia > 0.5 ? 'text-gray-800' : 'text-white';
   };
 
-  
+
 
   const carregarDemandasParaSelect = async () => {
     try {
       const demandasData = await getAllDemandas();
-      
+
       if (demandasData) {
         setDemanda(demandasData);
       }
@@ -150,7 +150,7 @@ export default function Solucao() {
       console.error('Erro ao carregar demandas para select:', error);
     }
   };
- 
+
 
 
   const fetchSolucoes = async (page = currentPage) => {
@@ -162,7 +162,7 @@ export default function Solucao() {
       }
 
       const solucoesData = await getSolucoes(page, itemsPerPage, Number(storedId));
-      const solucoesArray = solucoesData || []; 
+      const solucoesArray = solucoesData || [];
       setSolucoes(solucoesArray);
     } catch (error) {
       console.error('Erro ao buscar soluções:', error);
@@ -218,19 +218,25 @@ export default function Solucao() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-  
+
     try {
       const storedId = localStorage.getItem('selectedProprietarioId');
-      
+
       if (!storedId) {
         console.error('proprietario_id não encontrado no localStorage');
         return;
       }
 
+      // Validação dos dados antes do envio
+      if (!formData.nome || formData.nome.trim() === '') {
+        console.error('Nome é obrigatório');
+        return;
+      }
+
       // Format times data as JSON with the specified structure
       const formattedTimes = formData.times?.map(time => ({
-        id: time.id,
-        responsavel_id: Number(time.responsavel_id),
+        id: time.id || null,
+        responsavel_id: time.responsavel_id ? Number(time.responsavel_id) : null,
         funcao: time.funcao || '',
         data_inicio: time.dataInicio || '',
         data_fim: time.dataFim || ''
@@ -238,26 +244,26 @@ export default function Solucao() {
 
       // Format updates data as JSON with the specified structure
       const formattedAtualizacoes = formData.atualizacoes?.map(atualizacao => ({
-        id: atualizacao.id,
+        id: atualizacao.id || null,
         nome: atualizacao.nome || '',
         descricao: atualizacao.descricao || '',
         data_atualizacao: atualizacao.data_atualizacao || ''
       })) || [];
 
       const linguagemValue = selectedLanguages.length > 0 ? selectedLanguages.join(',') : null;
-      
+
       // Garantir que todos os campos estejam no formato correto
       const formDataToSubmit = {
         ...formData,
         proprietario_id: Number(storedId),
-        nome: formData.nome || '-',
-        sigla: formData.sigla || '-',
-        descricao: formData.descricao || '-',
-        versao: formData.versao || '-',
-        repositorio: formData.repositorio || null,
-        link: formData.link || null,
+        nome: formData.nome?.trim() || '-',
+        sigla: formData.sigla?.trim() || '-',
+        descricao: formData.descricao?.trim() || '-',
+        versao: formData.versao?.trim() || '-',
+        repositorio: formData.repositorio?.trim() || null,
+        link: formData.link?.trim() || null,
         andamento: formData.andamento || '0',
-        criticidade: formData.criticidade || '', // Enviar string vazia em vez de null
+        criticidade: formData.criticidade?.trim() || '',
         tipo_id: formData.tipo_id ? Number(formData.tipo_id) : null,
         linguagem_id: linguagemValue,
         desenvolvedor_id: formData.desenvolvedor_id ? Number(formData.desenvolvedor_id) : null,
@@ -272,22 +278,25 @@ export default function Solucao() {
         atualizacoes: JSON.stringify(formattedAtualizacoes)
       };
 
+      // Log para debug em produção
+      console.log('Dados formatados para envio:', formDataToSubmit);
+
       if (isEditing) {
         try {
           // Atualizar solução existente
           const updatedSolucao = await updateSolucao(isEditing, formDataToSubmit);
-          
+
           // Criar uma cópia do estado atual das soluções
           const currentSolucoes = [...solucoes];
-          
+
           // Encontrar o índice da solução editada
           const editedIndex = currentSolucoes.findIndex(s => String(s.id) === String(isEditing));
-          
+
           if (editedIndex !== -1) {
             // Buscar a solução atualizada da API
             const updatedData = await getSolucoes(currentPage, itemsPerPage, Number(storedId));
             const updatedSolucaoFromAPI = updatedData.find((s: SolucaoType) => String(s.id) === String(isEditing));
-            
+
             if (updatedSolucaoFromAPI) {
               // Atualizar a solução mantendo sua posição original
               currentSolucoes[editedIndex] = updatedSolucaoFromAPI;
@@ -306,17 +315,19 @@ export default function Solucao() {
         // Criar nova solução
         await createSolucao(formDataToSubmit);
         await fetchSolucoes();
-        
+
         setIsModalOpen(false);
         setFormData({} as SolucaoFormData);
         setSelectedLanguages([]);
       }
     } catch (error) {
       console.error('Submit error:', error);
+      // Adicione feedback visual para o usuário
+      alert('Erro ao salvar solução. Verifique o console para mais detalhes.');
     }
   };
 
-  
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement> | CustomChangeEvent) => {
     const { name, value } = e.target;
 
@@ -336,27 +347,27 @@ export default function Solucao() {
   };
 
 
-  
+
   const formatDate = (dateString?: string | null) => {
-   
-    
+
+
     if (!dateString) {
       return '-';
     }
-    
+
     try {
       const date = new Date(dateString);
-      
+
       if (isNaN(date.getTime())) {
         return '-';
       }
-      
+
       const formattedDate = new Intl.DateTimeFormat('pt-BR', {
         day: '2-digit',
         month: '2-digit',
         year: 'numeric'
       }).format(date);
-      
+
       return formattedDate;
     } catch (error) {
       return '-';
@@ -367,7 +378,7 @@ export default function Solucao() {
     setItemToDeleteId(id);
     setIsDeleteModalOpen(true);
   }, [setItemToDeleteId, setIsDeleteModalOpen]);
-  
+
   const confirmDelete = async () => {
     if (itemToDeleteId) {
       try {
@@ -388,7 +399,7 @@ export default function Solucao() {
       const historicoCompleto = await getHistoricoSolucoes();
       const historicoFiltrado = historicoCompleto
         .filter((historico: HistoricoType) => historico.solucaoId === Number(solucao.id))
-        .sort((a: HistoricoType, b: HistoricoType) => 
+        .sort((a: HistoricoType, b: HistoricoType) =>
           new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         );
       setHistoricoSolucao(historicoFiltrado);
@@ -409,115 +420,115 @@ export default function Solucao() {
 
     // Lista de mapeamentos de campos
     const camposMapeados: { [key: string]: { nome: string, getValue: (evento: HistoricoType) => string } } = {
-        'tipo_id': {
-            nome: 'Tipo',
-            getValue: (e) => {
-                const value = e.solucao.tipoId;
-                if (value === null) return 'Nulo (não informado)';
-                return tipos.find((t: BaseType) => t.id === Number(value))?.nome || 'Desconhecido';
-            }
-        },
-        'linguagem_id': {
-            nome: 'Linguagem',
-            getValue: (e) => {
-                const value = e.solucao.linguagemId;
-                if (!value) return 'Nulo (não informado)';
-                return String(value).split(',')
-                    .map(id => linguagens.find((l: BaseType) => l.id === Number(id))?.nome)
-                    .filter(Boolean)
-                    .join(', ') || 'Desconhecido';
-            }
-        },
-        'desenvolvedor_id': {
-            nome: 'Desenvolvedor',
-            getValue: (e) => {
-                const value = e.solucao.desenvolvedorId;
-                if (value === null) return 'Nulo (não informado)';
-                return desenvolvedores.find((d: BaseType) => d.id === Number(value))?.nome || 'Desconhecido';
-            }
-        },
-        'categoria_id': {
-            nome: 'Categoria',
-            getValue: (e) => {
-                const value = e.solucao.categoriaId;
-                if (value === null) return 'Nulo (não informado)';
-                return categorias.find((c: BaseType) => c.id === Number(value))?.nome || 'Desconhecido';
-            }
-        },
-        'responsavel_id': {
-            nome: 'Responsável',
-            getValue: (e) => {
-                const value = e.solucao.responsavelId;
-                if (value === null) return 'Nulo (não informado)';
-                return responsaveis.find((r: BaseType) => r.id === Number(value))?.nome || 'Desconhecido';
-            }
-        },
-        'status_id': {
-            nome: 'Status',
-            getValue: (e) => {
-                const value = e.solucao.statusId;
-                if (value === null) return 'Nulo (não informado)';
-                return statusList.find((s: BaseType) => s.id === Number(value))?.nome || 'Desconhecido';
-            }
-        },
-        'demanda_id': {
-            nome: 'Demanda',
-            getValue: (e) => {
-                const value = e.solucao.demandaId;
-                if (value === null) return 'Nulo (não informado)';
-                return demanda.find((d: any) => d.id === Number(value))?.nome || 'Desconhecido';
-            }
+      'tipo_id': {
+        nome: 'Tipo',
+        getValue: (e) => {
+          const value = e.solucao.tipoId;
+          if (value === null) return 'Nulo (não informado)';
+          return tipos.find((t: BaseType) => t.id === Number(value))?.nome || 'Desconhecido';
         }
-        
+      },
+      'linguagem_id': {
+        nome: 'Linguagem',
+        getValue: (e) => {
+          const value = e.solucao.linguagemId;
+          if (!value) return 'Nulo (não informado)';
+          return String(value).split(',')
+            .map(id => linguagens.find((l: BaseType) => l.id === Number(id))?.nome)
+            .filter(Boolean)
+            .join(', ') || 'Desconhecido';
+        }
+      },
+      'desenvolvedor_id': {
+        nome: 'Desenvolvedor',
+        getValue: (e) => {
+          const value = e.solucao.desenvolvedorId;
+          if (value === null) return 'Nulo (não informado)';
+          return desenvolvedores.find((d: BaseType) => d.id === Number(value))?.nome || 'Desconhecido';
+        }
+      },
+      'categoria_id': {
+        nome: 'Categoria',
+        getValue: (e) => {
+          const value = e.solucao.categoriaId;
+          if (value === null) return 'Nulo (não informado)';
+          return categorias.find((c: BaseType) => c.id === Number(value))?.nome || 'Desconhecido';
+        }
+      },
+      'responsavel_id': {
+        nome: 'Responsável',
+        getValue: (e) => {
+          const value = e.solucao.responsavelId;
+          if (value === null) return 'Nulo (não informado)';
+          return responsaveis.find((r: BaseType) => r.id === Number(value))?.nome || 'Desconhecido';
+        }
+      },
+      'status_id': {
+        nome: 'Status',
+        getValue: (e) => {
+          const value = e.solucao.statusId;
+          if (value === null) return 'Nulo (não informado)';
+          return statusList.find((s: BaseType) => s.id === Number(value))?.nome || 'Desconhecido';
+        }
+      },
+      'demanda_id': {
+        nome: 'Demanda',
+        getValue: (e) => {
+          const value = e.solucao.demandaId;
+          if (value === null) return 'Nulo (não informado)';
+          return demanda.find((d: any) => d.id === Number(value))?.nome || 'Desconhecido';
+        }
+      }
+
     };
 
     // Procura por diferentes padrões possíveis
     const patterns = [
-        /(\w+)_id: (\d+|null) -> (\d+|null)/g,    // padrão: campo_id: 1 -> 2 ou null -> 2
-        /(\w+)_id:(\d+|null)->(\d+|null)/g,       // padrão: campo_id:1->2 ou null->2
-        /(\w+): (\d+|null) -> (\d+|null)/g,       // padrão: campo: 1 -> 2 ou null -> 2
-        /(\w+):(\d+|null)->(\d+|null)/g           // padrão: campo:1->2 ou null->2
+      /(\w+)_id: (\d+|null) -> (\d+|null)/g,    // padrão: campo_id: 1 -> 2 ou null -> 2
+      /(\w+)_id:(\d+|null)->(\d+|null)/g,       // padrão: campo_id:1->2 ou null->2
+      /(\w+): (\d+|null) -> (\d+|null)/g,       // padrão: campo: 1 -> 2 ou null -> 2
+      /(\w+):(\d+|null)->(\d+|null)/g           // padrão: campo:1->2 ou null->2
     ];
 
     let formattedDesc = descricao;
-    
+
     patterns.forEach(pattern => {
-        formattedDesc = formattedDesc.replace(pattern, (match, campo, valorAntigo, valorNovo) => {
-            const campoNormalizado = campo.toLowerCase().endsWith('_id') ? campo : `${campo}_id`;
-            
-            if (camposMapeados[campoNormalizado]) {
-                const mapeamento = camposMapeados[campoNormalizado];
-                const antigoObj: HistoricoType = { 
-                    ...evento,
-                    solucao: { 
-                        ...evento.solucao, 
-                        [`${campoNormalizado.replace('_id', '')}Id`]: valorAntigo === 'null' ? null : Number(valorAntigo)
-                    }
-                };
-                const novoObj: HistoricoType = {
-                    ...antigoObj,
-                    solucao: {
-                        ...evento.solucao,
-                        [`${campoNormalizado.replace('_id', '')}Id`]: valorNovo === 'null' ? null : Number(valorNovo)
-                    }
-                };
-                
-                const nomeAntigo = mapeamento.getValue(antigoObj);
-                const nomeNovo = mapeamento.getValue(novoObj);
-                
-                return `${mapeamento.nome}: ${nomeAntigo} → ${nomeNovo}`;
+      formattedDesc = formattedDesc.replace(pattern, (match, campo, valorAntigo, valorNovo) => {
+        const campoNormalizado = campo.toLowerCase().endsWith('_id') ? campo : `${campo}_id`;
+
+        if (camposMapeados[campoNormalizado]) {
+          const mapeamento = camposMapeados[campoNormalizado];
+          const antigoObj: HistoricoType = {
+            ...evento,
+            solucao: {
+              ...evento.solucao,
+              [`${campoNormalizado.replace('_id', '')}Id`]: valorAntigo === 'null' ? null : Number(valorAntigo)
             }
-            return match;
-        });
+          };
+          const novoObj: HistoricoType = {
+            ...antigoObj,
+            solucao: {
+              ...evento.solucao,
+              [`${campoNormalizado.replace('_id', '')}Id`]: valorNovo === 'null' ? null : Number(valorNovo)
+            }
+          };
+
+          const nomeAntigo = mapeamento.getValue(antigoObj);
+          const nomeNovo = mapeamento.getValue(novoObj);
+
+          return `${mapeamento.nome}: ${nomeAntigo} → ${nomeNovo}`;
+        }
+        return match;
+      });
     });
 
     // Formata datas
     formattedDesc = formattedDesc.replace(/(data_status): (.*?) -> (.*?)(,|$)/g, (match, campo, dataAntiga, dataNova) => {
-        const formatDate = (dateString: string | null) => {
-            if (dateString === null || dateString === 'null') return 'Nulo (não informado)';
-            return new Date(dateString).toLocaleDateString('pt-BR');
-        };
-        return `${campo}: ${formatDate(dataAntiga)} → ${formatDate(dataNova)}`;
+      const formatDate = (dateString: string | null) => {
+        if (dateString === null || dateString === 'null') return 'Nulo (não informado)';
+        return new Date(dateString).toLocaleDateString('pt-BR');
+      };
+      return `${campo}: ${formatDate(dataAntiga)} → ${formatDate(dataNova)}`;
     });
 
     return formattedDesc;
@@ -596,8 +607,8 @@ export default function Solucao() {
           s.status?.nome.toLowerCase().includes(searchLower) ||
           s.nome?.toLowerCase().includes(searchLower) ||
           s.sigla?.toLowerCase().includes(searchLower) ||
-          (s.linguagemId && typeof s.linguagemId === 'string' 
-            ? s.linguagemId.split(',').some(id => linguagens.find(l => l.id === Number(id))?.nome.toLowerCase().includes(searchLower)) 
+          (s.linguagemId && typeof s.linguagemId === 'string'
+            ? s.linguagemId.split(',').some(id => linguagens.find(l => l.id === Number(id))?.nome.toLowerCase().includes(searchLower))
             : false) ||
           s.desenvolvedor?.nome.toLowerCase().includes(searchLower) ||
           s.categoria?.nome.toLowerCase().includes(searchLower) ||
@@ -612,7 +623,7 @@ export default function Solucao() {
     }
   }, [search, solucoes, linguagens]);
 
-  
+
 
   const renderDetalhesLinguagens = (solucao: SolucaoType) => {
     if (solucao.linguagemId) {
@@ -625,10 +636,10 @@ export default function Solucao() {
         <div className="flex flex-wrap gap-1">
           {linguagemEncontradas.map(linguagens => (
             <span
-              key={(linguagens as {id: number; nome: string}).id}
+              key={(linguagens as { id: number; nome: string }).id}
               className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-700 rounded-full"
             >
-              {(linguagens as {id: number; nome: string}).nome}
+              {(linguagens as { id: number; nome: string }).nome}
             </span>
           ))}
         </div>
@@ -641,7 +652,7 @@ export default function Solucao() {
     if (!repo || repo === '') return '';
     if (repo.includes('github.com')) {
       return (
-        <a 
+        <a
           href={repo}
           target="_blank"
           rel="noopener noreferrer"
@@ -655,17 +666,17 @@ export default function Solucao() {
       );
     }
     return (
-        <div>
-          <Link
-                          href={repo}
-                          target="_blank"
-                          className="text-purple-500 hover:text-purple-700 rounded-full hover:bg-purple-50 transition-colors"
-                        >
-                          
-                          <ExternalLink className="w-5 h-5" />
-                        </Link>
-        </div>
-      
+      <div>
+        <Link
+          href={repo}
+          target="_blank"
+          className="text-purple-500 hover:text-purple-700 rounded-full hover:bg-purple-50 transition-colors"
+        >
+
+          <ExternalLink className="w-5 h-5" />
+        </Link>
+      </div>
+
     );
   };
 
@@ -676,20 +687,20 @@ export default function Solucao() {
     if (progress < 75) return 'bg-yellow-500';
     return 'bg-green-500';
   };
-  
+
   const ProgressBar = ({ progress }: { progress: number }) => {
     const progressColor = getProgressColor(progress);
-    
+
     return (
       <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
-        <div 
+        <div
           className={`h-full ${progressColor} transition-all duration-300 ease-in-out`}
           style={{ width: `${progress}%` }}
         />
       </div>
     );
   };
-  
+
 
 
 
@@ -697,8 +708,8 @@ export default function Solucao() {
     <div className={`
       w-full bg-gray-50
       transition-all duration-300 ease-in-out
-      ${isCollapsed 
-        ? 'ml-10 w-[calc(100%-2rem)] fixed left-1 top-13 h-screen overflow-y-auto' 
+      ${isCollapsed
+        ? 'ml-10 w-[calc(100%-2rem)] fixed left-1 top-13 h-screen overflow-y-auto'
         : 'w-full'
       }
       py-6 px-6
@@ -712,22 +723,22 @@ export default function Solucao() {
           <div className="flex gap-2">
             {/* <UpdateSolucoesButton /> */}
             {!user?.isManager && (
-              <button 
-              onClick={handleOpenModal}
-              className="bg-blue-600 text-white px-4 py-2 rounded-md flex items-center gap-2 hover:bg-blue-700 transition-colors"
-            >
-              <Plus className="w-4 h-4" />
-              Adicionar
-            </button>
+              <button
+                onClick={handleOpenModal}
+                className="bg-blue-600 text-white px-4 py-2 rounded-md flex items-center gap-2 hover:bg-blue-700 transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+                Adicionar
+              </button>
             )}
-            
+
           </div>
         </div>
 
-        
+
 
         {/* Substitua a seção da tabela pelo componente Table */}
-        <DynamicTable 
+        <DynamicTable
           solucoes={solucoes}
           linguagens={linguagens}
           isCollapsed={isCollapsed}
@@ -736,11 +747,11 @@ export default function Solucao() {
           onInfo={handleInfoClick}
           onHistorico={handleHistoricoClick}
         />
-        
+
         {/* <Pagination /> */}
-        
+
         {isModalOpen && (
-            <SolucaoFormModal
+          <SolucaoFormModal
             isOpen={isModalOpen}
             isEditing={isEditing}
             formData={{
@@ -801,7 +812,7 @@ export default function Solucao() {
                     Sigla: {selectedDemandDetails.sigla}
                   </p>
                 </div>
-                <button 
+                <button
                   onClick={() => setIsInfoModalOpen(false)}
                   className="text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full p-2 transition-colors"
                 >
@@ -812,21 +823,19 @@ export default function Solucao() {
               <div className="mb-6">
                 <div className="flex space-x-4 border-b border-gray-200">
                   <button
-                    className={`py-3 px-2 focus:outline-none transition-colors ${
-                      activeTab === 'details'
-                        ? 'border-b-2 border-blue-500 text-blue-600 font-medium'
-                        : 'text-gray-500 hover:text-gray-700'
-                    }`}
+                    className={`py-3 px-2 focus:outline-none transition-colors ${activeTab === 'details'
+                      ? 'border-b-2 border-blue-500 text-blue-600 font-medium'
+                      : 'text-gray-500 hover:text-gray-700'
+                      }`}
                     onClick={() => setActiveTab('details')}
                   >
                     Detalhes da Solução
                   </button>
                   <button
-                    className={`py-3 px-6 focus:outline-none transition-colors ${
-                      activeTab === 'history'
-                        ? 'border-b-2 border-blue-500 text-blue-600 font-medium'
-                        : 'text-gray-500 hover:text-gray-700'
-                    }`}
+                    className={`py-3 px-6 focus:outline-none transition-colors ${activeTab === 'history'
+                      ? 'border-b-2 border-blue-500 text-blue-600 font-medium'
+                      : 'text-gray-500 hover:text-gray-700'
+                      }`}
                     onClick={() => setActiveTab('history')}
                   >
                     Log
@@ -836,7 +845,7 @@ export default function Solucao() {
 
               <div className="max-h-[50vh] overflow-y-auto pr-4">
                 {activeTab === 'details' ? (
-                    <div className="bg-white rounded-lg shadow-sm p-6">
+                  <div className="bg-white rounded-lg shadow-sm p-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
                       {/* Informações Básicas */}
                       <div className="col-span-2 mb-4">
@@ -844,22 +853,22 @@ export default function Solucao() {
                           Informações da Solução
                         </h3>
                       </div>
-                      
+
                       <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
                         <span className="text-sm font-medium text-gray-600">Nome:</span>
                         <span className="text-sm text-gray-800 font-medium">{selectedDemandDetails.nome}</span>
                       </div>
-                      
+
                       <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
                         <span className="text-sm font-medium text-gray-600">Sigla:</span>
                         <span className="text-sm text-gray-800 font-medium">{selectedDemandDetails.sigla}</span>
                       </div>
-                      
+
                       <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
                         <span className="text-sm font-medium text-gray-600">Versão:</span>
                         <span className="text-sm text-gray-800 font-medium">{selectedDemandDetails.versao}</span>
                       </div>
-                      
+
                       <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
                         <span className="text-sm font-medium text-gray-600">Repositório:</span>
                         <span className="text-sm text-gray-800 font-medium">
@@ -870,9 +879,9 @@ export default function Solucao() {
                       <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
                         <span className="text-sm font-medium text-gray-600">Link:</span>
                         {selectedDemandDetails.link ? (
-                          <a 
-                            href={selectedDemandDetails.link} 
-                            target="_blank" 
+                          <a
+                            href={selectedDemandDetails.link}
+                            target="_blank"
                             rel="noopener noreferrer"
                             className="text-sm text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1"
                           >
@@ -882,22 +891,22 @@ export default function Solucao() {
                           <span className="text-sm text-gray-800 font-medium">-</span>
                         )}
                       </div>
-                      
+
                       <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
                         <span className="text-sm font-medium text-gray-600">Tipo:</span>
                         <span className="text-sm text-gray-800 font-medium">{selectedDemandDetails.tipo?.nome || '-'}</span>
                       </div>
-                      
+
                       <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
                         <span className="text-sm font-medium text-gray-600">Categoria:</span>
                         <span className="text-sm text-gray-800 font-medium">{selectedDemandDetails.categoria?.nome || '-'}</span>
                       </div>
-                      
+
                       <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
                         <span className="text-sm font-medium text-gray-600">Demanda:</span>
                         <span className="text-sm text-gray-800 font-medium">{selectedDemandDetails.demanda?.nome || '-'}</span>
                       </div>
-                      
+
                       <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
                         <span className="text-sm font-medium text-gray-600">Status:</span>
                         <span
@@ -907,27 +916,27 @@ export default function Solucao() {
                           {selectedDemandDetails.status?.nome || '-'}
                         </span>
                       </div>
-                      
+
                       <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
                         <span className="text-sm font-medium text-gray-600">Responsável:</span>
                         <span className="text-sm text-gray-800 font-medium">{selectedDemandDetails.responsavel?.nome || '-'}</span>
                       </div>
-                      
+
                       <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
                         <span className="text-sm font-medium text-gray-600">Desenvolvedor:</span>
                         <span className="text-sm text-gray-800 font-medium">{selectedDemandDetails.desenvolvedor?.nome || '-'}</span>
                       </div>
-                      
+
                       <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
                         <span className="text-sm font-medium text-gray-600">Criticidade:</span>
                         <span className="text-sm text-gray-800 font-medium">{selectedDemandDetails.criticidade || '-'}</span>
                       </div>
-                      
+
                       <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
                         <span className="text-sm font-medium text-gray-600">Data Status:</span>
                         <span className="text-sm text-gray-800 font-medium">{formatDate(selectedDemandDetails.data_status || selectedDemandDetails.dataStatus)}</span>
                       </div>
-                      
+
                       <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
                         <span className="text-sm font-medium text-gray-600">Andamento:</span>
                         <div className="flex flex-col w-1/2 items-end">
@@ -935,14 +944,14 @@ export default function Solucao() {
                           <ProgressBar progress={Number(selectedDemandDetails.andamento) || 0} />
                         </div>
                       </div>
-                      
+
                       <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
                         <span className="text-sm font-medium text-gray-600">Linguagens:</span>
                         <div className="text-right">
                           {renderDetalhesLinguagens(selectedDemandDetails)}
                         </div>
                       </div>
-                      
+
                       <div className="col-span-2 mt-4">
                         <h3 className="text-lg font-semibold text-gray-800 mb-3 pb-2 border-b border-gray-200">
                           Descrição
@@ -1000,7 +1009,7 @@ export default function Solucao() {
                                         {formatDate(evento.createdAt)}
                                       </time>
                                     </div>
-                                    
+
                                     <div className="text-sm text-gray-700 mb-4">
                                       <div className="bg-gradient-to-r from-blue-50 to-white p-4 rounded-lg border-l-4 border-blue-500">
                                         {formatHistoricoDescricao(evento.descricao, evento)}
@@ -1014,7 +1023,7 @@ export default function Solucao() {
                                             Informações Básicas
                                           </h4>
                                           <div className="space-y-3">
-                                    
+
                                             <div className="flex items-center justify-between group hover:bg-white hover:shadow-sm p-2 rounded-md transition-all">
                                               <span className="font-medium text-gray-600">Nome:</span>
                                               <span className="text-gray-900 font-medium group-hover:text-blue-600">{evento.solucao.nome}</span>
@@ -1029,7 +1038,7 @@ export default function Solucao() {
                                             </div>
                                           </div>
                                         </div>
-                                        
+
                                         <div className="bg-gray-50 p-4 rounded-lg border border-gray-100 shadow-sm">
                                           <h4 className="font-semibold text-gray-900 mb-3 pb-2 border-b border-gray-200">
                                             Detalhes Técnicos
@@ -1042,14 +1051,14 @@ export default function Solucao() {
                                               </span>
                                             </div>
                                             <div className="flex items-center justify-between group hover:bg-white hover:shadow-sm p-2 rounded-md transition-all">
-                                                <span className="font-medium text-gray-600">Linguagem:</span>
-                                                <span className="text-gray-900 font-medium group-hover:text-blue-600">
-                                                  {renderDetalhesLinguagens({
-                                                    ...evento.solucao,
-                                                    timeId: evento.solucao.timesId
-                                                  })}
-                                                </span>
-                                              </div>
+                                              <span className="font-medium text-gray-600">Linguagem:</span>
+                                              <span className="text-gray-900 font-medium group-hover:text-blue-600">
+                                                {renderDetalhesLinguagens({
+                                                  ...evento.solucao,
+                                                  timeId: evento.solucao.timesId
+                                                })}
+                                              </span>
+                                            </div>
                                             <div className="flex items-center justify-between group hover:bg-white hover:shadow-sm p-2 rounded-md transition-all">
                                               <span className="font-medium text-gray-600">Status:</span>
                                               <span className="text-gray-900 font-medium group-hover:text-blue-600">{evento.solucao.statusId || '-'}</span>
@@ -1071,7 +1080,7 @@ export default function Solucao() {
               </div>
 
               <div className="mt-6 flex justify-end">
-                <button 
+                <button
                   onClick={() => setIsInfoModalOpen(false)}
                   className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
                 >
