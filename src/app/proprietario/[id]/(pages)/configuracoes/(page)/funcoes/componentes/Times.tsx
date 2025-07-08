@@ -30,7 +30,6 @@ export default function Times({ proprietarioId }: { proprietarioId?: string }) {
   const { isCollapsed } = useSidebar();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentTimes, setCurrentTimes] = useState<Partial<Time>>(() => ({
-    // Initialize with proprietarioId from props or localStorage
     proprietario_id: proprietarioId ? proprietarioId : 
                     localStorage.getItem('selectedProprietarioId') || ''
   }));
@@ -41,14 +40,13 @@ export default function Times({ proprietarioId }: { proprietarioId?: string }) {
 
   useEffect(() => {
     const loadTimes = async () => {
-      setTimes([]); // Clear existing linguagens
+      setTimes([]); 
       
       const storedId = proprietarioId || localStorage.getItem('selectedProprietarioId');
       if (storedId) {
         try {
           const data = await getTimes(storedId);
           
-          // Use data directly since getCategorias already filters by proprietario_id
           setTimes(data);
         } catch (error) {
           console.error('Error loading linguagens:', error);
@@ -59,7 +57,6 @@ export default function Times({ proprietarioId }: { proprietarioId?: string }) {
     
     loadTimes();
     
-    // Only load proprietários if we're in the main categories view
     if (!proprietarioId) {
       const loadProprietarios = async () => {
         const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/proprietarios`);
@@ -70,7 +67,6 @@ export default function Times({ proprietarioId }: { proprietarioId?: string }) {
     }
   }, [proprietarioId]);
 
-  // When modal is opened, ensure proprietarioId is set
   useEffect(() => {
     if (isModalOpen) {
       const storedId = proprietarioId || localStorage.getItem('selectedProprietarioId') || undefined;

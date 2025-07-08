@@ -44,7 +44,6 @@ export async function getProprietarios() {
       return response.data;
     }
   } catch (error) {
-    console.error('Erro ao buscar proprietários:', error);
     return { error: true, message: 'Falha ao carregar proprietários' };
   }
 }

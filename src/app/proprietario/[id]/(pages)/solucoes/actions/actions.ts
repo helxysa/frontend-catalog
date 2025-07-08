@@ -9,12 +9,7 @@ const url = `${baseUrl}/solucoes`;
 
 export const getSolucoes = async (page: number, itemsPerPage: number, proprietarioId: number) => {
   try {
-    const response = await api.get(`${baseUrl}/proprietarios/${proprietarioId}/solucoes`, {
-      params: {
-        page,
-        itemsPerPage,
-      }
-    });
+    const response = await api.get(`${baseUrl}/proprietarios/${proprietarioId}/solucoes?page=${page}&limit=${itemsPerPage}`)
     return response.data;
   } catch (error) {
     console.error('Error fetching soluções:', error);
@@ -92,9 +87,14 @@ export async function getAllDemandas() {
     }
 }
 
-export async function getDemandas(proprietariId: string) {
+export async function getDemandas(proprietariId: string, page?: number | null, limit?: number | null) {
     try {
-        const response = await api.get(`${urlSelect}/demandas`);
+        if(page == undefined && limit == undefined) {
+            const response = await api.get(`${urlSelect}/demandas/busca/${proprietariId}?page=1&limit=100`);
+            return response.data.data    
+        }
+
+        const response = await api.get(`${urlSelect}/demandas/busca/${proprietariId}?page=${page}&limit=${limit}`);
         return response.data.data;
     } catch (error) {
         console.error("Error fetching demands:", error);
