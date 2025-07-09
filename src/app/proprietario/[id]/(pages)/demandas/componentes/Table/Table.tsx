@@ -42,16 +42,19 @@ import {
   Trash2,
 } from 'lucide-react';
 import InfoModal from '../InfoModal/InfoModal';
+import DeleteConfirmationModal from '../DeleteConfirmationModal/DeleteConfirmationModal';
 
 export default function Table() {
   const [data, setData] = useState<Demanda[]>([]);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [demandaToEdit, setDemandaToEdit] = useState<Demanda | null>(null);
   const [solucoes, setSolucoes] = useState<{ [key: number]: any[] }>({});
-  const [loadingSolucoes, setLoadingSolucoes] = useState<{[key: number]: boolean}>({});
+  const [loadingSolucoes, setLoadingSolucoes] = useState<{ [key: number]: boolean }>({});
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
   const [selectedDemanda, setSelectedDemanda] = useState<Demanda | null>(null);
-  
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [demandaToDelete, setDemandaToDelete] = useState<number | null>(null);
+
   const [pagination, setPagination] = useState({
     pageIndex: 0,
     pageSize: 10,
@@ -85,15 +88,15 @@ export default function Table() {
   const fetchSolucoes = async (demandaId: number) => {
     if (loadingSolucoes[demandaId] || solucoes[demandaId]) return;
 
-    setLoadingSolucoes(prev => ({...prev, [demandaId]: true}));
+    setLoadingSolucoes(prev => ({ ...prev, [demandaId]: true }));
     try {
-        const solucoesData = await getSolucoesByDemandaId(String(demandaId));
-        setSolucoes(prev => ({ ...prev, [demandaId]: solucoesData || [] }));
+      const solucoesData = await getSolucoesByDemandaId(String(demandaId));
+      setSolucoes(prev => ({ ...prev, [demandaId]: solucoesData || [] }));
     } catch (error) {
-        console.error(`Erro ao buscar soluções para demanda ${demandaId}:`, error);
-        setSolucoes(prev => ({ ...prev, [demandaId]: [] }));
+      console.error(`Erro ao buscar soluções para demanda ${demandaId}:`, error);
+      setSolucoes(prev => ({ ...prev, [demandaId]: [] }));
     } finally {
-      setLoadingSolucoes(prev => ({...prev, [demandaId]: false}));
+      setLoadingSolucoes(prev => ({ ...prev, [demandaId]: false }));
     }
   };
 
@@ -110,18 +113,30 @@ export default function Table() {
     setDemandaToEdit(demanda);
     setIsFormOpen(true);
   }, []);
-  
-  const handleDelete = async (id: number) => {
-    if(window.confirm('Tem certeza que deseja excluir esta demanda?')) {
-        try {
-            await deleteDemandaAction(id);
-            fetchData();
-        } catch (error) {
-            console.error('Erro ao excluir demanda', error);
-            alert('Falha ao excluir a demanda.');
-        }
+
+  const handleDelete = (id: number) => {
+    setDemandaToDelete(id);
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (demandaToDelete) {
+      try {
+        await deleteDemandaAction(demandaToDelete);
+        fetchData();
+        setIsDeleteModalOpen(false);
+        setDemandaToDelete(null);
+      } catch (error) {
+        console.error('Erro ao excluir demanda', error);
+        alert('Falha ao excluir a demanda.');
+      }
     }
-  }
+  };
+
+  const cancelDelete = () => {
+    setIsDeleteModalOpen(false);
+    setDemandaToDelete(null);
+  };
 
   const handleInfo = (demanda: Demanda) => {
     setSelectedDemanda(demanda);
@@ -142,11 +157,11 @@ export default function Table() {
     handleCloseForm();
     fetchData();
   };
-  
+
   const handleClearFilters = () => {
     table.resetColumnFilters();
   };
-  
+
   const formatDate = (dateString?: string | null) => {
     if (!dateString) return '-';
     try {
@@ -178,143 +193,143 @@ export default function Table() {
       {
         accessorKey: 'nome',
         header: ({ column }) => (
-            <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")} className="text-xs font-medium text-gray-600 w-full justify-start p-0 hover:bg-transparent">
-              Nome <ArrowUpDown className="ml-2 h-4 w-4" />
-            </Button>
-          ),
+          <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")} className="text-xs font-medium text-gray-600 w-full justify-start p-0 hover:bg-transparent">
+            Nome <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        ),
       },
       {
         accessorKey: 'sigla',
         header: ({ column }) => (
-            <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")} className="text-xs font-medium text-gray-600 w-full justify-start p-0 hover:bg-transparent">
-              Sigla <ArrowUpDown className="ml-2 h-4 w-4" />
-            </Button>
-          ),
+          <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")} className="text-xs font-medium text-gray-600 w-full justify-start p-0 hover:bg-transparent">
+            Sigla <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        ),
       },
       {
         accessorKey: 'fatorGerador',
         header: ({ column }) => (
-            <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")} className="text-xs font-medium text-gray-600 w-full justify-start p-0 hover:bg-transparent">
-              Fator Gerador <ArrowUpDown className="ml-2 h-4 w-4" />
-            </Button>
-          ),
+          <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")} className="text-xs font-medium text-gray-600 w-full justify-start p-0 hover:bg-transparent">
+            Fator Gerador <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        ),
       },
       {
         accessorKey: 'demandante',
         header: ({ column }) => (
-            <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")} className="text-xs font-medium text-gray-600 w-full justify-start p-0 hover:bg-transparent">
-              Demandante <ArrowUpDown className="ml-2 h-4 w-4" />
-            </Button>
-          ),
+          <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")} className="text-xs font-medium text-gray-600 w-full justify-start p-0 hover:bg-transparent">
+            Demandante <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        ),
         filterFn: (row, id, value) => {
-            return value === row.getValue(id);
+          return value === row.getValue(id);
         },
       },
       {
         accessorKey: 'alinhamento.nome',
         header: ({ column }) => (
-            <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")} className="text-xs font-medium text-gray-600 w-full justify-start p-0 hover:bg-transparent">
-              Alinhamento <ArrowUpDown className="ml-2 h-4 w-4" />
-            </Button>
-          ),
+          <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")} className="text-xs font-medium text-gray-600 w-full justify-start p-0 hover:bg-transparent">
+            Alinhamento <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        ),
         cell: ({ row }) => row.original.alinhamento?.nome || 'N/A',
       },
       {
         id: 'prioridade',
         accessorFn: row => row.prioridade?.nome,
         header: ({ column }) => (
-            <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")} className="text-xs font-medium text-gray-600 w-full justify-start p-0 hover:bg-transparent">
-              Prioridade <ArrowUpDown className="ml-2 h-4 w-4" />
-            </Button>
-          ),
+          <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")} className="text-xs font-medium text-gray-600 w-full justify-start p-0 hover:bg-transparent">
+            Prioridade <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        ),
         cell: ({ row }) => row.original.prioridade?.nome || 'N/A',
         filterFn: (row, id, value) => {
-            if (value === 'sem_prioridade') {
-              return !row.original.prioridade || !row.original.prioridade.nome;
-            }
-            return row.original.prioridade?.nome === value;
+          if (value === 'sem_prioridade') {
+            return !row.original.prioridade || !row.original.prioridade.nome;
+          }
+          return row.original.prioridade?.nome === value;
         },
       },
       {
         id: 'solucoes',
         header: 'Soluções',
         cell: ({ row }) => {
-            const demandaId = row.original.id;
-            const solucoesDemanda = solucoes[demandaId];
-            const isLoading = loadingSolucoes[demandaId];
-            
-            const handleMouseEnter = () => {
-              fetchSolucoes(demandaId);
-            };
+          const demandaId = row.original.id;
+          const solucoesDemanda = solucoes[demandaId];
+          const isLoading = loadingSolucoes[demandaId];
 
-            return (
-              <div onMouseEnter={handleMouseEnter} className="text-center">
-                {isLoading ? "..." : (solucoesDemanda !== undefined ? solucoesDemanda.length : <span className='text-gray-400'>-</span>)}
-              </div>
-            );
+          const handleMouseEnter = () => {
+            fetchSolucoes(demandaId);
+          };
+
+          return (
+            <div onMouseEnter={handleMouseEnter} className="text-center">
+              {isLoading ? "..." : (solucoesDemanda !== undefined ? solucoesDemanda.length : <span className='text-gray-400'>-</span>)}
+            </div>
+          );
         }
       },
       {
         id: 'responsavel',
         accessorFn: row => row.responsavel?.nome,
         header: ({ column }) => (
-            <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")} className="text-xs font-medium text-gray-600 w-full justify-start p-0 hover:bg-transparent">
-              Responsável <ArrowUpDown className="ml-2 h-4 w-4" />
-            </Button>
-          ),
+          <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")} className="text-xs font-medium text-gray-600 w-full justify-start p-0 hover:bg-transparent">
+            Responsável <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        ),
         cell: ({ row }) => row.original.responsavel?.nome || 'N/A',
         filterFn: (row, id, value) => {
-            if (value === 'sem_responsavel') {
-              return !row.original.responsavel || !row.original.responsavel.nome;
-            }
-            return row.original.responsavel?.nome === value;
+          if (value === 'sem_responsavel') {
+            return !row.original.responsavel || !row.original.responsavel.nome;
+          }
+          return row.original.responsavel?.nome === value;
         },
       },
       {
         accessorKey: 'dataStatus',
         header: ({ column }) => (
-            <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")} className="text-xs font-medium text-gray-600 w-full justify-start p-0 hover:bg-transparent">
-              Data Status <ArrowUpDown className="ml-2 h-4 w-4" />
-            </Button>
-          ),
+          <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")} className="text-xs font-medium text-gray-600 w-full justify-start p-0 hover:bg-transparent">
+            Data Status <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        ),
         cell: ({ row }) => formatDate(row.original.dataStatus),
       },
       {
         id: 'status',
         accessorFn: row => row.status?.nome,
         header: ({ column }) => (
-            <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")} className="text-xs font-medium text-gray-600 w-full justify-start p-0 hover:bg-transparent">
-              Status <ArrowUpDown className="ml-2 h-4 w-4" />
-            </Button>
-          ),
+          <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")} className="text-xs font-medium text-gray-600 w-full justify-start p-0 hover:bg-transparent">
+            Status <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        ),
         cell: ({ row }) => {
-            const status = row.original.status;
-            if (!status?.nome) {
-              return (
-                <div className="flex items-center">
-                  <span className="rounded-md px-3 py-1 text-sm font-medium text-gray-700 bg-gray-200">
-                    N/A
-                  </span>
-                </div>
-              );
-            }
+          const status = row.original.status;
+          if (!status?.nome) {
             return (
               <div className="flex items-center">
-                <span
-                  className={`rounded-md px-3 py-1 text-sm font-medium ${determinarCorTexto(status.propriedade)}`}
-                  style={{ backgroundColor: status.propriedade }}
-                >
-                  {status.nome}
+                <span className="rounded-md px-3 py-1 text-sm font-medium text-gray-700 bg-gray-200">
+                  N/A
                 </span>
               </div>
             );
+          }
+          return (
+            <div className="flex items-center">
+              <span
+                className={`rounded-md px-3 py-1 text-sm font-medium ${determinarCorTexto(status.propriedade)}`}
+                style={{ backgroundColor: status.propriedade }}
+              >
+                {status.nome}
+              </span>
+            </div>
+          );
         },
         filterFn: (row, id, value) => {
-            const statusNome = row.original.status?.nome;
-            if (value === 'sem_status') {
-              return !statusNome;
-            }
-            return statusNome === value;
+          const statusNome = row.original.status?.nome;
+          if (value === 'sem_status') {
+            return !statusNome;
+          }
+          return statusNome === value;
         },
       },
       {
@@ -324,26 +339,26 @@ export default function Table() {
           const demanda = row.original;
           return (
             <div className="flex justify-end space-x-2">
-                {demanda.link && (
-                  <a 
-                    href={demanda.link} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-purple-600 hover:text-purple-800 rounded-full hover:bg-purple-50 transition-colors p-1"
-                  >
-                    <ExternalLink className="w-5 h-5" />
-                  </a>
-                )}
-                <button onClick={() => handleEdit(demanda)} className="text-green-600 hover:text-green-800 rounded-full hover:bg-green-50 transition-colors p-1">
-                    <Edit2 className="w-5 h-5" />
-                </button>
-                <button onClick={() => handleDelete(demanda.id)} className="text-red-400 hover:text-red-700 rounded-full hover:bg-red-50 transition-colors p-1">
-                    <Trash2 className="w-5 h-5" />
-                </button>
-                <button onClick={() => handleInfo(demanda)} className="text-blue-500 hover:text-blue-700 rounded-full hover:bg-blue-50 transition-colors p-1">
-                    <Info className="w-5 h-5" />
-                </button>
-              
+              {demanda.link && (
+                <a
+                  href={demanda.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-purple-600 hover:text-purple-800 rounded-full hover:bg-purple-50 transition-colors p-1"
+                >
+                  <ExternalLink className="w-5 h-5" />
+                </a>
+              )}
+              <button onClick={() => handleEdit(demanda)} className="text-green-600 hover:text-green-800 rounded-full hover:bg-green-50 transition-colors p-1">
+                <Edit2 className="w-5 h-5" />
+              </button>
+              <button onClick={() => handleDelete(demanda.id)} className="text-red-400 hover:text-red-700 rounded-full hover:bg-red-50 transition-colors p-1">
+                <Trash2 className="w-5 h-5" />
+              </button>
+              <button onClick={() => handleInfo(demanda)} className="text-blue-500 hover:text-blue-700 rounded-full hover:bg-blue-50 transition-colors p-1">
+                <Info className="w-5 h-5" />
+              </button>
+
             </div>
           );
         },
@@ -507,9 +522,9 @@ export default function Table() {
                     {header.isPlaceholder
                       ? null
                       : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
+                        header.column.columnDef.header,
+                        header.getContext()
+                      )}
                   </TableHead>
                 ))}
               </TableRow>
@@ -538,35 +553,35 @@ export default function Table() {
       </div>
       <div className="flex items-center justify-between space-x-2 py-4">
         <div className="flex items-center space-x-2">
-            <Button
-                variant="outline"
-                size="sm"
-                onClick={() => table.previousPage()}
-                disabled={!table.getCanPreviousPage()}
-                >
-                Anterior
-            </Button>
-            <Button
-                variant="outline"
-                size="sm"
-                onClick={() => table.nextPage()}
-                disabled={!table.getCanNextPage()}
-                >
-                Próximo
-            </Button>
-            <select
-                className="h-10 rounded-md border border-gray-300 bg-white px-3 text-sm"
-                value={table.getState().pagination.pageSize}
-                onChange={e => {
-                    table.setPageSize(Number(e.target.value));
-                }}
-            >
-                {[10, 50, 100].map(pageSize => (
-                    <option key={pageSize} value={pageSize}>
-                        {pageSize} registros
-                    </option>
-                ))}
-            </select>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => table.previousPage()}
+            disabled={!table.getCanPreviousPage()}
+          >
+            Anterior
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => table.nextPage()}
+            disabled={!table.getCanNextPage()}
+          >
+            Próximo
+          </Button>
+          <select
+            className="h-10 rounded-md border border-gray-300 bg-white px-3 text-sm"
+            value={table.getState().pagination.pageSize}
+            onChange={e => {
+              table.setPageSize(Number(e.target.value));
+            }}
+          >
+            {[10, 50, 100].map(pageSize => (
+              <option key={pageSize} value={pageSize}>
+                {pageSize} registros
+              </option>
+            ))}
+          </select>
         </div>
         <div className="text-sm text-muted-foreground">
           Página {table.getState().pagination.pageIndex + 1} de {table.getPageCount()} | Total: {totalRows} {totalRows === 1 ? 'registro' : 'registros'}
@@ -574,12 +589,19 @@ export default function Table() {
       </div>
       {isInfoModalOpen && <InfoModal demanda={selectedDemanda} onClose={handleCloseInfoModal} />}
       {isFormOpen && (
-        <Form 
+        <Form
           demandaToEdit={demandaToEdit as any}
           onClose={handleCloseForm}
           onSave={handleSaveForm}
         />
       )}
+      <DeleteConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onClose={cancelDelete}
+        onConfirm={confirmDelete}
+        title="Confirmar Exclusão"
+        message="Tem certeza que deseja excluir?"
+      />
     </div>
   );
 }
