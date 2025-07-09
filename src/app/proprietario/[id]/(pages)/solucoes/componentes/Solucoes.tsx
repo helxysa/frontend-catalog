@@ -1,10 +1,10 @@
-import Table from '../../solucoes/componentes/Table/Table'
+import Table from './Table/Table'
 
 
 export default function Solucoes() {
     return (
-        <>
-            <Table />            
-        </>
+        <div className="flex flex-col h-full">
+            <Table />
+        </div>
     )
 }

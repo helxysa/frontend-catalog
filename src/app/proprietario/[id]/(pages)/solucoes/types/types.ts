@@ -33,14 +33,16 @@ export interface SolucaoType {
     alinhamento?: { id: number | null; nome: string };
   };
   times?: {
+    id: number;
     responsavel_id: number | null;
     funcao: string;
     dataInicio: string;
     dataFim: string;
   }[];
   atualizacoes?: {
+    id: number;
     nome: string;
     descricao: string;
     data_atualizacao: string;
-  };
+  }[];
 }
