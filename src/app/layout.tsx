@@ -5,6 +5,7 @@ import { AppWrapper } from './componentes/Sidebar/AppWrapper'
 import { SidebarProvider } from './componentes/Sidebar/SidebarContext';
 import { AuthProvider } from './contexts/AuthContext';
 import { ProprietariosProvider } from './contexts/ProprietarioContext';
+import { Toaster } from "@/components/ui/toaster"
 
 const montserrat = Montserrat({
   subsets: ["latin"],
@@ -36,6 +37,7 @@ export default function RootLayout({
           <SidebarProvider>
             <AppWrapper>
               {children}
+              <Toaster />
             </AppWrapper>
           </SidebarProvider>
         </ProprietariosProvider>

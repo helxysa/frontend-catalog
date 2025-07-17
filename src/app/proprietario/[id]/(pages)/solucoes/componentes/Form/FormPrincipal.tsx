@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { getDemandas, getSolucoes, createSolucao, getStatus, getLinguagens, getResponsaveis, getCategorias, getDesenvolvedores, getTipos, updateSolucao, getSolucaoById } from '../../actions/actions';
 import { SolucaoType } from '../../types/types';
+import { useToast } from "@/hooks/use-toast"
 
 interface FormPrincipalProps {
     onClose: () => void;
@@ -49,16 +50,23 @@ const emptyFormState: SolucaoType = {
             funcao: '',
             dataInicio: '',
             dataFim: '',
+            id: 0
         },
     ],
-    atualizacoes: {
-        nome: '',
-        descricao: '',
-        data_atualizacao: '',
-    },
+    atualizacoes: [
+        {
+            id: 0,
+            nome: '',
+            descricao: '',
+            data_atualizacao: ''
+        }
+    ],
 };
 
 export default function FormPrincipal({ onClose, onSuccess, initialData }: FormPrincipalProps) {
+    const { toast } = useToast()
+    const [isSubmitting, setIsSubmitting] = useState(false)
+
     const [demandas, setDemandas] = useState<any[]>([]);
     const [tipos, setTipos] = useState<any[]>([]);
     const [tecnologias, setTecnologia] = useState<any[]>([]);
@@ -161,6 +169,7 @@ export default function FormPrincipal({ onClose, onSuccess, initialData }: FormP
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
+        setIsSubmitting(true)
         try {
             const storedId = localStorage.getItem('selectedProprietarioId')
             if (!storedId) {
@@ -170,6 +179,7 @@ export default function FormPrincipal({ onClose, onSuccess, initialData }: FormP
 
             const finalData = {
                 ...formData,
+                data_status: formData.dataStatus || null,
                 proprietario_id: Number(storedId),
                 demanda_id: formData.demandaId,
                 tipo_id: formData.tipoId,
@@ -182,6 +192,7 @@ export default function FormPrincipal({ onClose, onSuccess, initialData }: FormP
                 atualizacoes: JSON.stringify(formData.atualizacoes)
             };
 
+            delete (finalData as any).dataStatus;
             delete (finalData as any).tipo;
             delete (finalData as any).desenvolvedor;
             delete (finalData as any).categoria;
@@ -193,16 +204,30 @@ export default function FormPrincipal({ onClose, onSuccess, initialData }: FormP
 
             if (isEditing) {
                 await updateSolucao(String(formData.id), finalData);
-                alert('Solução atualizada com sucesso!');
+                toast({
+                    title: "Solução Editada.",
+                    description: "A sua solução foi editada.",
+                    variant: "success",
+                    duration: 1700,
+                });
             } else {
                 await createSolucao(finalData);
-                alert('Solução criada com sucesso!');
+                toast({
+                    title: "Solução Registrada",
+                    description: "A sua solução foi registrada.",
+                    variant: "success",
+                    duration: 1700,
+                });
             }
             onSuccess();
+            setIsSubmitting(false)
+
 
         } catch (err) {
             console.error('Error:' + err)
             alert(`Falha ao ${isEditing ? 'atualizar' : 'criar'} a solução.`);
+            setIsSubmitting(false)
+
         }
     }
 
@@ -706,7 +731,7 @@ export default function FormPrincipal({ onClose, onSuccess, initialData }: FormP
                                 type='submit'
                                 className='px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2'
                             >
-                                {isEditing ? 'Salvar Alterações' : 'Salvar'}
+                                {isSubmitting ? 'Salvando...' : isEditing ? 'Salvar Alterações' : 'Salvar'}
                             </button>
                         </div>
                     </form>

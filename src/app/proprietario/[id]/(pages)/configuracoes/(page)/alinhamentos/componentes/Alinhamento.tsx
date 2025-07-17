@@ -7,6 +7,7 @@ import {
   updateAlinhamento,
   deleteAlinhamento
 } from '../actions/actions';
+import { useToast } from "@/hooks/use-toast"
 import {
   Plus,
   Edit2,
@@ -25,6 +26,8 @@ export default function Alinhamento({ proprietarioId }: { proprietarioId?: strin
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [pagination, setPagination] = useState<PaginationMeta | null>(null);
   const [limit, setLimit] = useState(15);
+  const { toast } = useToast()
+
   const [currentPage, setCurrentPage] = useState(1);
   const [currentAlinhamento, setCurrentAlinhamento] = useState<Partial<Alinhamento>>(() => ({
     proprietario_id: proprietarioId ? proprietarioId :
@@ -110,6 +113,12 @@ export default function Alinhamento({ proprietarioId }: { proprietarioId?: strin
         setAlinhamentos([...alinhamentos, created]);
         setIsModalOpen(false);
         setCurrentAlinhamento({});
+        toast({
+          title: "Alinhamento criado.",
+          description: "A seu alinhamento foi registrado.",
+          variant: "success",
+          duration: 1700,
+        });
       } catch (error: any) {
         console.error('Erro ao criar alinhamento:', error);
         console.error('Dados do erro:', error.response?.data);
@@ -128,12 +137,38 @@ export default function Alinhamento({ proprietarioId }: { proprietarioId?: strin
       setAlinhamentos(alinhamentos.map(c => (c.id === currentAlinhamento.id ? updated : c)));
       setIsModalOpen(false);
       setCurrentAlinhamento({});
+      toast({
+        title: "Alinhamento editado.",
+        description: "O seu alinhamento foi editado.",
+        variant: "success",
+        duration: 1700,
+      });
     }
   };
 
   const handleDelete = async (id: string) => {
-    await deleteAlinhamento(id);
-    setAlinhamentos(alinhamentos.filter(c => c.id !== id));
+    const alinhamentosOriginais = [...alinhamentos];
+    // Atualiza a UI imediatamente para uma experiência mais fluida
+    setAlinhamentos(alinhamentos.filter(c => c.id.toString() !== id));
+
+    try {
+      // Realiza a chamada à API para deletar
+      await deleteAlinhamento(id);
+
+      // Notificação de sucesso
+    
+    } catch (error) {
+      // Reverte a UI para o estado original em caso de erro
+      setAlinhamentos(alinhamentosOriginais);
+
+      // Notificação de erro
+      toast({
+        title: "Erro ao excluir",
+        description: "Não foi possível remover o alinhamento. Tente novamente.",
+        variant: "destructive",
+      });
+      console.error("Erro ao deletar alinhamento:", error);
+    }
   };
 
   const showAlinhamentoDetails = (categoria: Alinhamento) => {

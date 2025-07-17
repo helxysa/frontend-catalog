@@ -7,6 +7,7 @@ import {
   updatePrioridade,
   deletePrioridade
 } from '../actions/actions';
+import { useToast } from "@/hooks/use-toast"
 import {
   Plus,
   Filter,
@@ -30,6 +31,7 @@ interface Proprietario {
 export default function Prioridade({ proprietarioId }: { proprietarioId?: string }) {
   const [prioridades, setPrioridades] = useState<Prioridade[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const { toast } = useToast()
   const [pagination, setPagination] = useState<PaginationMeta | null>(null);
   const [limit, setLimit] = useState(15);
   const [currentPage, setCurrentPage] = useState(1);
@@ -124,6 +126,12 @@ export default function Prioridade({ proprietarioId }: { proprietarioId?: string
         setPrioridades([...prioridades, created]);
         setIsModalOpen(false);
         setCurrentPrioridade({});
+        toast({
+          title: "Prioridade registrada.",
+          description: "A proridade foi registrada.",
+          variant: "success",
+          duration: 1700,
+      });
       } catch (error: any) {
         console.error('Erro ao criar prioridade:', error);
         console.error('Dados do erro:', error.response?.data);
@@ -142,6 +150,12 @@ export default function Prioridade({ proprietarioId }: { proprietarioId?: string
       setPrioridades(prioridades.map(p => (p.id === currentPrioridade.id ? updated : p)));
       setIsModalOpen(false);
       setCurrentPrioridade({});
+      toast({
+        title: "Prioridade editada.",
+        description: "A prioridade foi editada.",
+        variant: "success",
+        duration: 1700,
+    });
     }
   };
 

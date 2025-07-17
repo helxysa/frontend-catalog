@@ -11,6 +11,7 @@ import DeleteConfirmationModal from "./DeleteConfirmationModal";
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import Footer from '@/app/componentes/Footer/Footer'
+import { useToast } from "@/hooks/use-toast";
 
 // Componente de imagem otimizado com lazy loading
 const OptimizedImage = dynamic(() => import('next/image'), {
@@ -127,6 +128,7 @@ export default function Proprietario() {
   const [isCloning, setIsCloning] = useState(false); // Novo estado para loading da clonagem
   const router = useRouter();
   const { login, user } = useAuth();
+  const { toast } = useToast();
   const baseURL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3333';
 
   const fetchEscritorios = async () => {
@@ -180,8 +182,24 @@ export default function Proprietario() {
       setIsCloning(true); // Ativar loading
       await cloneProprietario(cloneProprietarioData.id.toString());
       fetchEscritorios();
+
+      // Toast de sucesso para clonagem
+      toast({
+        title: "Unidade clonada com sucesso",
+        description: `A unidade "${cloneProprietarioData.nome}" foi clonada com sucesso.`,
+        variant: "success",
+        duration: 2000,
+      });
     } catch (error) {
       console.error('Error cloning:', error);
+
+      // Toast de erro para clonagem
+      toast({
+        title: "Erro ao clonar unidade",
+        description: "Ocorreu um erro ao tentar clonar a unidade. Tente novamente.",
+        variant: "destructive",
+        duration: 2000,
+      });
     } finally {
       setIsCloning(false); // Desativar loading
       setShowCloneModal(false);
@@ -203,9 +221,24 @@ export default function Proprietario() {
       fetchEscritorios(); // Recarrega a lista após excluir
       setShowDeleteModal(false);
       setProprietarioToDelete(null);
+
+      // Toast de sucesso para exclusão (usando destructive como solicitado)
+      toast({
+        title: "Unidade excluída",
+        description: `A unidade "${proprietarioToDelete.nome}" foi excluída com sucesso.`,
+        variant: "destructive",
+        duration: 2000,
+      });
     } catch (error) {
       console.error('Erro ao excluir proprietário:', error);
-      // Aqui você pode adicionar um toast ou alerta para mostrar o erro
+
+      // Toast de erro para exclusão
+      toast({
+        title: "Erro ao excluir unidade",
+        description: "Ocorreu um erro ao tentar excluir a unidade. Tente novamente.",
+        variant: "destructive",
+        duration: 2000,
+      });
     }
   };
 
@@ -424,6 +457,17 @@ export default function Proprietario() {
               onSuccess={() => {
                 fetchEscritorios();
                 setShowModal(false);
+
+                // Toast de sucesso para criação/edição
+                toast({
+                  title: selectedProprietario ? "Unidade atualizada" : "Unidade criada",
+                  description: selectedProprietario
+                    ? `A unidade "${selectedProprietario.nome}" foi atualizada com sucesso.`
+                    : "A nova unidade foi criada com sucesso.",
+                  variant: "success",
+                  duration: 2000,
+                });
+
                 setSelectedProprietario(null);
               }}
               proprietario={selectedProprietario || undefined}
@@ -453,7 +497,6 @@ export default function Proprietario() {
                 setProprietarioToDelete(null);
               }}
               onConfirm={confirmDelete}
-              itemName={proprietarioToDelete.nome}
             />
           )}
         </div>

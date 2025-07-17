@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { X, Plus, Trash2 } from 'lucide-react';
 import { SolucaoType } from '../../../types/types';
 import { updateSolucao, getSolucaoById, getResponsaveis } from '../../../actions/actions';
+import { useToast } from "@/hooks/use-toast"
+
 
 interface ModalProps {
     isOpen: boolean;
@@ -28,6 +30,7 @@ interface AtualizacaoFormData {
 
 export default function HistoricoModal({ isOpen, onClose, solucaoId, formatDate, onUpdate }: ModalProps) {
     const [isLoading, setIsLoading] = useState(true);
+    const { toast } = useToast()
     const [activeFormTab, setActiveFormTab] = useState<'times' | 'atualizacoes'>('times');
     const [formData, setFormData] = useState<SolucaoType | null>(null);
     const [isDataLoaded, setIsDataLoaded] = useState(false);
@@ -152,6 +155,7 @@ export default function HistoricoModal({ isOpen, onClose, solucaoId, formatDate,
             dataInicio: '',
             dataFim: ''
         });
+ 
     };
 
     // Função para adicionar atualização
@@ -187,6 +191,8 @@ export default function HistoricoModal({ isOpen, onClose, solucaoId, formatDate,
             descricao: '',
             data_atualizacao: new Date().toISOString().split('T')[0]
         });
+
+        
     };
 
     // Função para remover time
@@ -230,6 +236,12 @@ export default function HistoricoModal({ isOpen, onClose, solucaoId, formatDate,
             }
 
             onClose();
+            toast({
+                title: "Histórico Registrado.",
+                description: "O histórico foi registrado com sucesso.",
+                variant: "success",
+                duration: 1700,
+              });    
         } catch (error) {
             console.error('Erro ao salvar histórico:', error);
             alert('Erro ao salvar histórico. Tente novamente.');

@@ -13,7 +13,7 @@ import {
 } from 'chart.js';
 import { Doughnut, Pie, Bar } from 'react-chartjs-2';
 import { getDemandas, getAlinhamentos, getStatus, getPrioridades } from "../actions/actions";
-import type { DemandaType } from '../../demandas/types/types';
+import type { Demanda } from '../../demandas/types/types';
 import { useSidebar } from '../../../../../componentes/Sidebar/SidebarContext';
 
 ChartJS.register(
@@ -34,7 +34,7 @@ const ensureArray = <T,>(data: T | T[] | null | undefined): T[] => {
 };
 
 export default function DashboardDemandas() {
-  const [demandas, setDemandas] = useState<DemandaType[]>([]);
+  const [demandas, setDemandas] = useState<Demanda[]>([]);
   const [alinhamentos, setAlinhamentos] = useState<any[]>([]);
   const [statusList, setStatusList] = useState<any[]>([]);
   const [prioridades, setPrioridades] = useState<any[]>([]);
@@ -170,7 +170,7 @@ export default function DashboardDemandas() {
     const counts: { [key: string]: number } = {};
 
     ensureArray(demandas).forEach(demanda => {
-      const propriedade = demanda.propriedade || 'Não informado';
+      const propriedade = demanda.status?.propriedade || 'Não informado';
       counts[propriedade] = (counts[propriedade] || 0) + 1;
     });
 
@@ -187,7 +187,7 @@ export default function DashboardDemandas() {
   // Função para agrupar demandas por responsável
   const getDemandasPorResponsavel = () => {
     // Criar um mapa de responsáveis para suas demandas
-    const responsavelMap: { [key: string]: DemandaType[] } = {};
+    const responsavelMap: { [key: string]: Demanda[] } = {};
 
     ensureArray(demandas).forEach(demanda => {
       const responsavelNome = demanda.responsavel?.nome || 'Não informado';
@@ -223,9 +223,13 @@ export default function DashboardDemandas() {
 
     // Conta as demandas por mês do ano atual
     ensureArray(demandas).forEach(demanda => {
-      if (!demanda.createdAt) return;
+      const dateStr = demanda.dataStatus;
+      if (!dateStr) return;
 
-      const createdDate = new Date(demanda.createdAt);
+      const createdDate = new Date(dateStr);
+      // Corrige o problema de fuso horário para garantir que a data seja a correta
+      createdDate.setMinutes(createdDate.getMinutes() + createdDate.getTimezoneOffset());
+
       if (createdDate.getFullYear() === currentYear) {
         const monthIndex = createdDate.getMonth();
         const monthName = monthNames[monthIndex];
@@ -280,6 +284,22 @@ export default function DashboardDemandas() {
         }
       }
     }
+  };
+
+  const evolucaoAnualData = processEvolucaoAnualData();
+  const maxDataValue = evolucaoAnualData.datasets.length > 0 && evolucaoAnualData.datasets[0].data.length > 0
+    ? Math.max(...evolucaoAnualData.datasets[0].data)
+    : 0;
+
+  const evolucaoBarChartOptions = {
+    ...barChartOptions,
+    scales: {
+      ...barChartOptions.scales,
+      y: {
+        ...barChartOptions.scales.y,
+        max: Math.max(5, Math.ceil(maxDataValue * 1.2) + 1),
+      },
+    },
   };
 
   return (
@@ -400,8 +420,8 @@ export default function DashboardDemandas() {
               <h3 className="text-gray-800 text-base font-semibold mb-4">Evolução Mensal de Demandas ({new Date().getFullYear()})</h3>
               <div className="h-[400px] w-full">
                 <Bar
-                  data={processEvolucaoAnualData()}
-                  options={barChartOptions}
+                  data={evolucaoAnualData}
+                  options={evolucaoBarChartOptions}
                 />
               </div>
             </div>

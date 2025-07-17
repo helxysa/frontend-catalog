@@ -92,7 +92,7 @@ export async function getProprietarios() {
   }
 }
 
-export async function getAlinhamentos() {
+export async function getAlinhamentos(data: any) {
   try {
     const storedId = localStorage.getItem('selectedProprietarioId');
     if (!storedId) {

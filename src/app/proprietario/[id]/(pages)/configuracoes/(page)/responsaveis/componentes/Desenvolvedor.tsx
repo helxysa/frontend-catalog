@@ -7,6 +7,7 @@ import {
   updateDesenvolvedor,
   deleteDesenvolvedor
 } from '../actions/actions';
+import { useToast } from "@/hooks/use-toast"
 import {
   Plus,
   Filter,
@@ -28,6 +29,7 @@ interface Proprietario {
 }
 
 export default function Desenvolvedor({ proprietarioId }: { proprietarioId?: string }) {
+  const { toast } = useToast()
   const [desenvolvedores, setDesenvolvedores] = useState<Responsavel[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [pagination, setPagination] = useState<PaginationMeta | null>(null);
@@ -125,6 +127,12 @@ export default function Desenvolvedor({ proprietarioId }: { proprietarioId?: str
         setDesenvolvedores([...desenvolvedores, created]);
         setIsModalOpen(false);
         setCurrentDesenvolvedor({});
+        toast({
+          title: "Responsável registrado.",
+          description: "O responsável foi registrado.",
+          variant: "success",
+          duration: 1700,
+      });
       } catch (error: any) {
         console.error('Erro ao criar desenvolvedor:', error);
         console.error('Dados do erro:', error.response?.data);

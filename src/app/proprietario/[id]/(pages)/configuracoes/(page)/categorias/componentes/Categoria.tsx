@@ -7,6 +7,7 @@ import {
   updateCategoria,
   deleteCategoria
 } from '../actions/actions';
+import { useToast } from "@/hooks/use-toast"
 import {
   Plus,
   Filter,
@@ -32,6 +33,8 @@ export default function Categoria({ proprietarioId }: { proprietarioId?: string 
   const [pagination, setPagination] = useState<PaginationMeta | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [limit, setLimit] = useState(15);
+  const { toast } = useToast()
+
   const [currentCategoria, setCurrentCategoria] = useState<Partial<Categoria>>(() => ({
     proprietario_id: proprietarioId ? proprietarioId :
       localStorage.getItem('selectedProprietarioId') || ''
@@ -133,6 +136,12 @@ export default function Categoria({ proprietarioId }: { proprietarioId?: string 
         }
         setIsModalOpen(false);
         setCurrentCategoria({});
+        toast({
+          title: "Categoria criada.",
+          description: "A sua categoria foi registrada.",
+          variant: "success",
+          duration: 1700,
+      });
       } catch (error: any) {
         console.error('Erro ao criar categoria:', error);
         console.error('Dados do erro:', error.response?.data);
@@ -151,6 +160,12 @@ export default function Categoria({ proprietarioId }: { proprietarioId?: string 
       setCategorias(categorias.map(c => (c.id === currentCategoria.id ? updated : c)));
       setIsModalOpen(false);
       setCurrentCategoria({});
+      toast({
+        title: "Categoria editada.",
+        description: "A sua categoria foi editada.",
+        variant: "success",
+        duration: 1700,
+    });
     }
   };
 

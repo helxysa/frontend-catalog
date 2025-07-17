@@ -18,7 +18,7 @@ import {
   Menu
 } from 'lucide-react';
 import type { Linguagem } from '../types/types';
-
+import { useToast } from "@/hooks/use-toast"
 import { useSidebar } from '../../../../../../../componentes/Sidebar/SidebarContext';
 import ReusableTable from '../../../componentes/Table/ReusableTable';
 import { PaginationMeta } from '../../categorias/types/types';
@@ -45,7 +45,7 @@ export default function Linguagem({ proprietarioId }: { proprietarioId?: string 
   const [selectedLinguagemDetails, setSelectedLinguagemDetails] = useState<Linguagem | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [proprietarios, setProprietarios] = useState<Proprietario[]>([]);
-
+  const { toast } = useToast()
   useEffect(() => {
     const loadLinguagens = async () => {
       setLinguagens([]); // Clear existing linguagens
@@ -126,6 +126,12 @@ export default function Linguagem({ proprietarioId }: { proprietarioId?: string 
         setLinguagens([...linguagens, created]);
         setIsModalOpen(false);
         setCurrentLinguagem({});
+        toast({
+          title: "Tecnologia registrada.",
+          description: "A tecnologia foi registrada.",
+          variant: "success",
+          duration: 1700,
+      });
       } catch (error: any) {
         console.error('Erro ao criar linguagem:', error);
         console.error('Dados do erro:', error.response?.data);
@@ -144,6 +150,12 @@ export default function Linguagem({ proprietarioId }: { proprietarioId?: string 
       setLinguagens(linguagens.map(l => (l.id === currentLinguagem.id ? updated : l)));
       setIsModalOpen(false);
       setCurrentLinguagem({});
+      toast({
+        title: "Tecnologia editada.",
+        description: "A tecnologia foi editada.",
+        variant: "success",
+        duration: 1700,
+    });
     }
   };
 

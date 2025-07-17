@@ -7,6 +7,8 @@ import {
   updateResponsavel,
   deleteResponsavel
 } from '../actions/actions';
+import { useToast } from "@/hooks/use-toast"
+
 import {
   Plus,
   Filter,
@@ -33,6 +35,7 @@ export default function Responsavel({ proprietarioId }: { proprietarioId?: strin
   const [pagination, setPagination] = useState<PaginationMeta | null>(null);
   const [limit, setLimit] = useState(15);
   const [currentPage, setCurrentPage] = useState(1);
+  const { toast } = useToast()
   const [currentResponsavel, setCurrentResponsavel] = useState<Partial<Responsavel>>(() => ({
     // Initialize with proprietarioId from props or localStorage
     proprietario_id: proprietarioId ? proprietarioId :
@@ -124,6 +127,12 @@ export default function Responsavel({ proprietarioId }: { proprietarioId?: strin
         setResponsaveis([...responsaveis, created]);
         setIsModalOpen(false);
         setCurrentResponsavel({});
+        toast({
+          title: "Membro do time registrado.",
+          description: "O membro do time foi registrado.",
+          variant: "success",
+          duration: 1700,
+      });
       } catch (error: any) {
         console.error('Erro ao criar responsavel:', error);
         console.error('Dados do erro:', error.response?.data);
@@ -142,6 +151,12 @@ export default function Responsavel({ proprietarioId }: { proprietarioId?: strin
       setResponsaveis(responsaveis.map(r => (r.id === currentResponsavel.id ? updated : r)));
       setIsModalOpen(false);
       setCurrentResponsavel({});
+      toast({
+        title: "Membro editada.",
+        description: "O membro do time foi editado.",
+        variant: "success",
+        duration: 1700,
+    });
     }
   };
 

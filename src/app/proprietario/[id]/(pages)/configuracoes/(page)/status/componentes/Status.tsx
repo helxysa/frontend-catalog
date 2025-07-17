@@ -20,7 +20,7 @@ import { ChromePicker } from 'react-color';
 import { useSidebar } from '../../../../../../../componentes/Sidebar/SidebarContext';
 import ReusableTable from '../../../componentes/Table/ReusableTable';
 import { PaginationMeta } from '../../categorias/types/types';
-
+import { useToast } from "@/hooks/use-toast"
 interface Proprietario {
   id: number;
   nome: string;
@@ -72,6 +72,8 @@ const statusPresets = [
 
 export default function Status({ proprietarioId }: { proprietarioId?: string }) {
   const [status, setStatus] = useState<Status[]>([]);
+  const { toast } = useToast()
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [pagination, setPagination] = useState<PaginationMeta | null>(null);
@@ -164,6 +166,12 @@ export default function Status({ proprietarioId }: { proprietarioId?: string }) 
         setStatus([...status, created]);
         setIsModalOpen(false);
         setCurrentStatus({});
+        toast({
+          title: "Status registrado.",
+          description: "O status foi registrado.",
+          variant: "success",
+          duration: 1700,
+      });
       } catch (error: any) {
         console.error('Erro ao criar status:', error);
         console.error('Dados do erro:', error.response?.data);
@@ -182,6 +190,12 @@ export default function Status({ proprietarioId }: { proprietarioId?: string }) 
       setStatus(status.map(s => (s.id === currentStatus.id ? updated : s)));
       setIsModalOpen(false);
       setCurrentStatus({});
+      toast({
+        title: "Statud editado.",
+        description: "O status foi editado.",
+        variant: "success",
+        duration: 1700,
+    });
     }
   };
   const handleDelete = async (id: string) => {

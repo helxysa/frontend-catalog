@@ -21,6 +21,7 @@ import type { Desenvolvedor } from '../types/types';
 import { useSidebar } from '../../../../../../../componentes/Sidebar/SidebarContext';
 import ReusableTable from '../../../componentes/Table/ReusableTable';
 import { PaginationMeta } from '../../categorias/types/types';
+import { useToast } from "@/hooks/use-toast"
 
 interface Proprietario {
   id: number;
@@ -35,6 +36,7 @@ export default function Desenvolvedor({ proprietarioId }: { proprietarioId?: str
     proprietario_id: proprietarioId ? proprietarioId :
                     localStorage.getItem('selectedProprietarioId') || ''
   }));
+  const { toast } = useToast()
   const [pagination, setPagination] = useState<PaginationMeta | null>(null);
   const [limit, setLimit] = useState(15);
   const [currentPage, setCurrentPage] = useState(1);
@@ -124,6 +126,12 @@ export default function Desenvolvedor({ proprietarioId }: { proprietarioId?: str
         setDesenvolvedores([...desenvolvedores, created]);
         setIsModalOpen(false);
         setCurrentDesenvolvedor({});
+        toast({
+          title: "Desenvolvedor registrado.",
+          description: "O desenvolvedor foi registrado.",
+          variant: "success",
+          duration: 1700,
+      });
       } catch (error: any) {
         console.error('Erro ao criar desenvolvedor:', error);
         console.error('Dados do erro:', error.response?.data);
@@ -142,6 +150,12 @@ export default function Desenvolvedor({ proprietarioId }: { proprietarioId?: str
       setDesenvolvedores(desenvolvedores.map(d => (d.id === currentDesenvolvedor.id ? updated : d)));
       setIsModalOpen(false);
       setCurrentDesenvolvedor({});
+      toast({
+        title: "Desenvolvedor editado.",
+        description: "O desenvolvedor foi editado.",
+        variant: "success",
+        duration: 1700,
+    });
     }
   };
 

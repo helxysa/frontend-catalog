@@ -7,6 +7,8 @@ import {
   updateTipo,
   deleteTipo
 } from '../actions/actions';
+import { useToast } from "@/hooks/use-toast"
+
 import {
   Plus,
   Filter,
@@ -34,6 +36,7 @@ export default function Tipo({ proprietarioId }: { proprietarioId?: string }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [pagination, setPagination] = useState<PaginationMeta | null>(null);
   const [limit, setLimit] = useState(15);
+ const { toast } = useToast()
   const [currentPage, setCurrentPage] = useState(1);
   const [currentTipo, setCurrentTipo] = useState<Partial<Tipo>>(() => ({
     proprietario_id: proprietarioId ? proprietarioId :
@@ -127,6 +130,13 @@ export default function Tipo({ proprietarioId }: { proprietarioId?: string }) {
         setTipos([...tipos, created]);
         setIsModalOpen(false);
         setCurrentTipo({});
+                
+        toast({
+          title: "Tipo registrado.",
+          description: "O tipo foi registrado.",
+          variant: "success",
+          duration: 1700,
+        });
       } catch (error: any) {
         console.error('Erro ao criar categoria:', error);
         console.error('Dados do erro:', error.response?.data);
@@ -145,6 +155,13 @@ export default function Tipo({ proprietarioId }: { proprietarioId?: string }) {
       setTipos(tipos.map(t => (t.id === currentTipo.id ? updated : t)));
       setIsModalOpen(false);
       setCurrentTipo({});
+      
+      toast({
+        title: "Tipo editado.",
+        description: "O tipo foi editado.",
+        variant: "success",
+        duration: 1700,
+      });
     }
   };
 

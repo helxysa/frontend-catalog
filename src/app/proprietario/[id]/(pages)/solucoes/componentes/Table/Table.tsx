@@ -47,16 +47,21 @@ import {
     Clock,
 } from 'lucide-react';
 import DeleteConfirmationModal from '../DeleteConfirmationModal/DeleteConfirmationModal';
+import InfoModal from '../InfoModal/InfoModal'
 import PdfGenerator from '../utils/pdfGenerator';
 import ExcelGenerator from '../utils/excelGenerator';
+import { useToast } from "@/hooks/use-toast"
 
 
 export default function Table() {
+    const { toast } = useToast()
+
     const { isCollapsed } = useSidebar();
     const [criarSolucao, setCriarSolucao] = useState(false)
     const [solucoes, setData] = useState<SolucaoType[]>([]);
     const [solucaoToEdit, setSolucaoToEdit] = useState<SolucaoType | null>(null);
     const [solucaoToDeleteId, setSolucaoToDeleteId] = useState<string | null>(null);
+    const [solucaoToInfoModal, setSolucaoToInfoModal] = useState<SolucaoType | null>(null); // CORRIGIDO
     const [historicoModalOpen, setHistoricoModalOpen] = useState(false);
     const [selectedSolucaoId, setSelectedSolucaoId] = useState<number | null>(null);
 
@@ -71,9 +76,29 @@ export default function Table() {
     const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
     const [globalFilter, setGlobalFilter] = useState('');
 
+
+    
+  const determinarCorTexto = (corHex: string | undefined) => {
+    if (!corHex) return 'text-gray-800';
+    corHex = corHex.replace('#', '');
+    const r = parseInt(corHex.substr(0, 2), 16);
+    const g = parseInt(corHex.substr(2, 2), 16);
+    const b = parseInt(corHex.substr(4, 2), 16);
+    const luminancia = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    return luminancia > 0.5 ? 'text-gray-800' : 'text-white';
+  };
+
     const toggleModal = () => {
         setSolucaoToEdit(null);
         setCriarSolucao(prev => !prev);
+    };
+
+    const handleInfo = (solucao: SolucaoType) => { 
+        setSolucaoToInfoModal(solucao);
+    };
+
+    const handleCloseInfoModal = () => { 
+        setSolucaoToInfoModal(null);
     };
 
     const handleFormSuccess = () => {
@@ -117,6 +142,12 @@ export default function Table() {
             await deleteSolucao(solucaoToDeleteId);
             setSolucaoToDeleteId(null);
             fetchData();
+            toast({
+                title: "Solução excluida",
+                description: "A sua solução foi excluida.",
+                variant: "destructive",
+                duration: 1900,
+            });
         }
     };
 
@@ -130,21 +161,32 @@ export default function Table() {
         setSelectedSolucaoId(null);
     };
 
-    const formatDate = (dateString: string) => {
-        if (!dateString) return '';
-        const date = new Date(dateString);
-        return date.toLocaleDateString('pt-BR');
+    const formatDate = (dateString?: string | null) => {
+        if (!dateString) return '-';
+        try {
+            const date = new Date(dateString);
+            // Corrige o problema de fuso horário
+            date.setMinutes(date.getMinutes() + date.getTimezoneOffset());
+            return new Intl.DateTimeFormat('pt-BR').format(date);
+        } catch (error) {
+            return '-';
+        }
     };
 
-    // Mock responsáveis - você pode substituir por dados reais da API
-    const responsaveis = useMemo(() => [
-        // Adicione aqui os responsáveis reais ou busque da API
-    ], []);
+    const responsaveis = useMemo(() => [], []);
 
     const handleClearFilters = () => {
         setColumnFilters([]);
     };
 
+    const demandantesUnicos = useMemo(() => Array.from(new Set(solucoes.map(s => s.demanda?.nome).filter(Boolean) as string[])).sort(), [solucoes]);
+    const tiposUnicos = useMemo(() => Array.from(new Set(solucoes.map(s => s.tipo?.nome).filter(Boolean) as string[])).sort(), [solucoes]);
+    const tecnologiasUnicas = useMemo(() => Array.from(new Set(solucoes.map(s => (s as any).linguagem?.nome).filter(Boolean) as string[])).sort(), [solucoes]);
+    const desenvolvedoresUnicos = useMemo(() => Array.from(new Set(solucoes.map(s => s.desenvolvedor?.nome).filter(Boolean) as string[])).sort(), [solucoes]);
+    const statusUnicos = useMemo(() => Array.from(new Set(solucoes.map(s => s.status?.nome).filter(Boolean) as string[])).sort(), [solucoes]);
+    const categoriasUnicas = useMemo(() => Array.from(new Set(solucoes.map(s => s.categoria?.nome).filter(Boolean) as string[])).sort(), [solucoes]);
+    const responsaveisUnicos = useMemo(() => Array.from(new Set(solucoes.map(s => s.responsavel?.nome).filter(Boolean) as string[])).sort(), [solucoes]);
+    const criticidadesUnicas = useMemo(() => Array.from(new Set(solucoes.map(s => s.criticidade).filter(Boolean) as string[])).sort(), [solucoes]);
 
 
     const columns = useMemo<ColumnDef<SolucaoType>[]>(
@@ -165,48 +207,71 @@ export default function Table() {
             {
                 id: 'demandante',
                 accessorFn: row => row.demanda?.nome,
-                header: "Demandante",
+                header: ({ column }) => (
+                    <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")} className="text-xs font-medium text-gray-600 w-full justify-start p-0 hover:bg-transparent">
+                        Demandante <ArrowUpDown className="ml-2 h-4 w-4" />
+                    </Button>
+                ),
                 filterFn: (row, id, value) => row.original.demanda?.nome === value,
             },
             {
                 id: 'tipo',
                 accessorFn: row => row.tipo?.nome,
-                header: "Tipo",
+                header: ({ column }) => (
+                    <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")} className="text-xs font-medium text-gray-600 w-full justify-start p-0 hover:bg-transparent">
+                        Tipo <ArrowUpDown className="ml-2 h-4 w-4" />
+                    </Button>
+                ),
                 filterFn: (row, id, value) => row.original.tipo?.nome === value,
             },
             {
                 id: 'linguagem',
                 accessorFn: row => (row as any).linguagem?.nome,
-                header: "Tecnologia",
+                header: ({ column }) => (
+                    <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")} className="text-xs font-medium text-gray-600 w-full justify-start p-0 hover:bg-transparent">
+                        Tecnologia <ArrowUpDown className="ml-2 h-4 w-4" />
+                    </Button>
+                ),
                 filterFn: (row, id, value) => (row.original as any).linguagem?.nome === value,
             },
             {
                 id: 'desenvolvedor',
                 accessorFn: row => row.desenvolvedor?.nome,
-                header: "Desenvolvedor",
+                header: ({ column }) => (
+                    <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")} className="text-xs font-medium text-gray-600 w-full justify-start p-0 hover:bg-transparent">
+                        Desenvolvedor <ArrowUpDown className="ml-2 h-4 w-4" />
+                    </Button>
+                ),
                 filterFn: (row, id, value) => row.original.desenvolvedor?.nome === value,
-            },
-            {
-                id: 'status',
-                accessorFn: row => row.status?.nome,
-                header: "Status",
-                filterFn: (row, id, value) => row.original.status?.nome === value,
             },
             {
                 id: 'categoria',
                 accessorFn: row => row.categoria?.nome,
-                header: "Categoria",
+                header: ({ column }) => (
+                    <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")} className="text-xs font-medium text-gray-600 w-full justify-start p-0 hover:bg-transparent">
+                        Categoria <ArrowUpDown className="ml-2 h-4 w-4" />
+                    </Button>
+                ),
                 filterFn: (row, id, value) => row.original.categoria?.nome === value,
             },
             {
                 id: 'responsavel',
                 accessorFn: row => row.responsavel?.nome,
-                header: "Responsável",
+                header: ({ column }) => (
+                    <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")} className="text-xs font-medium text-gray-600 w-full justify-start p-0 hover:bg-transparent">
+                        Responsável <ArrowUpDown className="ml-2 h-4 w-4" />
+                    </Button>
+                ),
                 filterFn: (row, id, value) => row.original.responsavel?.nome === value,
             },
+
             {
                 accessorKey: 'criticidade',
-                header: "Criticidade"
+                header: ({ column }) => (
+                    <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")} className="text-xs font-medium text-gray-600 w-full justify-start p-0 hover:bg-transparent">
+                        Criticidade <ArrowUpDown className="ml-2 h-4 w-4" />
+                    </Button>
+                ),
             },
             {
                 accessorKey: 'descricao',
@@ -217,39 +282,89 @@ export default function Table() {
                 ),
             },
             {
+                accessorKey: 'dataStatus',
+                header: ({ column }) => (
+                    <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")} className="text-xs font-medium text-gray-600 w-full justify-start p-0 hover:bg-transparent">
+                        Data Status <ArrowUpDown className="ml-2 h-4 w-4" />
+                    </Button>
+                ),
+                cell: ({ row }) => formatDate(row.original.dataStatus),
+            },
+            {
+                id: 'status',
+                accessorFn: row => row.status?.nome,
+                header: ({ column }) => (
+                    <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")} className="text-xs font-medium text-gray-600 w-full justify-start p-0 hover:bg-transparent">
+                        Status <ArrowUpDown className="ml-2 h-4 w-4" />
+                    </Button>
+                ),
+                cell: ({ row }) => {
+                    const status = row.original.status;
+                    if (!status?.nome) {
+                        return (
+                            <div className="flex items-center">
+                                <span className="rounded-md px-3 py-1 text-sm font-medium text-gray-700 bg-gray-200">
+                                    N/A
+                                </span>
+                            </div>
+                        );
+                    }
+                    return (
+                        <div className="flex items-center">
+                            <span
+                                className={`rounded-md px-3 py-1 text-sm font-medium ${determinarCorTexto(status.propriedade)}`}
+                                style={{ backgroundColor: status.propriedade }}
+                            >
+                                {status.nome}
+                            </span>
+                        </div>
+                    );
+                },
+                filterFn: (row, id, value) => row.original.status?.nome === value,
+            },
+            {
                 id: 'ações',
-                header: () => <div className="text-center">Ações</div>,
+                header: () => <div className="text-right">Ações</div>,
                 cell: ({ row }) => {
                     const solucao = row.original;
                     return (
-                        <div className="flex justify-end items-center space-x-1 pr-2">
-                            <Button
-                                variant="ghost"
-                                size="icon"
+                        <div className="flex justify-end space-x-2">
+                            {solucao.link && (
+                                <a
+                                    href={solucao.link}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-purple-600 hover:text-purple-800 rounded-full hover:bg-purple-50 transition-colors p-1"
+                                >
+                                    <ExternalLink className="w-5 h-5" />
+                                </a>
+                            )}
+                            <button
                                 onClick={() => handleHistoricoOpen(solucao.id!)}
-                                title="Histórico"
-                                className="text-blue-600 hover:text-blue-800 hover:bg-blue-50 transition-colors"
+                                className='text-blue-700'
+                                title='Histórico'
                             >
                                 <Clock className="w-5 h-5" />
-                            </Button>
-                            <Button
-                                variant="ghost"
-                                size="icon"
+                            </button>
+                            <button
                                 onClick={() => handleEdit(solucao)}
                                 title="Editar"
-                                className="text-green-600 hover:text-green-800 hover:bg-green-50 transition-colors"
-                            >
-                                <Edit2 className="w-6 h-6" />
-                            </Button>
-                            <Button
-                                variant="ghost"
-                                size="icon"
+                                className="text-green-600 hover:text-green-800 rounded-full hover:bg-green-50 transition-colors p-1">
+                                <Edit2 className="w-5 h-5" />
+                            </button>
+                            <button
                                 onClick={() => handleDeleteRequest(String(solucao.id))}
                                 title="Deletar"
-                                className="text-red-500 hover:text-red-700 hover:bg-red-50 transition-colors"
+                                className="text-red-400 hover:text-red-700 rounded-full hover:bg-red-50 transition-colors p-1"
                             >
-                                <Trash2 className="w-6 h-6" />
-                            </Button>
+                                <Trash2 className="w-5 h-5" />
+                            </button>
+                            <button
+                                onClick={() => handleInfo(solucao)} // CORRIGIDO
+                                title="Info"
+                                className="text-blue-500 hover:text-blue-700 rounded-full hover:bg-blue-50 transition-colors p-1">
+                                <Info className="w-5 h-5" />
+                            </button>
                         </div>
                     );
                 },
@@ -283,7 +398,6 @@ export default function Table() {
         getSortedRowModel: getSortedRowModel(),
     });
 
-    // Gera definição de colunas visíveis para o PDF
     const pdfColumns = useMemo(() => {
         return table
             .getAllColumns()
@@ -291,19 +405,14 @@ export default function Table() {
             .map((col) => {
                 const header = typeof col.columnDef.header === 'string' ? col.columnDef.header : col.id;
                 const accessor = (row: SolucaoType) => {
-                    // Prioridade: accessorFn
                     if (typeof (col.columnDef as any).accessorFn === 'function') {
                         return (col.columnDef as any).accessorFn(row);
                     }
-                    // Depois accessorKey – só se realmente existir e for string
                     if ('accessorKey' in col.columnDef && typeof col.columnDef.accessorKey === 'string') {
                         return (row as any)[col.columnDef.accessorKey];
                     }
-
-                    // Fallback: id da coluna
                     return (row as any)[col.id as keyof SolucaoType];
                 };
-
                 return { header, accessor };
             });
     }, [columnVisibility]);
@@ -314,7 +423,6 @@ export default function Table() {
 
     const filtrosAplicados = useMemo(() => {
         const filtros: string[] = [];
-
         columnFilters.forEach(filter => {
             const column = table.getColumn(filter.id);
             if (column && filter.value) {
@@ -324,11 +432,9 @@ export default function Table() {
                 filtros.push(`${columnName}: ${filter.value}`);
             }
         });
-
         if (globalFilter) {
             filtros.push(`Busca: ${globalFilter}`);
         }
-
         return filtros;
     }, [columnFilters, globalFilter, table]);
 
@@ -337,11 +443,19 @@ export default function Table() {
             w-full bg-gray-50
             transition-all duration-300 ease-in-out
             ${isCollapsed
-                ? '-ml-[190px] w-[calc(100%+220px)]'
+                ? '-ml-[190px] w-[calc(100%+230px)]'
                 : 'ml-0'
             }
             py-6 px-6
         `}>
+            {/* CORRIGIDO: Renderização do modal */}
+            {solucaoToInfoModal && (
+                <InfoModal
+                    solucao={solucaoToInfoModal}
+                    onClose={handleCloseInfoModal}
+                />
+            )}
+
             {solucaoToDeleteId && (
                 <DeleteConfirmationModal
                     isOpen={!!solucaoToDeleteId}
@@ -387,133 +501,37 @@ export default function Table() {
                                 }
                                 className="w-[200px] bg-white border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 shadow-sm"
                             />
-                            <select
-                                value={(table.getColumn("demandante")?.getFilterValue() as string) ?? ""}
-                                onChange={(event) =>
-                                    table.getColumn("demandante")?.setFilterValue(event.target.value || undefined)
-                                }
-                                className="w-[180px] h-10 rounded-md border border-gray-300 bg-white px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 shadow-sm"
-                            >
-                                <option value="">Todas as demandantes</option>
-                                {Array.from(new Set(solucoes.map(s => s.demanda?.nome).filter(Boolean)))
-                                    .sort()
-                                    .map((demandante) => (
-                                        <option key={demandante} value={demandante}>
-                                            {demandante}
-                                        </option>
-                                    ))}
+                            <select value={(table.getColumn("demandante")?.getFilterValue() as string) ?? ""} onChange={(event) => table.getColumn("demandante")?.setFilterValue(event.target.value || undefined)} className="w-[180px] h-10 rounded-md border border-gray-300 bg-white px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 shadow-sm">
+                                <option value="">Todos os demandantes</option>
+                                {demandantesUnicos.map(d => <option key={d} value={d}>{d}</option>)}
                             </select>
-                            <select
-                                value={(table.getColumn("tipo")?.getFilterValue() as string) ?? ""}
-                                onChange={(event) =>
-                                    table.getColumn("tipo")?.setFilterValue(event.target.value || undefined)
-                                }
-                                className="w-[180px] h-10 rounded-md border border-gray-300 bg-white px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 shadow-sm"
-                            >
+                            <select value={(table.getColumn("tipo")?.getFilterValue() as string) ?? ""} onChange={(event) => table.getColumn("tipo")?.setFilterValue(event.target.value || undefined)} className="w-[180px] h-10 rounded-md border border-gray-300 bg-white px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 shadow-sm">
                                 <option value="">Todos os tipos</option>
-                                {Array.from(new Set(solucoes.map(s => s.tipo?.nome).filter(Boolean)))
-                                    .sort()
-                                    .map((tipo) => (
-                                        <option key={tipo} value={tipo}>
-                                            {tipo}
-                                        </option>
-                                    ))}
+                                {tiposUnicos.map(t => <option key={t} value={t}>{t}</option>)}
                             </select>
-                            <select
-                                value={(table.getColumn("linguagem")?.getFilterValue() as string) ?? ""}
-                                onChange={(event) =>
-                                    table.getColumn("linguagem")?.setFilterValue(event.target.value || undefined)
-                                }
-                                className="w-[180px] h-10 rounded-md border border-gray-300 bg-white px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 shadow-sm"
-                            >
+                            <select value={(table.getColumn("linguagem")?.getFilterValue() as string) ?? ""} onChange={(event) => table.getColumn("linguagem")?.setFilterValue(event.target.value || undefined)} className="w-[180px] h-10 rounded-md border border-gray-300 bg-white px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 shadow-sm">
                                 <option value="">Todas as tecnologias</option>
-                                {Array.from(new Set(solucoes.map(s => (s as any).linguagem?.nome).filter(Boolean)))
-                                    .sort()
-                                    .map((linguagem) => (
-                                        <option key={linguagem} value={linguagem}>
-                                            {linguagem}
-                                        </option>
-                                    ))}
+                                {tecnologiasUnicas.map(t => <option key={t} value={t}>{t}</option>)}
                             </select>
-                            <select
-                                value={(table.getColumn("desenvolvedor")?.getFilterValue() as string) ?? ""}
-                                onChange={(event) =>
-                                    table.getColumn("desenvolvedor")?.setFilterValue(event.target.value || undefined)
-                                }
-                                className="w-[180px] h-10 rounded-md border border-gray-300 bg-white px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 shadow-sm"
-                            >
+                            <select value={(table.getColumn("desenvolvedor")?.getFilterValue() as string) ?? ""} onChange={(event) => table.getColumn("desenvolvedor")?.setFilterValue(event.target.value || undefined)} className="w-[180px] h-10 rounded-md border border-gray-300 bg-white px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 shadow-sm">
                                 <option value="">Todos os desenvolvedores</option>
-                                {Array.from(new Set(solucoes.map(s => s.desenvolvedor?.nome).filter(Boolean)))
-                                    .sort()
-                                    .map((desenvolvedor) => (
-                                        <option key={desenvolvedor} value={desenvolvedor}>
-                                            {desenvolvedor}
-                                        </option>
-                                    ))}
+                                {desenvolvedoresUnicos.map(d => <option key={d} value={d}>{d}</option>)}
                             </select>
-                            <select
-                                value={(table.getColumn("status")?.getFilterValue() as string) ?? ""}
-                                onChange={(event) =>
-                                    table.getColumn("status")?.setFilterValue(event.target.value || undefined)
-                                }
-                                className="w-[180px] h-10 rounded-md border border-gray-300 bg-white px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 shadow-sm"
-                            >
+                            <select value={(table.getColumn("status")?.getFilterValue() as string) ?? ""} onChange={(event) => table.getColumn("status")?.setFilterValue(event.target.value || undefined)} className="w-[180px] h-10 rounded-md border border-gray-300 bg-white px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 shadow-sm">
                                 <option value="">Todos os status</option>
-                                {Array.from(new Set(solucoes.map(s => s.status?.nome).filter(Boolean)))
-                                    .sort()
-                                    .map((status) => (
-                                        <option key={status} value={status}>
-                                            {status}
-                                        </option>
-                                    ))}
+                                {statusUnicos.map(s => <option key={s} value={s}>{s}</option>)}
                             </select>
-                            <select
-                                value={(table.getColumn("categoria")?.getFilterValue() as string) ?? ""}
-                                onChange={(event) =>
-                                    table.getColumn("categoria")?.setFilterValue(event.target.value || undefined)
-                                }
-                                className="w-[180px] h-10 rounded-md border border-gray-300 bg-white px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 shadow-sm"
-                            >
+                            <select value={(table.getColumn("categoria")?.getFilterValue() as string) ?? ""} onChange={(event) => table.getColumn("categoria")?.setFilterValue(event.target.value || undefined)} className="w-[180px] h-10 rounded-md border border-gray-300 bg-white px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 shadow-sm">
                                 <option value="">Todas as categorias</option>
-                                {Array.from(new Set(solucoes.map(s => s.categoria?.nome).filter(Boolean)))
-                                    .sort()
-                                    .map((categoria) => (
-                                        <option key={categoria} value={categoria}>
-                                            {categoria}
-                                        </option>
-                                    ))}
+                                {categoriasUnicas.map(c => <option key={c} value={c}>{c}</option>)}
                             </select>
-                            <select
-                                value={(table.getColumn("responsavel")?.getFilterValue() as string) ?? ""}
-                                onChange={(event) =>
-                                    table.getColumn("responsavel")?.setFilterValue(event.target.value || undefined)
-                                }
-                                className="w-[180px] h-10 rounded-md border border-gray-300 bg-white px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 shadow-sm"
-                            >
+                            <select value={(table.getColumn("responsavel")?.getFilterValue() as string) ?? ""} onChange={(event) => table.getColumn("responsavel")?.setFilterValue(event.target.value || undefined)} className="w-[180px] h-10 rounded-md border border-gray-300 bg-white px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 shadow-sm">
                                 <option value="">Todos os responsáveis</option>
-                                {Array.from(new Set(solucoes.map(s => s.responsavel?.nome).filter(Boolean)))
-                                    .sort()
-                                    .map((responsavel) => (
-                                        <option key={responsavel} value={responsavel}>
-                                            {responsavel}
-                                        </option>
-                                    ))}
+                                {responsaveisUnicos.map(r => <option key={r} value={r}>{r}</option>)}
                             </select>
-                            <select
-                                value={(table.getColumn("criticidade")?.getFilterValue() as string) ?? ""}
-                                onChange={(event) =>
-                                    table.getColumn("criticidade")?.setFilterValue(event.target.value || undefined)
-                                }
-                                className="w-[180px] h-10 rounded-md border border-gray-300 bg-white px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 shadow-sm"
-                            >
+                            <select value={(table.getColumn("criticidade")?.getFilterValue() as string) ?? ""} onChange={(event) => table.getColumn("criticidade")?.setFilterValue(event.target.value || undefined)} className="w-[180px] h-10 rounded-md border border-gray-300 bg-white px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 shadow-sm">
                                 <option value="">Todas as criticidades</option>
-                                {Array.from(new Set(solucoes.map(s => s.criticidade).filter(Boolean)))
-                                    .sort()
-                                    .map((criticidade) => (
-                                        <option key={criticidade} value={criticidade}>
-                                            {criticidade}
-                                        </option>
-                                    ))}
+                                {criticidadesUnicas.map(c => <option key={c} value={c}>{c}</option>)}
                             </select>
                         </div>
                         <div className="flex gap-2">

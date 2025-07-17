@@ -1,5 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Edit2, Trash2, Info, ChevronLeft, ChevronRight } from 'lucide-react';
+import DeleteConfirmationModal from '../../../demandas/componentes/DeleteConfirmationModal/DeleteConfirmationModal';
+import { useToast } from "@/hooks/use-toast";
 
 // Define a generic item type that must have an id
 // and can have 'nome' or other properties for display.
@@ -16,7 +18,7 @@ interface ReusableTableProps<T extends TableItem> {
   items: T[];
   onDetails: (item: T) => void;
   onEdit: (item: T) => void;
-  onDelete: (id: string | number) => void;
+  onDelete: (id: string | number) => Promise<void>;
   isLoading?: boolean;
   displayField: keyof T | string;
   displayFieldHeader: string;
@@ -33,6 +35,12 @@ interface ReusableTableProps<T extends TableItem> {
   onNextPage?: () => void;
   onPrevPage?: () => void;
   onLimitChange?: (newLimit: number) => void;
+
+  // Props para personalizar mensagens do toast
+  successDeleteTitle?: string;          // Padrão: "Item excluído"
+  successDeleteDescription?: string;    // Padrão: "O item foi excluído com sucesso."
+  errorDeleteTitle?: string;           // Padrão: "Erro ao excluir"
+  errorDeleteDescription?: string;     // Padrão: "Ocorreu um erro ao tentar excluir o item."
 }
 
 export default function ReusableTable<T extends TableItem>({
@@ -52,7 +60,44 @@ export default function ReusableTable<T extends TableItem>({
   onNextPage,
   onPrevPage,
   onLimitChange,
+  successDeleteTitle = "Deletado",
+  successDeleteDescription = "O item selecionado foi deletado com sucesso.",
+  errorDeleteTitle = "Erro ao excluir",
+  errorDeleteDescription = "Ocorreu um erro ao tentar excluir o item.",
 }: ReusableTableProps<T>) {
+  const [itemToDelete, setItemToDelete] = useState<string | number | null>(null);
+  const { toast } = useToast();
+
+  const handleRequestDelete = (id: string | number) => {
+    setItemToDelete(id);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (itemToDelete !== null) {
+      try {
+        await onDelete(itemToDelete);
+        setItemToDelete(null);
+
+        // Toast de sucesso
+        toast({
+          title: successDeleteTitle,
+          description: successDeleteDescription,
+          variant: "destructive",
+          duration: 1700,
+        });
+      } catch (error) {
+        console.error('Erro ao excluir item:', error);
+
+        // Toast de erro
+        toast({
+          title: errorDeleteTitle,
+          description: errorDeleteDescription,
+          variant: "destructive",
+          duration: 2000,
+        });
+      }
+    }
+  };
 
   const getDisplayValue = (item: T) => {
     const value = item[displayField as keyof T];
@@ -61,6 +106,11 @@ export default function ReusableTable<T extends TableItem>({
 
   return (
     <div className="space-y-2">
+      <DeleteConfirmationModal
+        isOpen={itemToDelete !== null}
+        onClose={() => setItemToDelete(null)}
+        onConfirm={handleConfirmDelete}
+      />
       {/* Container da Tabela - Card separado */}
       <div className="rounded-lg shadow-sm border border-gray-200 overflow-hidden">
         <table className="min-w-full">
@@ -111,7 +161,7 @@ export default function ReusableTable<T extends TableItem>({
                         <Edit2 className="w-4 h-4" />
                       </button>
                       <button
-                        onClick={() => onDelete(item.id)}
+                        onClick={() => handleRequestDelete(item.id)}
                         className="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50 transition-colors"
                         title="Excluir"
                       >

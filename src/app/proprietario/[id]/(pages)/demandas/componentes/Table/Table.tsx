@@ -169,6 +169,7 @@ export default function Table() {
     if (!dateString) return '-';
     try {
       const date = new Date(dateString);
+      date.setMinutes(date.getMinutes() + date.getTimezoneOffset());
       if (isNaN(date.getTime())) return '-';
       return new Intl.DateTimeFormat('pt-BR').format(date);
     } catch (error) {
@@ -400,7 +401,7 @@ export default function Table() {
       w-full bg-gray-50
       transition-all duration-300 ease-in-out
       ${isCollapsed
-        ? '-ml-[190px] w-[calc(100%+220px)]'
+        ? '-ml-[190px] w-[calc(100%+230px)]'
         : 'ml-0'
       }
       py-6 px-6

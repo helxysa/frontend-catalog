@@ -1,82 +1,56 @@
 import React from 'react';
-import { Trash2, XCircle } from 'lucide-react';
+import { Trash2, X } from 'lucide-react';
 
-interface DeleteModalProps {
+interface DeleteConfirmationModalProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: () => void;
-  itemName?: string;
+  title?: string;
+  message?: string;
 }
 
-const DeleteConfirmationModal: React.FC<DeleteModalProps> = ({ 
-  isOpen, 
-  onClose, 
-  onConfirm, 
-  itemName = 'este item' 
-}) => {
+export default function DeleteConfirmationModal({
+  isOpen,
+  onClose,
+  onConfirm,
+  title = "Confirmar Exclusão",
+  message = "Tem certeza que deseja excluir?"
+}: DeleteConfirmationModalProps) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/5 p-4">
-      <div 
-        className="
-          bg-white 
-          rounded-lg 
-          shadow-1xl 
-          w-full 
-          max-w-md 
-          overflow-hidden 
-          animate-fade-in-down
-        "
-      >
-        <div className="p-6 pb-0">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg shadow-lg max-w-md w-full mx-4">
+        <div className="p-6">
           <div className="flex items-center mb-4">
-            <Trash2 className="text-red-500 mr-3" size={24} />
-            <h2 className="text-lg font-semibold text-gray-800">Confirmar Exclusão</h2>
+            <div className="flex items-center justify-center w-8 h-8 bg-red-100 rounded-lg mr-3">
+              <Trash2 className="w-5 h-5 text-red-600" />
+            </div>
+            <h3 className="text-lg font-medium text-gray-900">{title}</h3>
           </div>
           
-          <p className="text-gray-600 mb-6 text-center">
-            Tem certeza que deseja excluir?
+          <p className="text-sm text-gray-600 mb-6">
+            {message}
           </p>
-        </div>
-        
-        <div className="flex justify-end bg-gray-50 p-4 space-x-3">
-          <button 
-            onClick={onClose}
-            className="
-              px-4 
-              py-2 
-              text-gray-600 
-              hover:bg-gray-100 
-              rounded-md 
-              transition-colors 
-              flex 
-              items-center
-            "
-          >
-            <XCircle className="mr-2" size={16} /> Cancelar
-          </button>
           
-          <button 
-            onClick={onConfirm}
-            className="
-              px-4 
-              py-2 
-              bg-red-500 
-              text-white 
-              rounded-md 
-              hover:bg-red-600 
-              transition-colors 
-              flex 
-              items-center
-            "
-          >
-            <Trash2 className="mr-2" size={16} /> Excluir
-          </button>
+          <div className="flex justify-end gap-3">
+            <button
+              onClick={onClose}
+              className="flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+            >
+              <X className="w-4 h-4 mr-2" />
+              Cancelar
+            </button>
+            <button
+              onClick={onConfirm}
+              className="flex items-center px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Excluir
+            </button>
+          </div>
         </div>
       </div>
     </div>
   );
-};
-
-export default DeleteConfirmationModal;
+} 
