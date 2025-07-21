@@ -11,6 +11,7 @@ import DeleteConfirmationModal from "./DeleteConfirmationModal";
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import Footer from '@/app/componentes/Footer/Footer'
+import { useToast } from "@/hooks/use-toast";
 
 // Componente de imagem otimizado com lazy loading
 const OptimizedImage = dynamic(() => import('next/image'), {
@@ -43,9 +44,10 @@ interface ConfirmModalProps {
   onClose: () => void;
   onConfirm: () => void;
   proprietarioName: string;
+  isLoading?: boolean; // Novo prop
 }
 
-function ConfirmCloneModal({ isOpen, onClose, onConfirm, proprietarioName }: ConfirmModalProps) {
+function ConfirmCloneModal({ isOpen, onClose, onConfirm, proprietarioName, isLoading = false }: ConfirmModalProps) {
   if (!isOpen) return null;
 
   return (
@@ -53,26 +55,57 @@ function ConfirmCloneModal({ isOpen, onClose, onConfirm, proprietarioName }: Con
       <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-xl transform transition-all animate-slideIn">
         <div className="text-center">
           <div className="w-12 h-12 bg-blue-100 rounded-full mx-auto flex items-center justify-center mb-4">
-            <svg className="w-6 h-6 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
+            {isLoading ? (
+              <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-blue-600"></div>
+            ) : (
+              <svg className="w-6 h-6 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            )}
           </div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Confirmar Clonagem</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            {isLoading ? 'Clonando...' : 'Confirmar Clonagem'}
+          </h3>
           <p className="text-gray-600 mb-6">
-            Você tem certeza que deseja clonar a unidade <span className="font-semibold">{proprietarioName}</span>?
+            {isLoading ? (
+              <>
+                Clonando a unidade <span className="font-semibold">{proprietarioName}</span> e todas as suas soluções...
+                <br />
+                <span className="text-sm text-gray-500 mt-2 block">Este processo pode levar alguns momentos.</span>
+              </>
+            ) : (
+              <>
+                Você tem certeza que deseja clonar a unidade <span className="font-semibold">{proprietarioName}</span>?
+              </>
+            )}
           </p>
           <div className="flex justify-center space-x-3">
             <button
               onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-300"
+              disabled={isLoading}
+              className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-gray-300 ${isLoading
+                ? 'text-gray-400 bg-gray-100 cursor-not-allowed'
+                : 'text-gray-700 bg-gray-100 hover:bg-gray-200'
+                }`}
             >
               Cancelar
             </button>
             <button
               onClick={onConfirm}
-              className="px-6 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              disabled={isLoading}
+              className={`px-6 py-2 text-sm font-medium text-white rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${isLoading
+                ? 'bg-blue-400 cursor-not-allowed'
+                : 'bg-blue-600 hover:bg-blue-700'
+                }`}
             >
-              Confirmar
+              {isLoading ? (
+                <div className="flex items-center space-x-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white"></div>
+                  <span>Clonando...</span>
+                </div>
+              ) : (
+                'Confirmar'
+              )}
             </button>
           </div>
         </div>
@@ -92,8 +125,10 @@ export default function Proprietario() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [proprietarioToDelete, setProprietarioToDelete] = useState<{ id: number; nome: string } | null>(null);
   const [imageError, setImageError] = useState<Record<number, boolean>>({});
+  const [isCloning, setIsCloning] = useState(false); // Novo estado para loading da clonagem
   const router = useRouter();
   const { login, user } = useAuth();
+  const { toast } = useToast();
   const baseURL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3333';
 
   const fetchEscritorios = async () => {
@@ -144,11 +179,29 @@ export default function Proprietario() {
     if (!cloneProprietarioData) return;
 
     try {
+      setIsCloning(true); // Ativar loading
       await cloneProprietario(cloneProprietarioData.id.toString());
       fetchEscritorios();
+
+      // Toast de sucesso para clonagem
+      toast({
+        title: "Unidade clonada com sucesso",
+        description: `A unidade "${cloneProprietarioData.nome}" foi clonada com sucesso.`,
+        variant: "success",
+        duration: 2000,
+      });
     } catch (error) {
       console.error('Error cloning:', error);
+
+      // Toast de erro para clonagem
+      toast({
+        title: "Erro ao clonar unidade",
+        description: "Ocorreu um erro ao tentar clonar a unidade. Tente novamente.",
+        variant: "destructive",
+        duration: 2000,
+      });
     } finally {
+      setIsCloning(false); // Desativar loading
       setShowCloneModal(false);
       setCloneProprietarioData(null);
     }
@@ -168,9 +221,24 @@ export default function Proprietario() {
       fetchEscritorios(); // Recarrega a lista após excluir
       setShowDeleteModal(false);
       setProprietarioToDelete(null);
+
+      // Toast de sucesso para exclusão (usando destructive como solicitado)
+      toast({
+        title: "Unidade excluída",
+        description: `A unidade "${proprietarioToDelete.nome}" foi excluída com sucesso.`,
+        variant: "destructive",
+        duration: 2000,
+      });
     } catch (error) {
       console.error('Erro ao excluir proprietário:', error);
-      // Aqui você pode adicionar um toast ou alerta para mostrar o erro
+
+      // Toast de erro para exclusão
+      toast({
+        title: "Erro ao excluir unidade",
+        description: "Ocorreu um erro ao tentar excluir a unidade. Tente novamente.",
+        variant: "destructive",
+        duration: 2000,
+      });
     }
   };
 
@@ -389,6 +457,17 @@ export default function Proprietario() {
               onSuccess={() => {
                 fetchEscritorios();
                 setShowModal(false);
+
+                // Toast de sucesso para criação/edição
+                toast({
+                  title: selectedProprietario ? "Unidade atualizada" : "Unidade criada",
+                  description: selectedProprietario
+                    ? `A unidade "${selectedProprietario.nome}" foi atualizada com sucesso.`
+                    : "A nova unidade foi criada com sucesso.",
+                  variant: "success",
+                  duration: 2000,
+                });
+
                 setSelectedProprietario(null);
               }}
               proprietario={selectedProprietario || undefined}
@@ -399,11 +478,14 @@ export default function Proprietario() {
             <ConfirmCloneModal
               isOpen={showCloneModal}
               onClose={() => {
-                setShowCloneModal(false);
-                setCloneProprietarioData(null);
+                if (!isCloning) { // Só permite fechar se não estiver clonando
+                  setShowCloneModal(false);
+                  setCloneProprietarioData(null);
+                }
               }}
               onConfirm={handleClone}
               proprietarioName={cloneProprietarioData.nome}
+              isLoading={isCloning} // Passar o estado de loading
             />
           )}
 
@@ -415,7 +497,6 @@ export default function Proprietario() {
                 setProprietarioToDelete(null);
               }}
               onConfirm={confirmDelete}
-              itemName={proprietarioToDelete.nome}
             />
           )}
         </div>

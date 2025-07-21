@@ -6,8 +6,8 @@ if (!baseUrl) {
 }
 const url = `${baseUrl}/tipos`;
 
-export async function getTipos(proprietarioId: string) {
-  const response = await api.get(`${baseUrl}/proprietarios/${proprietarioId}/tipos`);
+export async function getTipos(proprietarioId: string, page: number, limit: number) {
+  const response = await api.get(`${baseUrl}/proprietarios/${proprietarioId}/tipos?page=${page}&limit=${limit}`);
   return response.data;
 }
 

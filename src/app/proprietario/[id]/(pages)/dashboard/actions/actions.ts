@@ -12,8 +12,8 @@ export async function getTipos() {
   if (!storedId) {
       throw new Error("ProprietarioId not found in localStorage");
   }
-  const response = await api.get(`${url}/proprietarios/${storedId}/tipos`);
-  return response.data;
+  const response = await api.get(`${url}/proprietarios/${storedId}/tipos?page=1&limit=100`);
+  return response.data.data;
 }
 
 export async function getDemandas() {
@@ -27,8 +27,8 @@ export async function getDemandas() {
     const demandas = response.data;
 
     // Get alinhamentos
-    const alinhamentosResponse = await api.get(`${url}/proprietarios/${storedId}/alinhamentos`);
-    const alinhamentos = alinhamentosResponse.data;
+    const alinhamentosResponse = await api.get(`${url}/proprietarios/${storedId}/alinhamentos?page=1&limit=100`);
+    const alinhamentos = alinhamentosResponse.data.data;
 
     // Merge alinhamentos into demandas
     const demandasWithAlinhamentos = demandas.map((demanda: any) => ({
@@ -54,7 +54,7 @@ export async function getSolucoes() {
     const response = await api.get(`${url}/proprietarios/${storedId}/dashboard/todas-solucoes`);
 
     // Get alinhamentos
-    const alinhamentosResponse = await api.get(`${url}/proprietarios/${storedId}/alinhamentos`);
+    const alinhamentosResponse = await api.get(`${url}/proprietarios/${storedId}/alinhamentos?page=1&limit=100`);
 
     // Get demandas
     const demandasResponse = await api.get(`${url}/proprietarios/${storedId}/dashboard/demandas`);
@@ -64,7 +64,7 @@ export async function getSolucoes() {
 
     // Merge relationships
     const solucoes = response.data.data || [];
-    const alinhamentos = alinhamentosResponse.data || [];
+    const alinhamentos = alinhamentosResponse.data.data || [];
     const demandas = demandasResponse.data || [];
     const responsaveis = responsaveisResponse.data || [];
 
@@ -131,8 +131,8 @@ export async function getAlinhamentos() {
       throw new Error("ProprietarioId not found in localStorage");
   }
   try {
-    const response = await api.get(`${url}/proprietarios/${storedId}/alinhamentos`);
-    return response.data;
+    const response = await api.get(`${url}/proprietarios/${storedId}/alinhamentos?page=1&limit=100`);
+    return response.data.data;
   } catch (error) {
     console.error('Error fetching alinhamentos:', error);
     throw error;
@@ -144,8 +144,8 @@ export async function getStatus() {
   if (!storedId) {
       throw new Error("ProprietarioId not found in localStorage");
   }
-  const response = await api.get(`${url}/proprietarios/${storedId}/status`);
-  return response.data;
+  const response = await api.get(`${url}/proprietarios/${storedId}/status?page=1&limit=100`);
+  return response.data.data;
 }
 
 export async function getCategorias() {
@@ -153,8 +153,8 @@ export async function getCategorias() {
   if (!storedId) {
       throw new Error("ProprietarioId not found in localStorage");
   }
-  const response = await api.get(`${url}/proprietarios/${storedId}/categorias`);
-  return response.data;
+  const response = await api.get(`${url}/proprietarios/${storedId}/categorias?page=1&limit=100`);
+  return response.data.data;
 }
 
 export async function getDesenvolvedores(){
@@ -162,8 +162,8 @@ export async function getDesenvolvedores(){
   if (!storedId) {
       throw new Error("ProprietarioId not found in localStorage");
   }
-  const response = await api.get(`${url}/proprietarios/${storedId}/desenvolvedores`);
-  return response.data;
+  const response = await api.get(`${url}/proprietarios/${storedId}/desenvolvedores?page=1&limit=100`);
+  return response.data.data;
 }
 
 export async function getPrioridades() {
@@ -172,8 +172,8 @@ export async function getPrioridades() {
       throw new Error("ProprietarioId not found in localStorage");
   }
   try {
-    const response = await api.get(`${url}/proprietarios/${storedId}/prioridades`);
-    return response.data;
+    const response = await api.get(`${url}/proprietarios/${storedId}/prioridades?page=1&limit=100`);
+    return response.data.data;
   } catch (error) {
     console.error('Error fetching prioridades:', error);
     throw error;
@@ -186,13 +186,13 @@ export async function getResponsaveis() {
       throw new Error("ProprietarioId not found in localStorage");
   }
   try {
-    const response = await api.get(`${url}/proprietarios/${storedId}/responsaveis`);
+    const response = await api.get(`${url}/proprietarios/${storedId}/responsaveis?page=1&limit=100`);
 
     // Garantir que os dados estão no formato esperado
-    const responsaveis = Array.isArray(response.data) ? response.data : [];
+    const responsaveis = Array.isArray(response.data.data) ? response.data.data : [];
 
     // Verificar se cada responsável tem um nome
-    responsaveis.forEach((resp, index) => {
+    responsaveis.forEach((resp: { nome: any; id: any; }, index: any) => {
       if (!resp.nome) {
         console.warn(`Responsável ${index} (ID: ${resp.id}) não tem nome:`, resp);
       }

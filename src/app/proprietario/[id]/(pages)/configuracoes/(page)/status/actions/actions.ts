@@ -6,8 +6,8 @@ if (!baseUrl) {
 }
 const url = `${baseUrl}/status`;
 
-export async function getStatus(proprietarioId: string) {
-  const response = await api.get(`${baseUrl}/proprietarios/${proprietarioId}/status`);
+export async function getStatus(proprietarioId: string, page: number, limit: number) {
+  const response = await api.get(`${baseUrl}/proprietarios/${proprietarioId}/status?page=${page}&limit=${limit}`);
   return response.data;
 }
 

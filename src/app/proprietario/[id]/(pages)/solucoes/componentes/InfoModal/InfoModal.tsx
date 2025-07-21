@@ -1,54 +1,80 @@
 'use client';
 
-import React, { JSX } from 'react';
+import { SolucaoType } from '../../types/types';
 import { X, ExternalLink } from 'lucide-react';
-import { SolucaoType, HistoricoType, BaseType } from '../../types/types'; // Adjust path as needed
+import { useState, useEffect } from 'react';
+import { getHistoricoSolucoes } from '../../actions/actions';
 
-interface SolucaoInfoModalProps {
-  isOpen: boolean;
-  solucao: SolucaoType;
-  onClose: () => void;
-  activeTab: string;
-  setActiveTab: React.Dispatch<React.SetStateAction<string>>;
-  historicoSolucao: HistoricoType[];
-  formatHistoricoDescricao: (descricao: string, evento: HistoricoType) => string;
-  formatDate: (dateString?: string | null) => string;
-  renderDetalhesLinguagens: (solucao: SolucaoType) => JSX.Element | string;
-  formatRepositoryLink: (repo: string) => JSX.Element | string;
-  ProgressBar: ({ progress }: { progress: number }) => JSX.Element;
-  determinarCorTexto: (corHex: string | undefined) => string;
-  // Props needed for formatHistoricoDescricao if its dependencies are not self-contained
-  tipos: BaseType[];
-  linguagens: BaseType[];
-  desenvolvedores: BaseType[];
-  categorias: BaseType[];
-  responsaveis: BaseType[];
-  statusList: (BaseType & { propriedade: string })[];
-  demanda: BaseType[];
+interface Log {
+  id: number;
+  usuario: string;
+  descricao: string;
+  createdAt: string;
 }
 
-export default function SolucaoInfoModal({
-  isOpen,
-  solucao,
-  onClose,
-  activeTab,
-  setActiveTab,
-  historicoSolucao,
-  formatHistoricoDescricao,
-  formatDate,
-  renderDetalhesLinguagens,
-  formatRepositoryLink,
-  ProgressBar,
-  determinarCorTexto,
-  tipos,
-  linguagens,
-  desenvolvedores,
-  categorias,
-  responsaveis,
-  statusList,
-  demanda,
-}: SolucaoInfoModalProps) {
-  if (!isOpen) return null;
+const determinarCorTexto = (corHex: string | undefined) => {
+  if (!corHex) return 'text-gray-800';
+  corHex = corHex.replace('#', '');
+  const r = parseInt(corHex.substr(0, 2), 16);
+  const g = parseInt(corHex.substr(2, 2), 16);
+  const b = parseInt(corHex.substr(4, 2), 16);
+  const luminancia = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return luminancia > 0.5 ? 'text-gray-800' : 'text-white';
+};
+
+export default function InfoModal({ solucao, onClose }: { solucao: SolucaoType | null; onClose: () => void; }) {
+  const [activeTab, setActiveTab] = useState('details');
+  const [log, setLog] = useState<Log[]>([]);
+  const [isLoadingLog, setIsLoadingLog] = useState(false);
+
+  useEffect(() => {
+    if (activeTab === 'history' && solucao && log.length === 0 && !isLoadingLog) {
+      const fetchLog = async () => {
+        setIsLoadingLog(true);
+        const historyData = await getHistoricoSolucoes();
+        if (historyData) {
+          setLog(historyData);
+        }
+        setIsLoadingLog(false);
+      };
+      fetchLog();
+    }
+  }, [activeTab, solucao, log.length, isLoadingLog]);
+
+  if (!solucao) return null;
+
+  const formatDate = (dateString?: string | null) => {
+    if (!dateString) return '-';
+    try {
+      const date = new Date(dateString);
+      return new Intl.DateTimeFormat('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+      }).format(date).replace(',', ' às');
+    } catch (error) {
+      return '-';
+    }
+  };
+
+  const formatDateOnly = (dateString?: string | null) => {
+    if (!dateString) return '-';
+    try {
+      const date = new Date(dateString);
+      date.setMinutes(date.getMinutes() + date.getTimezoneOffset());
+
+      return new Intl.DateTimeFormat('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+      }).format(date);
+    } catch (error) {
+      return '-';
+    }
+  };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4 overflow-y-auto">
@@ -74,8 +100,8 @@ export default function SolucaoInfoModal({
           <div className="flex space-x-4">
             <button
               className={`py-3 px-2 focus:outline-none transition-colors ${activeTab === 'details'
-                  ? 'border-b-2 border-blue-500 text-blue-600 font-medium'
-                  : 'text-gray-500 hover:text-gray-700'
+                ? 'border-b-2 border-blue-500 text-blue-600 font-medium'
+                : 'text-gray-500 hover:text-gray-700'
                 }`}
               onClick={() => setActiveTab('details')}
             >
@@ -83,8 +109,8 @@ export default function SolucaoInfoModal({
             </button>
             <button
               className={`py-3 px-6 focus:outline-none transition-colors ${activeTab === 'history'
-                  ? 'border-b-2 border-blue-500 text-blue-600 font-medium'
-                  : 'text-gray-500 hover:text-gray-700'
+                ? 'border-b-2 border-blue-500 text-blue-600 font-medium'
+                : 'text-gray-500 hover:text-gray-700'
                 }`}
               onClick={() => setActiveTab('history')}
             >
@@ -95,11 +121,11 @@ export default function SolucaoInfoModal({
 
         <div className="flex-grow overflow-y-auto pr-4">
           {activeTab === 'details' ? (
-            <div className="bg-white rounded-lg p-2"> {/* Simplified padding */}
+            <div className="bg-white rounded-lg p-2">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3">
                 <div className="col-span-2 mb-3">
                   <h3 className="text-lg font-semibold text-gray-700 mb-2 pb-2 border-b border-gray-200">
-                    Informações da Solução
+                    Informações Básicas
                   </h3>
                 </div>
 
@@ -107,18 +133,17 @@ export default function SolucaoInfoModal({
                   { label: "Nome", value: solucao.nome },
                   { label: "Sigla", value: solucao.sigla },
                   { label: "Versão", value: solucao.versao },
-                  { label: "Repositório", value: formatRepositoryLink(solucao.repositorio) },
-                  { label: "Link Externo", value: solucao.link ? (
-                      <a href={solucao.link} target="_blank" rel="noopener noreferrer"
-                         className="text-sm text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1">
-                        Acessar <ExternalLink className="w-3 h-3" />
-                      </a>
-                    ) : '-'
-                  },
+                  { label: "Repositório", value: solucao.repositorio },
+                  { label: "Link", value: solucao.link },
+                  { label: "Andamento", value: solucao.andamento },
+                  { label: "Criticidade", value: solucao.criticidade },
                   { label: "Tipo", value: solucao.tipo?.nome },
                   { label: "Categoria", value: solucao.categoria?.nome },
-                  { label: "Demanda", value: solucao.demanda?.nome },
-                  { label: "Status", value: solucao.status?.nome ? (
+                  { label: "Desenvolvedor", value: solucao.desenvolvedor?.nome },
+                  { label: "Responsável", value: solucao.responsavel?.nome },
+                  { label: "Data Status", value: formatDateOnly(solucao.dataStatus) },
+                  {
+                    label: "Status", value: solucao.status?.nome ? (
                       <span
                         className={`rounded-md px-2 py-0.5 text-xs font-medium ${determinarCorTexto(solucao.status?.propriedade)}`}
                         style={{ backgroundColor: solucao.status?.propriedade }}
@@ -127,28 +152,17 @@ export default function SolucaoInfoModal({
                       </span>
                     ) : '-'
                   },
-                  { label: "Responsável", value: solucao.responsavel?.nome },
-                  { label: "Desenvolvedor", value: solucao.desenvolvedor?.nome },
-                  { label: "Criticidade", value: solucao.criticidade },
-                  { label: "Data Status", value: formatDate(solucao.data_status || solucao.dataStatus) },
-                  { label: "Andamento", value: (
-                      <div className="flex flex-col w-full items-start">
-                        <span className="text-sm text-gray-800 font-medium mb-1">{solucao.andamento || '0'}%</span>
-                        <ProgressBar progress={Number(solucao.andamento) || 0} />
-                      </div>
-                    )
-                  },
-                  { label: "Tecnologias", value: renderDetalhesLinguagens(solucao), fullWidth: true },
+                  { label: "Demanda", value: solucao.demanda?.nome },
                 ].map((item, index) => (
                   <div key={index}
-                       className={`p-2.5 rounded-md bg-gray-50/70 border border-gray-100 ${item.fullWidth ? 'md:col-span-2' : ''}`}>
+                    className="p-2.5 rounded-md bg-gray-50/70 border border-gray-100">
                     <div className="flex justify-between items-center">
                       <span className="text-xs font-medium text-gray-500">{item.label}:</span>
                       <span className="text-xs text-gray-700 font-semibold text-right break-all">{item.value || '-'}</span>
                     </div>
                   </div>
                 ))}
-                
+
                 <div className="col-span-2 mt-3">
                   <h3 className="text-sm font-semibold text-gray-700 mb-1 pb-1 border-b border-gray-200">
                     Descrição
@@ -166,12 +180,14 @@ export default function SolucaoInfoModal({
                 <p className="text-xs text-gray-500">Acompanhe todas as mudanças realizadas nesta solução.</p>
               </div>
               <div className="flow-root">
-                {historicoSolucao && historicoSolucao.length > 0 ? (
+                {isLoadingLog ? (
+                  <p className="text-center text-sm text-gray-500 py-8">Carregando histórico...</p>
+                ) : log && log.length > 0 ? (
                   <ul role="list" className="-mb-8">
-                    {historicoSolucao.map((evento: HistoricoType, index: number) => (
+                    {log.map((evento: Log, index: number) => (
                       <li key={evento.id}>
                         <div className="relative pb-6">
-                          {index !== historicoSolucao.length - 1 && (
+                          {index !== log.length - 1 && (
                             <span className="absolute left-4 top-4 -ml-px h-full w-0.5 bg-gray-200" aria-hidden="true" />
                           )}
                           <div className="relative flex items-start space-x-3">
@@ -194,9 +210,8 @@ export default function SolucaoInfoModal({
                                 )}
                               </div>
                               <div className="text-xs text-gray-700 bg-white p-3 rounded-md border border-gray-200 shadow-sm">
-                                {formatHistoricoDescricao(evento.descricao, evento)}
+                                {evento.descricao}
                               </div>
-                              {/* Detalhes do estado da solução no momento do histórico (opcional, pode ser verboso) */}
                             </div>
                           </div>
                         </div>
@@ -204,7 +219,7 @@ export default function SolucaoInfoModal({
                     ))}
                   </ul>
                 ) : (
-                   <p className="text-center text-sm text-gray-500 py-8">Nenhum histórico de alterações encontrado para esta solução.</p>
+                  <p className="text-center text-sm text-gray-500 py-8">Nenhum histórico de alterações encontrado para esta solução.</p>
                 )}
               </div>
             </div>
