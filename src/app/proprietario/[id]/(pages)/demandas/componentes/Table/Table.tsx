@@ -53,8 +53,10 @@ export default function Table() {
   const [loadingSolucoes, setLoadingSolucoes] = useState<{ [key: number]: boolean }>({});
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
   const [selectedDemanda, setSelectedDemanda] = useState<Demanda | null>(null);
+
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [demandaToDelete, setDemandaToDelete] = useState<number | null>(null);
+
 
   const [pagination, setPagination] = useState({
     pageIndex: 0,
@@ -117,6 +119,7 @@ export default function Table() {
     setIsFormOpen(true);
   }, []);
 
+
   const handleDelete = (id: number) => {
     setDemandaToDelete(id);
     setIsDeleteModalOpen(true);
@@ -129,6 +132,7 @@ export default function Table() {
         fetchData();
         setIsDeleteModalOpen(false);
         setDemandaToDelete(null);
+
       } catch (error) {
         console.error('Erro ao excluir demanda', error);
         alert('Falha ao excluir a demanda.');
@@ -496,7 +500,7 @@ export default function Table() {
             <Button variant="outline" onClick={handleClearFilters} className="bg-white">
               Limpar Filtros
             </Button>
-            <DropdownMenu>
+            <DropdownMenu> 
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="icon">
                   <Columns className="h-4 w-4" />
@@ -615,7 +619,20 @@ export default function Table() {
           title="Confirmar Exclusão"
           message="Tem certeza que deseja excluir?"
         />
+<<<<<<< HEAD
+      )}
+
+      <DeleteConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onClose={cancelDelete}
+        onConfirm={confirmDelete}
+        title="Confirmar Exclusão"
+        message="Tem certeza que deseja excluir?"
+      />
+
+=======
       </div>
+>>>>>>> 90685b11fc2c6b853eadd7d5151737545015c95d
     </div>
   );
 }
