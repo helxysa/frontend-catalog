@@ -500,7 +500,7 @@ export default function Table() {
             <Button variant="outline" onClick={handleClearFilters} className="bg-white">
               Limpar Filtros
             </Button>
-            <DropdownMenu> 
+            <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="icon">
                   <Columns className="h-4 w-4" />
@@ -604,7 +604,9 @@ export default function Table() {
             Página {table.getState().pagination.pageIndex + 1} de {table.getPageCount()} | Total: {totalRows} {totalRows === 1 ? 'registro' : 'registros'}
           </div>
         </div>
+        
         {isInfoModalOpen && <InfoModal demanda={selectedDemanda} onClose={handleCloseInfoModal} />}
+        
         {isFormOpen && (
           <Form
             demandaToEdit={demandaToEdit as any}
@@ -612,6 +614,7 @@ export default function Table() {
             onSave={handleSaveForm}
           />
         )}
+        
         <DeleteConfirmationModal
           isOpen={isDeleteModalOpen}
           onClose={cancelDelete}
@@ -619,20 +622,8 @@ export default function Table() {
           title="Confirmar Exclusão"
           message="Tem certeza que deseja excluir?"
         />
-<<<<<<< HEAD
-      )}
-
-      <DeleteConfirmationModal
-        isOpen={isDeleteModalOpen}
-        onClose={cancelDelete}
-        onConfirm={confirmDelete}
-        title="Confirmar Exclusão"
-        message="Tem certeza que deseja excluir?"
-      />
-
-=======
+        
       </div>
->>>>>>> 90685b11fc2c6b853eadd7d5151737545015c95d
     </div>
   );
 }
