@@ -13,7 +13,7 @@ import {
 } from 'chart.js';
 import { Doughnut, Bar, Pie } from 'react-chartjs-2';
 import { getDemandas, getSolucoes, getAlinhamentos, getStatus, getCategorias, getDesenvolvedores, getTipos, getResponsaveis } from "../actions/actions";
-import type { DemandaType } from '../../demandas/types/types';
+import type { Demanda } from '../../demandas/types/types';
 import type { SolucaoType } from '../../solucoes/types/types';
 import type { Desenvolvedor } from '../../configuracoes/(page)/desenvolvedores/types/types';
 import type { Status } from '../../configuracoes/(page)/status/types/types';
@@ -64,7 +64,7 @@ const ensureArray = <T,>(data: T | T[] | null | undefined): T[] => {
 
 export default function Dashboard() {
   const [dashboardData, setDashboardData] = useState<{
-    demandas: DemandaType[];
+    demandas: Demanda[];
     solucoes: SolucaoType[];
     alinhamentos: any[];
     status: Status[];

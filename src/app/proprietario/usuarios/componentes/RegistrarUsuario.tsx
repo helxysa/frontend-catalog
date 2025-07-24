@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { registerUser, updateUser, deleteUser, checkIsAdmin, listUsers, getCurrentUser } from "../actions/actions";
 import { UserPlus, Mail, User, Lock, Eye, EyeOff, Users, Calendar, X, Shield, ShieldCheck, Trash2, Edit2, ChevronLeft } from 'lucide-react';
 import { UserRegister } from "../types/type";
-import DeleteConfirmationModal from "../../../proprietario/[id]/(pages)/solucoes/componentes/ModalConfirmacao/DeleteConfirmationModal";
+import DeleteConfirmationModal from '@/app/proprietario/[id]/(pages)/demandas/componentes/DeleteConfirmationModal/DeleteConfirmationModal'
 import Link from "next/link";
 
 
@@ -571,7 +571,6 @@ export default function RegistrarUsuario() {
           isOpen={isDeleteModalOpen}
           onClose={() => setIsDeleteModalOpen(false)}
           onConfirm={confirmDelete}
-          itemName={userToDelete?.fullName}
         />
       )}
     </div>

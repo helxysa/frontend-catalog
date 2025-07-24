@@ -18,7 +18,7 @@ import {
   Menu 
 } from 'lucide-react';
 import { Time } from '../types/type';
-
+import { useToast } from "@/hooks/use-toast"
 import { useSidebar } from '../../../../../../../componentes/Sidebar/SidebarContext';
 interface Proprietario {
   id: number;
@@ -29,8 +29,9 @@ export default function Times({ proprietarioId }: { proprietarioId?: string }) {
   const [times, setTimes] = useState<Time[]>([]);
   const { isCollapsed } = useSidebar();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const { toast } = useToast()
+
   const [currentTimes, setCurrentTimes] = useState<Partial<Time>>(() => ({
-    // Initialize with proprietarioId from props or localStorage
     proprietario_id: proprietarioId ? proprietarioId : 
                     localStorage.getItem('selectedProprietarioId') || ''
   }));
@@ -41,14 +42,13 @@ export default function Times({ proprietarioId }: { proprietarioId?: string }) {
 
   useEffect(() => {
     const loadTimes = async () => {
-      setTimes([]); // Clear existing linguagens
+      setTimes([]); 
       
       const storedId = proprietarioId || localStorage.getItem('selectedProprietarioId');
       if (storedId) {
         try {
           const data = await getTimes(storedId);
           
-          // Use data directly since getCategorias already filters by proprietario_id
           setTimes(data);
         } catch (error) {
           console.error('Error loading linguagens:', error);
@@ -59,7 +59,6 @@ export default function Times({ proprietarioId }: { proprietarioId?: string }) {
     
     loadTimes();
     
-    // Only load proprietários if we're in the main categories view
     if (!proprietarioId) {
       const loadProprietarios = async () => {
         const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/proprietarios`);
@@ -70,7 +69,6 @@ export default function Times({ proprietarioId }: { proprietarioId?: string }) {
     }
   }, [proprietarioId]);
 
-  // When modal is opened, ensure proprietarioId is set
   useEffect(() => {
     if (isModalOpen) {
       const storedId = proprietarioId || localStorage.getItem('selectedProprietarioId') || undefined;
@@ -107,6 +105,12 @@ export default function Times({ proprietarioId }: { proprietarioId?: string }) {
         setTimes([...times, created]);
         setIsModalOpen(false);
         setCurrentTimes({});
+        toast({
+          title: "Membro registrada.",
+          description: "O membro foi registrado.",
+          variant: "success",
+          duration: 1700,
+      });
       } catch (error: any) {
         console.error('Erro ao criar times:', error);
         console.error('Dados do erro:', error.response?.data);
@@ -127,6 +131,12 @@ export default function Times({ proprietarioId }: { proprietarioId?: string }) {
         setTimes(times.map(l => (l.id === currentTimes.id ? updated : l)));
         setIsModalOpen(false);
         setCurrentTimes({});
+        toast({
+          title: "Membro editada.",
+          description: "O membro foi editada.",
+          variant: "success",
+          duration: 1700,
+      });
       } catch (error: any) {
         console.error('Erro ao atualizar time:', error);
         console.error('Dados do erro:', error.response?.data);

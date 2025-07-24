@@ -7,6 +7,7 @@ const baseURL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3333';
 import { useAuth } from '../../contexts/AuthContext';
 import { Building2, ChevronDown } from 'lucide-react';
 import dynamic from 'next/dynamic';
+import { useProprietarios } from '../../contexts/ProprietarioContext';
 
 // Definir a interface Proprietario
 interface Proprietario {
@@ -27,7 +28,7 @@ const OptimizedImage = dynamic(() => import('next/image'), {
 });
 
 export default function UnitSwitcher() {
-  const [proprietarios, setProprietarios] = useState<Proprietario[]>([]);
+  const { proprietarios, isLoading } = useProprietarios();
   const [selectedId, setSelectedId] = useState('');
   const [selectedProprietario, setSelectedProprietario] = useState<Proprietario | null>(null);
   const [isOpen, setIsOpen] = useState(false);
@@ -48,43 +49,17 @@ export default function UnitSwitcher() {
   };
 
   useEffect(() => {
-    const loadProprietarios = async () => {
-      try {
-        const data = await getProprietarios();
-        setProprietarios(data);
+    if (!isLoading && proprietarios.length > 0) {
+      const storedId = localStorage.getItem('selectedProprietarioId');
+      const proprietarioExists = proprietarios.some((p: Proprietario) => p.id.toString() === storedId);
 
-        // Se não houver proprietários, não fazer nada
-        if (!data || data.length === 0) return;
-
-        // Se houver apenas um proprietário, selecionar automaticamente
-        if (data.length === 1) {
-          handleProprietarioChange(data[0].id.toString());
-          return;
-        }
-
-        // Verificar se há um proprietário selecionado no localStorage
-        const storedId = localStorage.getItem('selectedProprietarioId');
-
-        // Se houver um ID armazenado e ele pertencer ao usuário atual, usá-lo
-        if (storedId) {
-          const proprietarioExists = data.some((p: Proprietario) => p.id.toString() === storedId);
-          if (proprietarioExists) {
-            handleProprietarioChange(storedId);
-            return;
-          }
-        }
-
-        // Caso contrário, selecionar o primeiro proprietário
-        handleProprietarioChange(data[0].id.toString());
-      } catch (error) {
-        console.error('Erro ao carregar proprietários:', error);
+      if (storedId && proprietarioExists) {
+        handleProprietarioChange(storedId);
+      } else if (proprietarios[0]) {
+        handleProprietarioChange(proprietarios[0].id.toString());
       }
-    };
-
-    if (user) {
-      loadProprietarios();
     }
-  }, [user]);
+  }, [proprietarios, isLoading]);
 
   // Adicionar um useEffect para atualizar o selectedProprietario quando mudar de página
   useEffect(() => {

@@ -44,7 +44,6 @@ export async function getProprietarios() {
       return response.data;
     }
   } catch (error) {
-    console.error('Erro ao buscar proprietários:', error);
     return { error: true, message: 'Falha ao carregar proprietários' };
   }
 }
@@ -56,6 +55,7 @@ export async function getProprietarioById(id: string) {
     // Obter informações do usuário atual
     const userResponse = await api.get(`${baseUrl}/auth/me`);
     const user = userResponse.data.user;
+    
 
     // Se for admin, pode acessar qualquer proprietário
     if (VerifyRole(user.roleId) === 'admin' || VerifyRole(user.roleId) === 'manager') {

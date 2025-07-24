@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { getDemandas, getSolucoesByDemandaId, deleteDemandaAction } from '../../actions/actions';
 import { Demanda, PaginatedResponse } from '../../types/types';
+import { useSidebar } from '../../../../../../componentes/Sidebar/SidebarContext';
 import {
   Table as ShadcnTable,
   TableHeader,
@@ -66,6 +67,8 @@ export default function Table() {
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [globalFilter, setGlobalFilter] = useState('');
+
+  const { isCollapsed } = useSidebar();
 
   const fetchData = useCallback(async () => {
     const proprietarioId = localStorage.getItem('selectedProprietarioId');
@@ -169,6 +172,7 @@ export default function Table() {
     if (!dateString) return '-';
     try {
       const date = new Date(dateString);
+      date.setMinutes(date.getMinutes() + date.getTimezoneOffset());
       if (isNaN(date.getTime())) return '-';
       return new Intl.DateTimeFormat('pt-BR').format(date);
     } catch (error) {
@@ -396,216 +400,233 @@ export default function Table() {
   });
 
   return (
-    <div className="w-full space-y-4 pt-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-800">Crie sua demanda</h1>
-        <Button onClick={handleCreate} className="bg-blue-600 hover:bg-blue-700 text-white">
-          <Plus className="mr-2 h-4 w-4" /> Adicionar
-        </Button>
-      </div>
-
-      <div className="flex items-center justify-between py-4 gap-4">
-        <div className="flex flex-wrap items-center gap-2">
-          <Input
-            placeholder="Filtrar por nome..."
-            value={(table.getColumn("nome")?.getFilterValue() as string) ?? ""}
-            onChange={(event) =>
-              table.getColumn("nome")?.setFilterValue(event.target.value)
-            }
-            className="w-[200px] bg-white border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 shadow-sm"
-          />
-          <select
-            value={(table.getColumn("demandante")?.getFilterValue() as string) ?? ""}
-            onChange={(event) =>
-              table.getColumn("demandante")?.setFilterValue(event.target.value || undefined)
-            }
-            className="w-[180px] h-10 rounded-md border border-gray-300 bg-white px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 shadow-sm"
-          >
-            <option value="">Todos os demandantes</option>
-            {Array.from(new Set(data.map(s => s.demandante).filter(Boolean)))
-              .sort()
-              .map((demandante) => (
-                <option key={demandante} value={demandante}>
-                  {demandante}
-                </option>
-              ))}
-          </select>
-          <select
-            value={(table.getColumn("responsavel")?.getFilterValue() as string) ?? ""}
-            onChange={(event) =>
-              table.getColumn("responsavel")?.setFilterValue(event.target.value || undefined)
-            }
-            className="w-[180px] h-10 rounded-md border border-gray-300 bg-white px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 shadow-sm"
-          >
-            <option value="">Todos os responsáveis</option>
-            <option value="sem_responsavel">Não informado</option>
-            {Array.from(new Set(data.map(s => s.responsavel?.nome).filter(Boolean) as string[]))
-              .sort()
-              .map((responsavel) => (
-                <option key={responsavel} value={responsavel}>
-                  {responsavel}
-                </option>
-              ))}
-          </select>
-          <select
-            value={(table.getColumn("prioridade")?.getFilterValue() as string) ?? ""}
-            onChange={(event) =>
-              table.getColumn("prioridade")?.setFilterValue(event.target.value || undefined)
-            }
-            className="w-[180px] h-10 rounded-md border border-gray-300 bg-white px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 shadow-sm"
-          >
-            <option value="">Todas as prioridades</option>
-            <option value="sem_prioridade">Não informado</option>
-            {Array.from(new Set(data.map(s => s.prioridade?.nome).filter(Boolean) as string[]))
-              .sort()
-              .map((prioridade) => (
-                <option key={prioridade} value={prioridade}>
-                  {prioridade}
-                </option>
-              ))}
-          </select>
-          <select
-            value={(table.getColumn("status")?.getFilterValue() as string) ?? ""}
-            onChange={(event) =>
-              table.getColumn("status")?.setFilterValue(event.target.value || undefined)
-            }
-            className="w-[180px] h-10 rounded-md border border-gray-300 bg-white px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 shadow-sm"
-          >
-            <option value="">Todos os status</option>
-            <option value="sem_status">Não informado</option>
-            {Array.from(new Set(data.map(s => s.status?.nome).filter(Boolean) as string[]))
-              .sort()
-              .map((status) => (
-                <option key={status} value={status}>
-                  {status}
-                </option>
-              ))}
-          </select>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={handleClearFilters} className="bg-white">
-            Limpar Filtros
+    <div className={`
+      w-full bg-gray-50
+      transition-all duration-300 ease-in-out
+      ${isCollapsed
+        ? '-ml-[190px] w-[calc(100%+230px)]'
+        : 'ml-0'
+      }
+      py-6 px-6
+    `}>
+      <div className="w-full space-y-4">
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold text-gray-800">Crie sua demanda</h1>
+          <Button onClick={handleCreate} className="bg-blue-600 hover:bg-blue-700 text-white">
+            <Plus className="mr-2 h-4 w-4" /> Adicionar
           </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="icon">
-                <Columns className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
-              {table
-                .getAllColumns()
-                .filter((column) => column.getCanHide())
-                .map((column) => {
-                  return (
-                    <DropdownMenuCheckboxItem
-                      key={column.id}
-                      className="capitalize"
-                      checked={column.getIsVisible()}
-                      onCheckedChange={(value) =>
-                        column.toggleVisibility(!!value)
-                      }
-                      onSelect={(e) => e.preventDefault()}
-                    >
-                      {typeof column.columnDef.header === 'string' ? column.columnDef.header : column.id}
-                    </DropdownMenuCheckboxItem>
-                  )
-                })}
-            </DropdownMenuContent>
-          </DropdownMenu>
         </div>
-      </div>
-      <div className="rounded-md border bg-white">
-        <ShadcnTable>
-          <TableHeader className="bg-gray-100 border-b">
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id} className="text-xs font-medium text-gray-600 h-9 px-2">
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                        header.column.columnDef.header,
-                        header.getContext()
-                      )}
-                  </TableHead>
+
+        <div className="flex items-center justify-between py-4 gap-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <Input
+              placeholder="Filtrar por nome..."
+              value={(table.getColumn("nome")?.getFilterValue() as string) ?? ""}
+              onChange={(event) =>
+                table.getColumn("nome")?.setFilterValue(event.target.value)
+              }
+              className="w-[200px] bg-white border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 shadow-sm"
+            />
+            <select
+              value={(table.getColumn("demandante")?.getFilterValue() as string) ?? ""}
+              onChange={(event) =>
+                table.getColumn("demandante")?.setFilterValue(event.target.value || undefined)
+              }
+              className="w-[180px] h-10 rounded-md border border-gray-300 bg-white px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 shadow-sm"
+            >
+              <option value="">Todos os demandantes</option>
+              {Array.from(new Set(data.map(s => s.demandante).filter(Boolean)))
+                .sort()
+                .map((demandante) => (
+                  <option key={demandante} value={demandante}>
+                    {demandante}
+                  </option>
                 ))}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody className="bg-white">
-            {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id} className="border-b hover:bg-gray-50/80 transition-colors">
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} className="px-2 py-2">
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </TableCell>
+            </select>
+            <select
+              value={(table.getColumn("responsavel")?.getFilterValue() as string) ?? ""}
+              onChange={(event) =>
+                table.getColumn("responsavel")?.setFilterValue(event.target.value || undefined)
+              }
+              className="w-[180px] h-10 rounded-md border border-gray-300 bg-white px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 shadow-sm"
+            >
+              <option value="">Todos os responsáveis</option>
+              <option value="sem_responsavel">Não informado</option>
+              {Array.from(new Set(data.map(s => s.responsavel?.nome).filter(Boolean) as string[]))
+                .sort()
+                .map((responsavel) => (
+                  <option key={responsavel} value={responsavel}>
+                    {responsavel}
+                  </option>
+                ))}
+            </select>
+            <select
+              value={(table.getColumn("prioridade")?.getFilterValue() as string) ?? ""}
+              onChange={(event) =>
+                table.getColumn("prioridade")?.setFilterValue(event.target.value || undefined)
+              }
+              className="w-[180px] h-10 rounded-md border border-gray-300 bg-white px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 shadow-sm"
+            >
+              <option value="">Todas as prioridades</option>
+              <option value="sem_prioridade">Não informado</option>
+              {Array.from(new Set(data.map(s => s.prioridade?.nome).filter(Boolean) as string[]))
+                .sort()
+                .map((prioridade) => (
+                  <option key={prioridade} value={prioridade}>
+                    {prioridade}
+                  </option>
+                ))}
+            </select>
+            <select
+              value={(table.getColumn("status")?.getFilterValue() as string) ?? ""}
+              onChange={(event) =>
+                table.getColumn("status")?.setFilterValue(event.target.value || undefined)
+              }
+              className="w-[180px] h-10 rounded-md border border-gray-300 bg-white px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 shadow-sm"
+            >
+              <option value="">Todos os status</option>
+              <option value="sem_status">Não informado</option>
+              {Array.from(new Set(data.map(s => s.status?.nome).filter(Boolean) as string[]))
+                .sort()
+                .map((status) => (
+                  <option key={status} value={status}>
+                    {status}
+                  </option>
+                ))}
+            </select>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={handleClearFilters} className="bg-white">
+              Limpar Filtros
+            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="icon">
+                  <Columns className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                {table
+                  .getAllColumns()
+                  .filter((column) => column.getCanHide())
+                  .map((column) => {
+                    return (
+                      <DropdownMenuCheckboxItem
+                        key={column.id}
+                        className="capitalize"
+                        checked={column.getIsVisible()}
+                        onCheckedChange={(value) =>
+                          column.toggleVisibility(!!value)
+                        }
+                        onSelect={(e) => e.preventDefault()}
+                      >
+                        {typeof column.columnDef.header === 'string' ? column.columnDef.header : column.id}
+                      </DropdownMenuCheckboxItem>
+                    )
+                  })}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
+        <div className="rounded-md border bg-white">
+          <ShadcnTable>
+            <TableHeader className="bg-gray-100 border-b">
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => (
+                    <TableHead key={header.id} className="text-xs font-medium text-gray-600 h-9 px-2">
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
+                    </TableHead>
                   ))}
                 </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center text-gray-500">
-                  Nenhum resultado encontrado.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </ShadcnTable>
-      </div>
-      <div className="flex items-center justify-between space-x-2 py-4">
-        <div className="flex items-center space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
-          >
-            Anterior
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
-          >
-            Próximo
-          </Button>
-          <select
-            className="h-10 rounded-md border border-gray-300 bg-white px-3 text-sm"
-            value={table.getState().pagination.pageSize}
-            onChange={e => {
-              table.setPageSize(Number(e.target.value));
-            }}
-          >
-            {[10, 50, 100].map(pageSize => (
-              <option key={pageSize} value={pageSize}>
-                {pageSize} registros
-              </option>
-            ))}
-          </select>
+              ))}
+            </TableHeader>
+            <TableBody className="bg-white">
+              {table.getRowModel().rows?.length ? (
+                table.getRowModel().rows.map((row) => (
+                  <TableRow key={row.id} className="border-b hover:bg-gray-50/80 transition-colors">
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id} className="px-2 py-2">
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={columns.length} className="h-24 text-center text-gray-500">
+                    Nenhum resultado encontrado.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </ShadcnTable>
         </div>
-        <div className="text-sm text-muted-foreground">
-          Página {table.getState().pagination.pageIndex + 1} de {table.getPageCount()} | Total: {totalRows} {totalRows === 1 ? 'registro' : 'registros'}
+        <div className="flex items-center justify-between space-x-2 py-4">
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => table.previousPage()}
+              disabled={!table.getCanPreviousPage()}
+            >
+              Anterior
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => table.nextPage()}
+              disabled={!table.getCanNextPage()}
+            >
+              Próximo
+            </Button>
+            <select
+              className="h-10 rounded-md border border-gray-300 bg-white px-3 text-sm"
+              value={table.getState().pagination.pageSize}
+              onChange={e => {
+                table.setPageSize(Number(e.target.value));
+              }}
+            >
+              {[10, 50, 100].map(pageSize => (
+                <option key={pageSize} value={pageSize}>
+                  {pageSize} registros
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="text-sm text-muted-foreground">
+            Página {table.getState().pagination.pageIndex + 1} de {table.getPageCount()} | Total: {totalRows} {totalRows === 1 ? 'registro' : 'registros'}
+          </div>
         </div>
-      </div>
-      {isInfoModalOpen && <InfoModal demanda={selectedDemanda} onClose={handleCloseInfoModal} />}
-      {isFormOpen && (
-        <Form
-          demandaToEdit={demandaToEdit as any}
-          onClose={handleCloseForm}
-          onSave={handleSaveForm}
+        
+        {isInfoModalOpen && <InfoModal demanda={selectedDemanda} onClose={handleCloseInfoModal} />}
+        
+        {isFormOpen && (
+          <Form
+            demandaToEdit={demandaToEdit as any}
+            onClose={handleCloseForm}
+            onSave={handleSaveForm}
+          />
+        )}
+        
+        <DeleteConfirmationModal
+          isOpen={isDeleteModalOpen}
+          onClose={cancelDelete}
+          onConfirm={confirmDelete}
+          title="Confirmar Exclusão"
+          message="Tem certeza que deseja excluir?"
         />
+
       )}
 
-      <DeleteConfirmationModal
-        isOpen={isDeleteModalOpen}
-        onClose={cancelDelete}
-        onConfirm={confirmDelete}
-        title="Confirmar Exclusão"
-        message="Tem certeza que deseja excluir?"
-      />
+
+        
+      </div>
 
     </div>
   );
