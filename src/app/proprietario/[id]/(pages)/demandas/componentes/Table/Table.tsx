@@ -42,6 +42,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import InfoModal from '../InfoModal/InfoModal';
+import DeleteConfirmationModal from '../DeleteConfirmationModal/DeleteConfirmationModal';
 
 export default function Table() {
   const [data, setData] = useState<Demanda[]>([]);
@@ -51,6 +52,9 @@ export default function Table() {
   const [loadingSolucoes, setLoadingSolucoes] = useState<{ [key: number]: boolean }>({});
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
   const [selectedDemanda, setSelectedDemanda] = useState<Demanda | null>(null);
+
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [demandaToDelete, setDemandaToDelete] = useState<number | null>(null);
 
   const [pagination, setPagination] = useState({
     pageIndex: 0,
@@ -111,17 +115,31 @@ export default function Table() {
     setIsFormOpen(true);
   }, []);
 
-  const handleDelete = async (id: number) => {
-    if (window.confirm('Tem certeza que deseja excluir esta demanda?')) {
+
+  const handleDelete = (id: number) => {
+    setDemandaToDelete(id);
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (demandaToDelete) {
       try {
-        await deleteDemandaAction(id);
+        await deleteDemandaAction(demandaToDelete);
         fetchData();
+        setIsDeleteModalOpen(false);
+        setDemandaToDelete(null);
+
       } catch (error) {
         console.error('Erro ao excluir demanda', error);
         alert('Falha ao excluir a demanda.');
       }
     }
-  }
+  };
+
+  const cancelDelete = () => {
+    setIsDeleteModalOpen(false);
+    setDemandaToDelete(null);
+  };
 
   const handleInfo = (demanda: Demanda) => {
     setSelectedDemanda(demanda);
@@ -580,6 +598,15 @@ export default function Table() {
           onSave={handleSaveForm}
         />
       )}
+
+      <DeleteConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onClose={cancelDelete}
+        onConfirm={confirmDelete}
+        title="Confirmar Exclusão"
+        message="Tem certeza que deseja excluir?"
+      />
+
     </div>
   );
 }
